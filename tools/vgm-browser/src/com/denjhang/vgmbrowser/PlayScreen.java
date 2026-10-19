@@ -315,14 +315,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 ay2.setEnvOct(true, ay2.getEnvOctTri() + dir);
             }
         } else if (cursor == ROW_ENVSAW_UNI) {
-            ay.setEnvUni(false, (ay.getEnvUni(false) + dir + 3) % 3);
+            int u = (ay.getEnvUni(false) + dir + 3) % 3;
+            ay.setEnvUni(false, u);
             if (ay2 != null) {
-                ay2.setEnvUni(false, ay2.getEnvUni(false));
+                ay2.setEnvUni(false, u);
             }
         } else if (cursor == ROW_ENVTRI_UNI) {
-            ay.setEnvUni(true, (ay.getEnvUni(true) + dir + 3) % 3);
+            int u = (ay.getEnvUni(true) + dir + 3) % 3;
+            ay.setEnvUni(true, u);
             if (ay2 != null) {
-                ay2.setEnvUni(true, ay2.getEnvUni(true));
+                ay2.setEnvUni(true, u);
             }
         } else {
             int ch = cursor - ROW_CH0;

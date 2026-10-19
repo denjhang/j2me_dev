@@ -815,6 +815,21 @@ public class Ay2Midi {
         return syncNote >= 0 ? 0 : -1;
     }
 
+    /** 声道门位（mixer 低有效）：T=方波门开。 */
+    public boolean visToneGate(int ch) {
+        return (regs[7] & (1 << ch)) == 0;
+    }
+
+    /** N=噪声门开。 */
+    public boolean visNoiseGate(int ch) {
+        return (regs[7] & (0x8 << ch)) == 0;
+    }
+
+    /** E=包络位（音量寄存器 bit4）。 */
+    public boolean visEnvGate(int ch) {
+        return (regs[8 + ch] & 0x10) != 0;
+    }
+
     /** 该声道当前电平 0-127（键盘按键亮度参考）。 */
     public int visLevel(int ch) {
         int v = curVol[ch];

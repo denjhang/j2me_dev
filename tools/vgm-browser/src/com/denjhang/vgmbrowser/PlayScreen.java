@@ -57,7 +57,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_NOISEMAP = 2;
     private static final int ROW_ENVSAW_OCT = 3;
     private static final int ROW_ENVTRI_OCT = 4;
-    private static final int ROW_CH0 = 5;
+    private static final int ROW_ENVSAW_UNI = 5;
+    private static final int ROW_ENVTRI_UNI = 6;
+    private static final int ROW_CH0 = 7;
+    private static final String[] UNI_NAMES = {"关", "上行1八度", "上行2八度"};
 
     private final Font small;
     private final Font big;
@@ -249,6 +252,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         drawRow(g, cursor == ROW_ENVTRI_OCT, y, "包络三角八度",
                 (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri());
         y += 16;
+        drawRow(g, cursor == ROW_ENVSAW_UNI, y, "锯齿上行复音",
+                UNI_NAMES[ay.getEnvUni(false)]);
+        y += 16;
+        drawRow(g, cursor == ROW_ENVTRI_UNI, y, "三角上行复音",
+                UNI_NAMES[ay.getEnvUni(true)]);
+        y += 16;
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
             drawRow(g, cursor == ROW_CH0 + i, y, CH_NAMES[i],
                     String.valueOf(ay.getProg(i)));
@@ -304,6 +313,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             ay.setEnvOct(true, ay.getEnvOctTri() + dir);
             if (ay2 != null) {
                 ay2.setEnvOct(true, ay2.getEnvOctTri() + dir);
+            }
+        } else if (cursor == ROW_ENVSAW_UNI) {
+            ay.setEnvUni(false, (ay.getEnvUni(false) + dir + 3) % 3);
+            if (ay2 != null) {
+                ay2.setEnvUni(false, ay2.getEnvUni(false));
+            }
+        } else if (cursor == ROW_ENVTRI_UNI) {
+            ay.setEnvUni(true, (ay.getEnvUni(true) + dir + 3) % 3);
+            if (ay2 != null) {
+                ay2.setEnvUni(true, ay2.getEnvUni(true));
             }
         } else {
             int ch = cursor - ROW_CH0;

@@ -116,8 +116,28 @@ public class Ay2Midi {
     private int noiseNote = 60;
 
     private int buzzSrc = -1;
-    private int buzzNote = -1;
+    private int buzzNote = -1;       // 基准音
+    private int buzzVoices = 1;      // 当前堆叠数（1-3）
     private int buzzProgSent = -1;   // 已发到蜂鸣器通道的音色
+
+    /** 关掉蜂鸣通道上全部堆叠音。 */
+    private void buzzOffAll() {
+        if (buzzNote >= 0) {
+            for (int i = 0; i < buzzVoices; i++) {
+                int n = buzzNote + i * 12;
+                if (n <= 127) {
+                    send(NOTE_OFF | buzzerCh, n, 0);
+                }
+            }
+        }
+        buzzNote = -1;
+        buzzSrc = -1;
+        buzzVoices = 1;
+    }
+
+    private int familyVoices(int slot) {
+        return (slot == SLOT_ENV_TRI ? envUniTri : envUniSaw) + 1;
+    }
 
     // 软件包络仿真（慢包络的音量模拟），状态机照抄 emu2149 的 env 单元
     private int envPtr = 31;           // 0-31 电平（6 位计数器，0x20 为进/借位标志）
@@ -255,11 +275,7 @@ public class Ay2Midi {
             }
         } else {
             // 包络四形状类共用蜂鸣器 MIDI 通道：换音色先关音
-            if (buzzNote >= 0) {
-                send(NOTE_OFF | buzzerCh, buzzNote, 0);
-                buzzNote = -1;
-                buzzSrc = -1;
-            }
+            buzzOffAll();
             buzzProgSent = -1;
         }
         progMap[idx] = prog;
@@ -309,6 +325,8 @@ public class Ay2Midi {
         noiseMapMode = src.noiseMapMode;
         envOctSaw = src.envOctSaw;
         envOctTri = src.envOctTri;
+        envUniSaw = src.envUniSaw;
+        envUniTri = src.envUniTri;
         forceRefreshAll();
     }
 
@@ -346,11 +364,7 @@ public class Ay2Midi {
             }
             noiseVol[ch] = -1;
         }
-        if (buzzNote >= 0) {
-            send(NOTE_OFF | buzzerCh, buzzNote, 0);
-        }
-        buzzSrc = -1;
-        buzzNote = -1;
+        buzzOffAll();
         stopSyncBuzz();
         syncBuzz = false;
         r13Interval = 0;
@@ -521,20 +535,40 @@ public class Ay2Midi {
         int cents144 = (int) (n144 - note * 65536);
         int bend = centsToBend(cents144);
 
-        if (syncNote >= 0 && syncNote != note) {
-            send(NOTE_OFF | buzzerCh, syncNote, 0);
+        int voices = envUniSaw + 1;      // 同步蜂鸣属锯齿族
+        if (syncNote >= 0 && (syncNote != note || syncVoices != voices)) {
+            for (int i = 0; i < syncVoices; i++) {
+                int n = syncNote + i * 12;
+                if (n <= 127) {
+                    send(NOTE_OFF | buzzerCh, n, 0);
+                }
+            }
         }
         syncNote = note;
+        syncVoices = voices;
         send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
         send(CC | buzzerCh, CC_EXPRESSION, 127);
-        send(NOTE_ON | buzzerCh, note, 127);
+        for (int i = 0; i < voices; i++) {
+            int n = note + i * 12;
+            if (n <= 127) {
+                send(NOTE_ON | buzzerCh, n, 127);
+            }
+        }
     }
+
+    private int syncVoices = 1;
 
     private void stopSyncBuzz() {
         if (syncNote >= 0) {
-            send(NOTE_OFF | buzzerCh, syncNote, 0);
+            for (int i = 0; i < syncVoices; i++) {
+                int n = syncNote + i * 12;
+                if (n <= 127) {
+                    send(NOTE_OFF | buzzerCh, n, 0);
+                }
+            }
             syncNote = -1;
         }
+        syncVoices = 1;
     }
 
     /**
@@ -689,6 +723,9 @@ public class Ay2Midi {
     /** 包络八度：锯齿族（含衰减/交替，32 步）与三角（64 步）分开调。 */
     private int envOctSaw;
     private int envOctTri;
+    /** 上行八度复音：0=关 1=+1八度(2复音) 2=+2八度(3复音)。锯齿/三角独立。 */
+    private int envUniSaw;
+    private int envUniTri;
 
     public int getNoiseMapMode() {
         return noiseMapMode;
@@ -700,6 +737,26 @@ public class Ay2Midi {
 
     public int getEnvOctTri() {
         return envOctTri;
+    }
+
+    public int getEnvUni(boolean tri) {
+        return tri ? envUniTri : envUniSaw;
+    }
+
+    /** 上行八度复音设置（0/1/2 循环）。生效中的蜂鸣音立即重算。 */
+    public void setEnvUni(boolean tri, int u) {
+        if (u < 0) u = 0;
+        if (u > 2) u = 2;
+        if (tri) {
+            if (u == envUniTri) return;
+            envUniTri = u;
+        } else {
+            if (u == envUniSaw) return;
+            envUniSaw = u;
+        }
+        if (buzzSrc >= 0) {
+            updateBuzzerPitch(buzzSrc);
+        }
     }
 
     /** tri=true 调三角八度，否则锯齿族。生效中的蜂鸣音立即重算。 */
@@ -751,10 +808,8 @@ public class Ay2Midi {
         if (buzz != buzzer[ch]) {
             buzzer[ch] = buzz;
             noteOff(ch);
-            if (buzzSrc == ch && buzzNote >= 0) {
-                send(NOTE_OFF | buzzerCh, buzzNote, 0);
-                buzzNote = -1;
-                buzzSrc = -1;
+            if (buzzSrc == ch) {
+                buzzOffAll();
             }
         }
 
@@ -864,10 +919,8 @@ public class Ay2Midi {
     private void updateBuzzerPitch(int ch) {
         int hz = envWaveHz();
         if (!buzzer[ch] || hz <= 0) {
-            if (buzzSrc == ch && buzzNote >= 0) {
-                send(NOTE_OFF | buzzerCh, buzzNote, 0);
-                buzzNote = -1;
-                buzzSrc = -1;
+            if (buzzSrc == ch) {
+                buzzOffAll();
             }
             return;
         }
@@ -891,23 +944,25 @@ public class Ay2Midi {
         int prog = slot >= 0 ? progMap[slot] : progMap[SLOT_ENV_SAW];
         if (prog != buzzProgSent) {
             // 形状类音色变化：先关音再换音色（音源不允许演奏中换）
-            if (buzzNote >= 0) {
-                send(NOTE_OFF | buzzerCh, buzzNote, 0);
-                buzzNote = -1;
-            }
+            buzzOffAll();
             buzzProgSent = prog;
             send(PROG | buzzerCh, prog, 0);
         }
-        if (buzzSrc != ch || buzzNote != note) {
-            // 无条件关掉旧音符（防止通道切换时复音泄漏）
-            if (buzzNote >= 0) {
-                send(NOTE_OFF | buzzerCh, buzzNote, 0);
-            }
+        int voices = familyVoices(slot);
+        if (buzzSrc != ch || buzzNote != note || buzzVoices != voices) {
+            // 无条件关掉旧堆叠（防止通道切换/复音数变化时泄漏）
+            buzzOffAll();
             buzzSrc = ch;
             buzzNote = note;
+            buzzVoices = voices;
             send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
             send(CC | buzzerCh, CC_EXPRESSION, 127);  // 蜂鸣器固定最大音量
-            send(NOTE_ON | buzzerCh, note, 127);
+            for (int i = 0; i < voices; i++) {
+                int n = note + i * 12;               // 基准 + 上行八度堆叠
+                if (n <= 127) {
+                    send(NOTE_ON | buzzerCh, n, 127);
+                }
+            }
         } else if (Math.abs(bend - curBend[ch]) > 4) {
             send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
         }

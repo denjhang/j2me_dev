@@ -11,6 +11,7 @@ import com.denjhang.vgm.VgmFile;
 public class BrowserMIDlet extends MIDlet {
 
     private FileListScreen list;
+    private PlayScreen play;
 
     public void startApp() {
         if (list == null) {
@@ -23,6 +24,7 @@ public class BrowserMIDlet extends MIDlet {
     }
 
     public void destroyApp(boolean unconditional) {
+        releasePlay();
         notifyDestroyed();
     }
 
@@ -43,11 +45,27 @@ public class BrowserMIDlet extends MIDlet {
     }
 
     void openPlay(VgmFile file, int listIndex) {
-        Display.getDisplay(this).setCurrent(new PlayScreen(this, file, listIndex));
+        releasePlay();
+        play = new PlayScreen(this, file, listIndex);
+        Display.getDisplay(this).setCurrent(play);
+    }
+
+    /** 释放上一个播放屏（切曲时必须关掉旧 MIDI Player，防资源泄漏）。 */
+    void releasePlay() {
+        if (play != null) {
+            play.release();
+            play = null;
+        }
     }
 
     /** 播放器切曲（上一曲/下一曲），越界忽略。 */
     void switchTrack(int idx) {
+        releasePlay();
         list.openByIndex(idx);
+    }
+
+    /** 播放列表条目数（随机播放用）。 */
+    int trackCount() {
+        return list.entryCount();
     }
 }

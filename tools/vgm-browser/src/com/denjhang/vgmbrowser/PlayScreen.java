@@ -8,20 +8,16 @@ import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
 import com.denjhang.vgm.Ay2Midi;
-import com.denjhang.vgm.VgmCommandTable;
 import com.denjhang.vgm.VgmFile;
 import com.denjhang.vgm.VgmParser;
 
 /**
- * VGM → MIDI 实时播放器 HUD。
+ * 播放器 HUD。
  *
- * 打开即自动播放。键位：
- *   4 / 6        上一曲 / 下一曲（播放列表）
- *   5            暂停 / 继续
- *   0            停止
- *   ↑ / ↓        移动设置光标
- *   ← / →        修改光标所在项（声像 / 八度 / 各通道音色）
- *   返回         停止并退出
+ * 普通模式：◀▶ 切曲（顺序/随机）  ▲▼ 主音量  ●/5 播放暂停  # 进设置
+ * 设置模式：▲▼ 移动光标  ◀▶ 调整  # 返回
+ *
+ * 后台播放：返回列表不停播；打开新曲时由 MIDlet 释放旧实例（单实例）。
  */
 public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
@@ -30,28 +26,28 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         "噪声A", "噪声B", "噪声C",
         "包络-锯齿", "包络-衰减", "包络-三角", "包络-交替"
     };
-    /** 可选音色（常用 GM 值）。 */
     private static final int[] PROG_CHOICES = {
         80, 81, 83, 87, 38, 48, 33, 56, 73, 24, 19, 11, 4, 0, 52, 127
     };
+    private static final String[] UNI_NAMES = {"关", "上行1八度", "上行2八度"};
+    private static final int[] LOOP_CHOICES = {1, 2, 3, 5, 99};
+    private static final String[] LOOP_NAMES = {"1", "2", "3", "5", "无限"};
+    private static final String[] ORDER_NAMES = {"顺序", "随机"};
 
-    private final BrowserMIDlet midlet;
-    private final VgmFile file;
-    private final Ay2Midi ay;
-    /** 第二片 PSG（双 AY 曲目），遇到 0xA0 寄存器 bit7 时惰性创建。 */
-    private Ay2Midi ay2;
-    private final VgmParser parser;
-    private final int listIndex;
+    // v16 配色：ChA 绿 / ChB 蓝 / ChC 红；二芯片 紫/黄/青；噪声灰
+    private static final int COL_A = 0xA0C8A0;
+    private static final int COL_B = 0xA0A0DC;
+    private static final int COL_C = 0xDCA0A0;
+    private static final int COL_A2 = 0xC8A0C8;
+    private static final int COL_B2 = 0xC8C8A0;
+    private static final int COL_C2 = 0xA0C8C8;
+    private static final int[] CH_COLORS = {COL_A, COL_B, COL_C};
+    private static final int[] CH2_COLORS = {COL_A2, COL_B2, COL_C2};
 
-    private final Command cmdBack = new Command("返回", Command.BACK, 1);
+    private static final int MODE_HUD = 0;
+    private static final int MODE_SETTINGS = 1;
+    private int mode = MODE_HUD;
 
-    private volatile boolean playing;
-    private volatile boolean uiAlive = true;
-    private volatile boolean loop = true;
-    private Thread play;
-    private String err;
-
-    private int cursor;          // HUD 行光标
     private static final int ROW_STEREO = 0;
     private static final int ROW_OCT = 1;
     private static final int ROW_NOISEMAP = 2;
@@ -60,44 +56,39 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_ENVSAW_UNI = 5;
     private static final int ROW_ENVTRI_UNI = 6;
     private static final int ROW_BUZZ_VOL = 7;
-    private static final int ROW_CH0 = 8;
-    private static final String[] UNI_NAMES = {"关", "上行1八度", "上行2八度"};
-    private static final int TOTAL_ROWS = 8 + Ay2Midi.SLOTS;   // 8 项设置 + 10 槽
+    private static final int ROW_LOOP = 8;
+    private static final int ROW_ORDER = 9;
+    private static final int ROW_CH0 = 10;
+    private static final int TOTAL_ROWS = 10 + Ay2Midi.SLOTS;
     private static final int ROW_H = 16;
+    private int cursor;
     private int scroll;
 
-    private String rowName(int r) {
-        switch (r) {
-            case ROW_STEREO: return "声像";
-            case ROW_OCT: return "八度";
-            case ROW_NOISEMAP: return "噪声映射";
-            case ROW_ENVSAW_OCT: return "包络锯齿八度";
-            case ROW_ENVTRI_OCT: return "包络三角八度";
-            case ROW_ENVSAW_UNI: return "锯齿上行复音";
-            case ROW_ENVTRI_UNI: return "三角上行复音";
-            case ROW_BUZZ_VOL: return "蜂鸣器音量";
-            default: return CH_NAMES[r - ROW_CH0];
-        }
-    }
+    private final BrowserMIDlet midlet;
+    private final VgmFile file;
+    final Ay2Midi ay;
+    private Ay2Midi ay2;
+    private final VgmParser parser;
+    private final int listIndex;
 
-    private String rowValue(int r) {
-        switch (r) {
-            case ROW_STEREO: return Ay2Midi.STEREO_MODES[ay.getStereoMode()];
-            case ROW_OCT: return (ay.getOct() >= 0 ? "+" : "") + ay.getOct();
-            case ROW_NOISEMAP: return Ay2Midi.NOISE_MAP_NAMES[ay.getNoiseMapMode()];
-            case ROW_ENVSAW_OCT:
-                return (ay.getEnvOctSaw() >= 0 ? "+" : "") + ay.getEnvOctSaw();
-            case ROW_ENVTRI_OCT:
-                return (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri();
-            case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
-            case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
-            case ROW_BUZZ_VOL: return String.valueOf(ay.getBuzzVol());
-            default: return String.valueOf(ay.getProg(r - ROW_CH0));
-        }
-    }
+    private final Command cmdSettings = new Command("设置", Command.SCREEN, 1);
+    private final Command cmdBack = new Command("列表", Command.BACK, 2);
 
+    private volatile boolean playing;
+    private volatile boolean uiAlive = true;
+    private Thread play;
+    private String err;
+
+    private int loopIdx = 1;          // 默认循环 2 次
+    private int loopPlays;
+    private boolean shuffle;
+    private int masterVol = 100;
+    private int lastKeyOct = 5;
+
+    private final java.util.Random rng = new java.util.Random();
     private final Font small;
-    private final Font big;
+    private final Font titleFont;
+    private final Font tiny;
 
     public PlayScreen(BrowserMIDlet midlet, VgmFile file, int listIndex) {
         this.midlet = midlet;
@@ -106,45 +97,67 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.parser = file.getParser();
         this.ay = new Ay2Midi();
         setFullScreenMode(true);
+        addCommand(cmdSettings);
         addCommand(cmdBack);
         setCommandListener(this);
         small = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        big = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
-        // VGM 时钟字段高两位是标志（bit31=双芯片，bit30=YM2149），取低 30 位
+        titleFont = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
+        tiny = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         if (file.header.chipClock[0x12] != 0) {
             ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
-        }
-        if (file.header.ayClock2 != 0) {
-            ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
-            ay2.setClock(file.header.ayClock2 & 0x3FFFFFFF);
-            if (ay2.ready) {
-                ay2.copyConfigFrom(ay);
-            } else {
-                ay2 = null;
-            }
         }
         if (!ay.ready) {
             err = ay.initError;
         } else {
             ay.forceRefreshAll();
+            ay.setMasterVol(masterVol);
+        }
+        if (file.header.ayClock2 != 0) {
+            attachChip2();
         }
         startPlay(true);
         Thread ui = new Thread(this);
         ui.start();
     }
 
+    private void attachChip2() {
+        if (ay2 != null) {
+            return;
+        }
+        ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
+        ay2.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
+        if (ay2.ready) {
+            ay2.copyConfigFrom(ay);
+            ay2.setMasterVol(masterVol);
+        } else {
+            ay2 = null;
+        }
+    }
+
+    /** 由 MIDlet 释放资源（切曲/退出）。返回列表不调用——后台继续播。 */
+    public void release() {
+        uiAlive = false;
+        playing = false;
+        ay.close();
+        if (ay2 != null) {
+            ay2.close();
+        }
+    }
+
     public void run() {
         while (uiAlive) {
-            repaint();
+            if (isShown()) {
+                repaint();
+            }
             try {
-                Thread.sleep(200);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 break;
             }
         }
     }
 
-    // ------------------------------------------------------------ 播放控制
+    // ------------------------------------------------------------ 播放
 
     private void startPlay(boolean reset) {
         if (playing || !ay.ready) {
@@ -152,7 +165,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         if (reset) {
             parser.reset();
+            loopPlays = 0;
             ay.allSoundOff();
+            if (ay2 != null) {
+                ay2.allSoundOff();
+            }
         }
         playing = true;
         play = new Thread(new Runnable() {
@@ -161,22 +178,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
         });
         play.start();
-    }
-
-    private void pausePlay() {
-        playing = false;
-        ay.allSoundOff();
-        if (ay2 != null) {
-            ay2.allSoundOff();
-        }
-    }
-
-    private void stopPlay() {
-        playing = false;
-        ay.allSoundOff();
-        if (ay2 != null) {
-            ay2.allSoundOff();
-        }
     }
 
     private void playLoop() {
@@ -191,8 +192,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             int t = parser.next();
 
             if (t == VgmParser.EV_END) {
-                if (loop && file.header.hasLoop()) {
+                if (file.header.hasLoop() && loopPlays < LOOP_CHOICES[loopIdx]) {
                     parser.seek(file.header.loopOffset);
+                    loopPlays++;
                     continue;
                 }
                 break;
@@ -200,16 +202,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
             if (t == VgmParser.EV_REG_WRITE && parser.evCmd == 0xA0) {
                 if ((parser.evReg & 0x80) != 0) {
-                    // 第二片 PSG：寄存器 bit7 标志
-                    if (ay2 == null) {
-                        ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
-                        ay2.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
-                        if (ay2.ready) {
-                            ay2.copyConfigFrom(ay);
-                        } else {
-                            ay2 = null;
-                        }
-                    }
+                    attachChip2();
                     if (ay2 != null) {
                         ay2.write(parser.evReg & 0x7F, parser.evData);
                     }
@@ -238,40 +231,306 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (playing) {
             playing = false;
             ay.allSoundOff();
+            if (ay2 != null) {
+                ay2.allSoundOff();
+            }
+            autoNext();
         }
     }
 
-    // ------------------------------------------------------------ 绘制
+    /** 切曲：先淡出再切。 */
+    private void switchTrackFade(final int target) {
+        final int from = masterVol;
+        new Thread(new Runnable() {
+            public void run() {
+                for (int i = 10; i >= 0; i--) {
+                    int v = from * i / 10;
+                    ay.setMasterVol(v);
+                    if (ay2 != null) {
+                        ay2.setMasterVol(v);
+                    }
+                    try {
+                        Thread.sleep(24);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+                playing = false;
+                midlet.switchTrack(target);
+            }
+        }).start();
+    }
+
+    private void autoNext() {
+        int next = nextIndex();
+        if (next >= 0) {
+            switchTrackFade(next);
+        }
+    }
+
+    private int nextIndex() {
+        int n = midlet.trackCount();
+        if (n <= 1) {
+            return -1;
+        }
+        if (shuffle) {
+            int r = listIndex;
+            while (r == listIndex) {
+                int v = rng.nextInt();
+                if (v < 0) {
+                    v = -v;
+                }
+                r = v % n;
+            }
+            return r;
+        }
+        int r = listIndex + 1;
+        return r < n ? r : 0;
+    }
+
+    private int prevIndex() {
+        int n = midlet.trackCount();
+        if (n <= 1) {
+            return -1;
+        }
+        if (shuffle) {
+            return nextIndex();
+        }
+        int r = listIndex - 1;
+        return r >= 0 ? r : n - 1;
+    }
+
+    // ------------------------------------------------------------ HUD 绘制
 
     protected void paint(Graphics g) {
         int w = getWidth();
         int h = getHeight();
-        g.setColor(0x101820);
+        g.setColor(0x0C1118);
         g.fillRect(0, 0, w, h);
 
-        String title = file.header.gd3Title;
-        if (title.length() == 0) title = file.header.gd3TitleEn;
-        if (title.length() == 0) title = file.name;
-        g.setFont(big);
-        g.setColor(0xE0E0E0);
-        g.drawString(clip(title, 20), 4, 4, Graphics.TOP | Graphics.LEFT);
+        if (mode == MODE_SETTINGS) {
+            paintSettings(g, w, h);
+            return;
+        }
+        paintHud(g, w, h);
+    }
 
+    private void paintHud(Graphics g, int w, int h) {
+        // GD3 标签
+        String title = pick(file.header.gd3Title, file.header.gd3TitleEn);
+        if (title.length() == 0) {
+            title = file.name;
+        }
+        g.setFont(titleFont);
+        g.setColor(0xF0EDE4);
+        g.drawString(clip(title, 22), 6, 4, Graphics.TOP | Graphics.LEFT);
+
+        g.setFont(tiny);
+        int y = 26;
+        g.setColor(0x8894A8);
+        String game = pick(file.header.gd3Game, file.header.gd3GameEn);
+        String artist = pick(file.header.gd3Artist, file.header.gd3ArtistEn);
+        if (game.length() > 0) {
+            g.drawString(clip(game, 30), 6, y, Graphics.TOP | Graphics.LEFT);
+            y += 13;
+        }
+        if (artist.length() > 0) {
+            g.drawString(clip("by " + artist, 30), 6, y, Graphics.TOP | Graphics.LEFT);
+            y += 13;
+        }
+        if (file.header.gd3Date.length() > 0) {
+            g.drawString(clip(file.header.gd3Date, 34), 6, y, Graphics.TOP | Graphics.LEFT);
+            y += 13;
+        }
+        if (file.header.gd3Notes.length() > 0) {
+            g.drawString(clip(file.header.gd3Notes, 36), 6, y, Graphics.TOP | Graphics.LEFT);
+            y += 13;
+        }
+
+        // 进度条
+        y += 6;
+        int barW = w - 40;
+        int barY = y;
+        int barH = 10;
+        long total = file.header.totalSamples;
+        long cur = parser.getSamples();
+        int filled = total > 0 ? (int) (barW * cur / total) : 0;
+        if (filled > barW) {
+            filled = barW;
+        }
+        g.setColor(0x1B2430);
+        g.fillRoundRect(6, barY, barW, barH, barH, barH);
+        if (filled > 2) {
+            g.setColor(0x3E7BA8);
+            g.fillRoundRect(6, barY, filled, barH, barH, barH);
+            g.setColor(0x6FB1DE);
+            g.fillRoundRect(6, barY, filled, barH / 2, barH, barH);
+        }
+        g.setColor(0xE8E8E8);
+        g.fillArc(6 + filled - 3, barY - 2, barH + 4, barH + 4, 0, 360);
+        g.setFont(tiny);
+        g.setColor(0x8894A8);
+        g.drawString(fmt(cur / 44100), 6, barY + 12, Graphics.TOP | Graphics.LEFT);
+        g.drawString(fmt(total / 44100), 6 + barW, barY + 12, Graphics.TOP | Graphics.RIGHT);
+
+        // 状态行
+        int sy = barY + 27;
+        g.setColor(playing ? 0x7CFC7C : 0x707A88);
         g.setFont(small);
-        int y = 30;
-        g.setColor(playing ? 0x7CFC7C : 0xA0A0A0);
-        String st = playing ? "▶" : "‖";
-        g.drawString(st + " " + (parser.getSamples() / 44100) + "s / "
-                + (int) file.header.durationSeconds() + "s"
-                + (loop && file.header.hasLoop() ? "  ⟳" : ""), 4, y,
-                Graphics.TOP | Graphics.LEFT);
-        y += 18;
-        g.setColor(0x808080);
-        g.drawString(ay.statusLine(), 4, y, Graphics.TOP | Graphics.LEFT);
-        y += 22;
+        StringBuffer st = new StringBuffer();
+        st.append(playing ? "▶" : "‖");
+        if (file.header.hasLoop()) {
+            st.append(" ⟳").append(loopPlays).append('/').append(LOOP_NAMES[loopIdx]);
+        }
+        st.append(shuffle ? " 随机" : " 曲目 ").append(listIndex + 1);
+        st.append("  音量").append(masterVol);
+        g.drawString(st.toString(), 6, sy, Graphics.TOP | Graphics.LEFT);
 
-        // 设置区：滚动窗口，光标跟随可见
-        int y0 = y;
-        int listH = h - y0 - 24;
+        // 三个钢琴键盘
+        int py = sy + 18;
+        int kbH = h - py - 22;
+        int per = kbH / 3;
+        if (per > 40) {
+            per = 40;
+        }
+        for (int ch = 0; ch < 3; ch++) {
+            drawKeyboard(g, 6, py + ch * per, w - 12, per - 4, ch);
+        }
+
+        g.setColor(0x4A5568);
+        g.setFont(tiny);
+        g.drawString("◀▶曲目 ▲▼音量 ●播放暂停 #设置", 6, h - 18,
+                Graphics.TOP | Graphics.LEFT);
+
+        if (err != null) {
+            g.setColor(0xFF7C7C);
+            g.drawString(clip(err, 26), 6, h - 32, Graphics.TOP | Graphics.LEFT);
+        }
+    }
+
+    /** 单个 AY 声道的键盘：两八度窗口跟随当前音，双芯片叠色。 */
+    private void drawKeyboard(Graphics g, int x, int y, int w, int h, int ch) {
+        int note1 = ay.visNote(ch);
+        int note2 = ay2 != null ? ay2.visNote(ch) : -1;
+        boolean noise1 = ay.visNoise(ch);
+        boolean noise2 = ay2 != null && ay2.visNoise(ch);
+
+        int ref = note1 >= 0 ? note1 : note2;
+        if (ref >= 0) {
+            lastKeyOct = ref / 12;
+        }
+        int octBase = lastKeyOct;
+
+        int keyH = h - 10;
+        int whiteW = w / 14;
+        if (whiteW < 8) {
+            whiteW = 8;
+        }
+
+        for (int i = 0; i < 14; i++) {
+            int note = (octBase + i / 7) * 12 + WHITE_PC[i % 7];
+            int c1 = keyColor(note, note1, ay.visLevel(ch), CH_COLORS[ch]);
+            int c2 = ay2 != null
+                    ? keyColor(note, note2, ay2.visLevel(ch), CH2_COLORS[ch]) : -1;
+            int kx = x + i * whiteW;
+            if (c1 >= 0 && c2 >= 0) {
+                g.setColor(0xD8D8D8);
+                g.fillRect(kx, y + 10, whiteW, keyH);
+                g.setColor(c1);
+                g.fillRect(kx, y + 10, whiteW / 2, keyH);
+                g.setColor(c2);
+                g.fillRect(kx + whiteW / 2, y + 10, whiteW - whiteW / 2, keyH);
+            } else if (c1 >= 0 || c2 >= 0) {
+                g.setColor(c1 >= 0 ? c1 : c2);
+                g.fillRect(kx, y + 10, whiteW, keyH);
+            } else {
+                g.setColor(0xD8D8D8);
+                g.fillRect(kx, y + 10, whiteW, keyH);
+            }
+            g.setColor(0x30343C);
+            g.drawRect(kx, y + 10, whiteW, keyH);
+        }
+        for (int i = 0; i < 14; i++) {
+            int pc = WHITE_PC[i % 7];
+            int black = blackAfter(pc);
+            if (black < 0) {
+                continue;
+            }
+            int note = (octBase + i / 7) * 12 + black;
+            int kx = x + (i + 1) * whiteW - whiteW / 4;
+            int bw = whiteW / 2;
+            if (keyOn(note, note1) || keyOn(note, note2)) {
+                g.setColor(keyOn(note, note1) ? CH_COLORS[ch] : CH2_COLORS[ch]);
+                g.fillRect(kx, y + 10, bw, keyH / 2);
+                g.setColor(0x10131A);
+                g.fillRect(kx, y + 10 + keyH / 2, bw, keyH - keyH / 2);
+            } else {
+                g.setColor(0x10131A);
+                g.fillRect(kx, y + 10, bw, keyH - 4);
+            }
+        }
+
+        g.setFont(tiny);
+        g.setColor(CH_COLORS[ch]);
+        g.drawString("Ch" + "ABC".charAt(ch), x, y, Graphics.TOP | Graphics.LEFT);
+        g.setColor(0x707A88);
+        g.drawString("C" + (octBase - 1) + "-C" + octBase, x + 26, y,
+                Graphics.TOP | Graphics.LEFT);
+        if (noise1 || noise2) {
+            g.setColor(0x9AA4B4);
+            g.fillArc(x + w - 10, y, 7, 7, 0, 360);
+            g.setColor(0x4A5568);
+            g.drawArc(x + w - 10, y, 7, 7, 0, 360);
+        }
+    }
+
+    private static final int[] WHITE_PC = {0, 2, 4, 5, 7, 9, 11};
+
+    private static int blackAfter(int pc) {
+        switch (pc) {
+            case 0: return 1;
+            case 2: return 3;
+            case 4: return -1;
+            case 5: return 6;
+            case 7: return 8;
+            case 9: return 10;
+            default: return -1;
+        }
+    }
+
+    private static boolean keyOn(int note, int active) {
+        return active == note;
+    }
+
+    private static int keyColor(int note, int active, int level, int base) {
+        if (active != note) {
+            return -1;
+        }
+        int r = (base >> 16) & 0xFF;
+        int gr = (base >> 8) & 0xFF;
+        int b = base & 0xFF;
+        int f = 80 + level * 60 / 127;
+        r = r * f / 100;
+        gr = gr * f / 100;
+        b = b * f / 100;
+        if (r > 255) r = 255;
+        if (gr > 255) gr = 255;
+        if (b > 255) b = 255;
+        return (r << 16) | (gr << 8) | b;
+    }
+
+    // ------------------------------------------------------------ 设置浮层
+
+    private void paintSettings(Graphics g, int w, int h) {
+        g.setFont(titleFont);
+        g.setColor(0xF0EDE4);
+        g.drawString("设置", 6, 4, Graphics.TOP | Graphics.LEFT);
+        g.setFont(tiny);
+        g.setColor(0x4A5568);
+        g.drawString("▲▼选 ◀▶调 #返回", w - 6, 4, Graphics.TOP | Graphics.RIGHT);
+
+        int y0 = 28;
+        int listH = h - y0 - 8;
         int visible = listH / ROW_H;
         if (visible < 1) {
             visible = 1;
@@ -288,111 +547,139 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (scroll < 0) {
             scroll = 0;
         }
-        g.setColor(0xE0E0E0);
         for (int i = 0; i < visible; i++) {
             int r = scroll + i;
             if (r >= TOTAL_ROWS) {
                 break;
             }
-            drawRow(g, cursor == r, y0 + i * ROW_H, rowName(r), rowValue(r));
+            boolean sel = cursor == r;
+            if (sel) {
+                g.setColor(0x1C2E44);
+                g.fillRect(4, y0 + i * ROW_H, w - 12, ROW_H - 1);
+            }
+            g.setColor(sel ? 0x6FB1DE : 0xC8CDD6);
+            g.setFont(tiny);
+            g.drawString(rowName(r), 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.LEFT);
+            g.setColor(0xE8B44C);
+            g.drawString(rowValue(r), w - 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.RIGHT);
         }
-
-        // 纵向滚动条（右侧）
         if (TOTAL_ROWS > visible) {
             int trackH = visible * ROW_H;
-            g.setColor(0x2A323C);
+            g.setColor(0x1B2430);
             g.fillRect(w - 5, y0, 3, trackH);
             int thumbH = trackH * visible / TOTAL_ROWS;
             if (thumbH < 8) {
                 thumbH = 8;
             }
             int thumbY = y0 + (trackH - thumbH) * scroll / (TOTAL_ROWS - visible);
-            g.setColor(0x64B4FF);
+            g.setColor(0x6FB1DE);
             g.fillRect(w - 5, thumbY, 3, thumbH);
         }
+    }
 
-        if (err != null) {
-            y += 4;
-            g.setColor(0xFF7C7C);
-            g.drawString(clip("错误: " + err, 24), 4, y, Graphics.TOP | Graphics.LEFT);
+    private String rowName(int r) {
+        switch (r) {
+            case ROW_STEREO: return "声像";
+            case ROW_OCT: return "八度";
+            case ROW_NOISEMAP: return "噪声映射";
+            case ROW_ENVSAW_OCT: return "包络锯齿八度";
+            case ROW_ENVTRI_OCT: return "包络三角八度";
+            case ROW_ENVSAW_UNI: return "锯齿上行复音";
+            case ROW_ENVTRI_UNI: return "三角上行复音";
+            case ROW_BUZZ_VOL: return "蜂鸣器音量";
+            case ROW_LOOP: return "循环次数";
+            case ROW_ORDER: return "播放顺序";
+            default: return CH_NAMES[r - ROW_CH0];
         }
-
-        g.setColor(0x606870);
-        g.drawString("4◀曲目 曲目▶6 5暂停 0停 ←→调 ↑↓选", 4, h - 34,
-                Graphics.TOP | Graphics.LEFT);
-        g.drawString("返回=退出", 4, h - 20, Graphics.TOP | Graphics.LEFT);
     }
 
-    private void drawRow(Graphics g, boolean selected, int y, String name, String val) {
-        g.setColor(selected ? 0x64B4FF : 0xE0E0E0);
-        g.drawString((selected ? ">" : " ") + name, 4, y, Graphics.TOP | Graphics.LEFT);
-        g.drawString(val, getWidth() - 8, y, Graphics.TOP | Graphics.RIGHT);
+    private String rowValue(int r) {
+        switch (r) {
+            case ROW_STEREO: return Ay2Midi.STEREO_MODES[ay.getStereoMode()];
+            case ROW_OCT: return (ay.getOct() >= 0 ? "+" : "") + ay.getOct();
+            case ROW_NOISEMAP: return Ay2Midi.NOISE_MAP_NAMES[ay.getNoiseMapMode()];
+            case ROW_ENVSAW_OCT:
+                return (ay.getEnvOctSaw() >= 0 ? "+" : "") + ay.getEnvOctSaw();
+            case ROW_ENVTRI_OCT:
+                return (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri();
+            case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
+            case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
+            case ROW_BUZZ_VOL: return String.valueOf(ay.getBuzzVol());
+            case ROW_LOOP: return LOOP_NAMES[loopIdx];
+            case ROW_ORDER: return ORDER_NAMES[shuffle ? 1 : 0];
+            default: return String.valueOf(ay.getProg(r - ROW_CH0));
+        }
     }
-
-    private static String clip(String s, int n) {
-        return s.length() > n ? s.substring(0, n) : s;
-    }
-
-    // ------------------------------------------------------------ 输入
 
     private void adjust(int dir) {
-        if (cursor == ROW_STEREO) {
-            ay.setStereoMode(ay.getStereoMode() + dir);
-            if (ay2 != null) {
-                ay2.setStereoMode(ay2.getStereoMode() + dir);
+        switch (cursor) {
+            case ROW_STEREO:
+                ay.setStereoMode(ay.getStereoMode() + dir);
+                if (ay2 != null) ay2.setStereoMode(ay2.getStereoMode() + dir);
+                break;
+            case ROW_OCT: {
+                int v = ay.getOct() + dir;
+                ay.setOct(v);
+                if (ay2 != null) ay2.setOct(v);
+                break;
             }
-        } else if (cursor == ROW_OCT) {
-            ay.setOct(ay.getOct() + dir);
-            if (ay2 != null) {
-                ay2.setOct(ay2.getOct() + dir);
+            case ROW_NOISEMAP: {
+                int v = ay.getNoiseMapMode() + dir;
+                ay.setNoiseMapMode(v);
+                if (ay2 != null) ay2.setNoiseMapMode(v);
+                break;
             }
-        } else if (cursor == ROW_NOISEMAP) {
-            ay.setNoiseMapMode(ay.getNoiseMapMode() + dir);
-            if (ay2 != null) {
-                ay2.setNoiseMapMode(ay2.getNoiseMapMode() + dir);
+            case ROW_ENVSAW_OCT: {
+                int v = ay.getEnvOctSaw() + dir;
+                ay.setEnvOct(false, v);
+                if (ay2 != null) ay2.setEnvOct(false, v);
+                break;
             }
-        } else if (cursor == ROW_ENVSAW_OCT) {
-            ay.setEnvOct(false, ay.getEnvOctSaw() + dir);
-            if (ay2 != null) {
-                ay2.setEnvOct(false, ay2.getEnvOctSaw() + dir);
+            case ROW_ENVTRI_OCT: {
+                int v = ay.getEnvOctTri() + dir;
+                ay.setEnvOct(true, v);
+                if (ay2 != null) ay2.setEnvOct(true, v);
+                break;
             }
-        } else if (cursor == ROW_ENVTRI_OCT) {
-            ay.setEnvOct(true, ay.getEnvOctTri() + dir);
-            if (ay2 != null) {
-                ay2.setEnvOct(true, ay2.getEnvOctTri() + dir);
+            case ROW_ENVSAW_UNI: {
+                int u = (ay.getEnvUni(false) + dir + 3) % 3;
+                ay.setEnvUni(false, u);
+                if (ay2 != null) ay2.setEnvUni(false, u);
+                break;
             }
-        } else if (cursor == ROW_ENVSAW_UNI) {
-            int u = (ay.getEnvUni(false) + dir + 3) % 3;
-            ay.setEnvUni(false, u);
-            if (ay2 != null) {
-                ay2.setEnvUni(false, u);
+            case ROW_ENVTRI_UNI: {
+                int u = (ay.getEnvUni(true) + dir + 3) % 3;
+                ay.setEnvUni(true, u);
+                if (ay2 != null) ay2.setEnvUni(true, u);
+                break;
             }
-        } else if (cursor == ROW_ENVTRI_UNI) {
-            int u = (ay.getEnvUni(true) + dir + 3) % 3;
-            ay.setEnvUni(true, u);
-            if (ay2 != null) {
-                ay2.setEnvUni(true, u);
+            case ROW_BUZZ_VOL: {
+                int v = ay.getBuzzVol() + dir * 10;
+                ay.setBuzzVol(v);
+                if (ay2 != null) ay2.setBuzzVol(v);
+                break;
             }
-        } else if (cursor == ROW_BUZZ_VOL) {
-            int v = ay.getBuzzVol() + dir * 10;
-            ay.setBuzzVol(v);
-            if (ay2 != null) {
-                ay2.setBuzzVol(v);
-            }
-        } else {
-            int ch = cursor - ROW_CH0;
-            int cur = ay.getProg(ch);
-            int idx = findProg(cur);
-            int next = idx;
-            for (int step = 0; step < PROG_CHOICES.length; step++) {
-                next += dir;
-                if (next < 0) next = PROG_CHOICES.length - 1;
-                if (next >= PROG_CHOICES.length) next = 0;
-                if (PROG_CHOICES[next] != cur) break;
-            }
-            ay.setProg(ch, PROG_CHOICES[next]);
-            if (ay2 != null) {
-                ay2.setProg(ch, PROG_CHOICES[next]);
+            case ROW_LOOP:
+                loopIdx = (loopIdx + dir + LOOP_CHOICES.length) % LOOP_CHOICES.length;
+                loopPlays = 0;
+                break;
+            case ROW_ORDER:
+                shuffle = !shuffle;
+                break;
+            default: {
+                int ch = cursor - ROW_CH0;
+                int cur = ay.getProg(ch);
+                int idx = findProg(cur);
+                int next = idx;
+                for (int step = 0; step < PROG_CHOICES.length; step++) {
+                    next += dir;
+                    if (next < 0) next = PROG_CHOICES.length - 1;
+                    if (next >= PROG_CHOICES.length) next = 0;
+                    if (PROG_CHOICES[next] != cur) break;
+                }
+                ay.setProg(ch, PROG_CHOICES[next]);
+                if (ay2 != null) ay2.setProg(ch, PROG_CHOICES[next]);
+                break;
             }
         }
     }
@@ -406,50 +693,97 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         return 0;
     }
 
+    // ------------------------------------------------------------ 工具
+
+    private static String pick(String a, String b) {
+        return a != null && a.length() > 0 ? a : (b == null ? "" : b);
+    }
+
+    private static String clip(String s, int n) {
+        return s.length() > n ? s.substring(0, n) + ".." : s;
+    }
+
+    private static String fmt(long sec) {
+        if (sec < 0) {
+            sec = 0;
+        }
+        return sec / 60 + ":" + (sec % 60 < 10 ? "0" : "") + (sec % 60);
+    }
+
+    // ------------------------------------------------------------ 输入
+
+    protected void keyPressed(int keyCode) {
+        int action = getGameAction(keyCode);
+
+        if (mode == MODE_SETTINGS) {
+            if (keyCode == KEY_POUND) {
+                mode = MODE_HUD;
+            } else if (action == UP) {
+                cursor = cursor > 0 ? cursor - 1 : TOTAL_ROWS - 1;
+            } else if (action == DOWN) {
+                cursor = cursor < TOTAL_ROWS - 1 ? cursor + 1 : 0;
+            } else if (action == LEFT) {
+                adjust(-1);
+            } else if (action == RIGHT) {
+                adjust(1);
+            }
+            repaint();
+            return;
+        }
+
+        if (action == LEFT) {
+            int p = prevIndex();
+            if (p >= 0) {
+                switchTrackFade(p);
+            }
+        } else if (action == RIGHT) {
+            int n = nextIndex();
+            if (n >= 0) {
+                switchTrackFade(n);
+            }
+        } else if (action == UP) {
+            setMaster(masterVol + 5);
+        } else if (action == DOWN) {
+            setMaster(masterVol - 5);
+        } else if (action == FIRE || keyCode == KEY_NUM5) {
+            if (playing) {
+                playing = false;
+                ay.allSoundOff();
+                if (ay2 != null) {
+                    ay2.allSoundOff();
+                }
+            } else {
+                startPlay(false);
+            }
+        } else if (keyCode == KEY_POUND) {
+            mode = MODE_SETTINGS;
+        }
+        repaint();
+    }
+
     protected void keyRepeated(int keyCode) {
-        // 长按连发：方向键连选/连调，数字键忽略（避免切曲/暂停连发）
         int action = getGameAction(keyCode);
         if (action == UP || action == DOWN || action == LEFT || action == RIGHT) {
             keyPressed(keyCode);
         }
     }
 
-    protected void keyPressed(int keyCode) {
-        int action = getGameAction(keyCode);
-        if (keyCode == KEY_NUM4) {
-            midlet.switchTrack(listIndex - 1);
-        } else if (keyCode == KEY_NUM6) {
-            midlet.switchTrack(listIndex + 1);
-        } else if (keyCode == KEY_NUM5) {
-            if (playing) {
-                pausePlay();
-            } else {
-                startPlay(false);
-            }
-        } else if (keyCode == KEY_NUM0) {
-            stopPlay();
-        } else if (action == UP) {
-            cursor--;
-            if (cursor < 0) cursor = ROW_CH0 + Ay2Midi.SLOTS - 1;
-        } else if (action == DOWN) {
-            cursor++;
-            if (cursor > ROW_CH0 + Ay2Midi.SLOTS - 1) cursor = 0;
-        } else if (action == LEFT) {
-            adjust(-1);
-        } else if (action == RIGHT) {
-            adjust(1);
+    private void setMaster(int v) {
+        if (v < 0) v = 0;
+        if (v > 127) v = 127;
+        masterVol = v;
+        ay.setMasterVol(v);
+        if (ay2 != null) {
+            ay2.setMasterVol(v);
         }
-        repaint();
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == cmdBack) {
-            uiAlive = false;
-            playing = false;
-            ay.close();
-            if (ay2 != null) {
-                ay2.close();
-            }
+        if (c == cmdSettings) {
+            mode = MODE_SETTINGS;
+            repaint();
+        } else if (c == cmdBack) {
+            // 返回列表但保持后台播放（单实例由 MIDlet 管理）
             midlet.backToList();
         }
     }

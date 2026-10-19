@@ -328,6 +328,7 @@ public class Ay2Midi {
         envUniSaw = src.envUniSaw;
         envUniTri = src.envUniTri;
         buzzVol = src.buzzVol;
+        masterVol = src.masterVol;
         forceRefreshAll();
     }
 
@@ -344,7 +345,7 @@ public class Ay2Midi {
         // CC7 (Main Volume) 固定 127，CC11 (Expression) 做动态音量
         for (int i = 0; i < CHANNELS; i++) {
             int ch = channelOf(i);
-            send(CC | ch, CC_VOLUME, 127);
+            send(CC | ch, CC_VOLUME, masterVol);
             send(CC | ch, CC_EXPRESSION, i == 6 ? 127 : 0);
             send(CC | ch, 123, 0);   // All notes off
         }
@@ -729,6 +730,8 @@ public class Ay2Midi {
     private int envUniTri = 1;   // 定案默认：上行 1 八度（2 复音）
     /** 蜂鸣器音量（CC11），默认 100。 */
     private int buzzVol = 100;
+    /** 主音量（CC7），所有通道统一。 */
+    private int masterVol = 100;
 
     public int getNoiseMapMode() {
         return noiseMapMode;
@@ -748,6 +751,47 @@ public class Ay2Midi {
 
     public int getBuzzVol() {
         return buzzVol;
+    }
+
+    public int getMasterVol() {
+        return masterVol;
+    }
+
+    /** 主音量 0-127，立即推到全部通道（用于整体音量调节和淡出）。 */
+    public void setMasterVol(int v) {
+        if (v < 0) v = 0;
+        if (v > 127) v = 127;
+        if (v == masterVol) {
+            return;
+        }
+        masterVol = v;
+        for (int i = 0; i < CHANNELS; i++) {
+            send(CC | channelOf(i), CC_VOLUME, v);
+        }
+    }
+
+    // ---------------- 可视化接口（钢琴键盘用） ----------------
+
+    /** 声道当前发声音符（方波或该声道触发的蜂鸣音），-1 无。 */
+    public int visNote(int ch) {
+        if (buzzSrc == ch && buzzNote >= 0) {
+            return buzzNote;
+        }
+        return curNote[ch];
+    }
+
+    /** 该声道噪声门是否开着。 */
+    public boolean visNoise(int ch) {
+        return noiseSounding[ch];
+    }
+
+    /** 该声道当前电平 0-127（键盘按键亮度参考）。 */
+    public int visLevel(int ch) {
+        int v = curVol[ch];
+        if (buzzSrc == ch) {
+            v = buzzVol;
+        }
+        return v < 0 ? 0 : v;
     }
 
     /** 蜂鸣器音量 0-127，立即推送到通道。 */

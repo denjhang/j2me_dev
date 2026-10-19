@@ -78,6 +78,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     private final Command cmdSettings = new Command("Settings", Command.SCREEN, 1);
     private final Command cmdBack = new Command("List", Command.BACK, 2);
+    private final Command cmdSetBack = new Command("Back", Command.OK, 1);
 
     private volatile boolean playing;
     private volatile boolean uiAlive = true;
@@ -896,7 +897,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
         if (mode == MODE_SETTINGS) {
             if (keyCode == KEY_POUND) {
-                mode = MODE_HUD;
+                setMode(MODE_HUD);
             } else if (action == UP) {
                 cursor = cursor > 0 ? cursor - 1 : TOTAL_ROWS - 1;
             } else if (action == DOWN) {
@@ -935,9 +936,24 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 startPlay(false);
             }
         } else if (keyCode == KEY_POUND) {
-            mode = MODE_SETTINGS;
+            setMode(MODE_SETTINGS);
         }
         repaint();
+    }
+
+    /** 模式切换同时更新左软键：HUD=Settings，Settings=Back。 */
+    private void setMode(int m) {
+        if (mode == m) {
+            return;
+        }
+        mode = m;
+        if (m == MODE_SETTINGS) {
+            removeCommand(cmdSettings);
+            addCommand(cmdSetBack);
+        } else {
+            removeCommand(cmdSetBack);
+            addCommand(cmdSettings);
+        }
     }
 
     protected void keyRepeated(int keyCode) {
@@ -959,11 +975,15 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     public void commandAction(Command c, Displayable d) {
         if (c == cmdSettings) {
-            mode = MODE_SETTINGS;
+            setMode(MODE_SETTINGS);
+            repaint();
+        } else if (c == cmdSetBack) {
+            setMode(MODE_HUD);
             repaint();
         } else if (c == cmdBack) {
             // 返回列表但保持后台播放（单实例由 MIDlet 管理）
             midlet.backToList();
+            midlet.refreshListNowPlaying();
         }
     }
 }

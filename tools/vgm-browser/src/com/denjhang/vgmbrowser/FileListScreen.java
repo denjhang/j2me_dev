@@ -33,7 +33,8 @@ public class FileListScreen extends List implements CommandListener {
     private final Command cmdRefresh = new Command("Refresh", Command.SCREEN, 3);
     private final Command cmdTone = new Command("Square wave test", Command.SCREEN, 4);
     private final Command cmdInfo = new Command("About", Command.SCREEN, 5);
-    private final Command cmdNow = new Command("Now playing", Command.SCREEN, 0);
+    private final Command cmdNow = new Command("Now playing", Command.OK, 1);
+    private boolean advancedShown;
 
     private final Vector entries = new Vector();  // Entry
 
@@ -47,11 +48,11 @@ public class FileListScreen extends List implements CommandListener {
     public FileListScreen(BrowserMIDlet midlet) {
         super("VGM 浏览器", List.IMPLICIT);
         this.midlet = midlet;
-        addCommand(cmdOpen);
-        addCommand(cmdRefresh);
-        addCommand(cmdTone);
-        addCommand(cmdInfo);
         setCommandListener(this);
+        // 常驻命令只有右软键 Up；左软键随播放状态切换（命令数恰好 1 时
+        // KEmulator 才把命令直接放到左软键，所以平时不挂 Refresh/About 等杂项）
+        addCommand(cmdUp);
+        addCommand(midlet.playerAlive() ? cmdNow : cmdOpen);
         refreshNowPlaying();
         // 直达模拟器文件系统里的 vgm 目录，省两次点击；失败再回根列表
         loadDir("file:///root/vgm/");
@@ -62,14 +63,26 @@ public class FileListScreen extends List implements CommandListener {
 
     // ------------------------------------------------------------ 目录读取
 
-    /** 有后台播放时显示 Now playing 入口。 */
+    /** 播放状态变化后调用：左软键 = Now playing（播着）/ Open（没播）。 */
     void refreshNowPlaying() {
-        if (midlet.playerAlive()) {
-            addCommand(cmdNow);
+        boolean alive = midlet.playerAlive();
+        removeCommand(cmdNow);
+        removeCommand(cmdOpen);
+        addCommand(alive ? cmdNow : cmdOpen);
+    }
+
+    /** 高级命令进 Menu（Refresh/About/Test），仅在需要时挂一次。 */
+    private void showAdvanced() {
+        if (!advancedShown) {
+            advancedShown = true;
+            addCommand(cmdRefresh);
+            addCommand(cmdTone);
+            addCommand(cmdInfo);
         }
     }
 
     private void loadRoots() {
+        refreshNowPlaying();
         currentDir = null;
         entries.removeAllElements();
         deleteAll();
@@ -111,6 +124,7 @@ public class FileListScreen extends List implements CommandListener {
     }
 
     private void loadDir(String url) {
+        refreshNowPlaying();
         entries.removeAllElements();
         deleteAll();
         currentDir = url;

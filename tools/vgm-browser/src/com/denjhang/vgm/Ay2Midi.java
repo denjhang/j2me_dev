@@ -323,7 +323,8 @@ public class Ay2Midi {
             case 10:
                 updateChannelCtl(2);
                 break;
-            case 11: case 12:
+            case 11: case 12: case 13:
+                // 包络周期/形状变化会改变蜂鸣器判定与八度，全部声道重估
                 updateAllCtl();
                 break;
             default:
@@ -345,8 +346,25 @@ public class Ay2Midi {
         return (regs[8 + ch] & 0x10) != 0;
     }
 
+    /**
+     * 包络形状（R13）→ 每周期步数（yasp11 ay_to_opm.c 同款）：
+     *   8,9,11,12,13,15 = 锯齿类，32 步（基准八度）
+     *   10,14           = 三角类，64 步（低一个八度）
+     *   0-7             = 一次性形状，非连续波形，返回 0
+     */
+    private int shapeSteps() {
+        switch (regs[13] & 0x0F) {
+            case 8: case 9: case 11: case 12: case 13: case 15:
+                return 32;
+            case 10: case 14:
+                return 64;
+            default:
+                return 0;
+        }
+    }
+
     private boolean isBuzzer(int ch) {
-        return envMode(ch) && envelopePeriod() < 200;
+        return envMode(ch) && envelopePeriod() < 200 && shapeSteps() > 0;
     }
 
     private int envelopePeriod() {
@@ -490,6 +508,10 @@ public class Ay2Midi {
             return;
         }
         long n144 = note144(hz);
+        // 64 步三角波形周期翻倍 → 低一个八度；32 步锯齿为基准
+        if (shapeSteps() == 64) {
+            n144 -= 12L * 65536;
+        }
         if (n144 < 0 || n144 > 127L * 65536) {
             return;
         }

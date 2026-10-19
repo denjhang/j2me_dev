@@ -5,5 +5,5 @@ MIDlet-1: VgmBrowser, , com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Description: VGM file parser/browser (phase 1, no audio yet)
 MicroEdition-Profile: MIDP-2.0
 MicroEdition-Configuration: CLDC-1.1
-MIDlet-Jar-Size: 46796
+MIDlet-Jar-Size: 56577
 MIDlet-Jar-URL: VgmBrowser.jar

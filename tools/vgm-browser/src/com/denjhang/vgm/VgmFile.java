@@ -24,6 +24,14 @@ public class VgmFile {
     }
 
     public static VgmFile fromBytes(String name, byte[] data) {
+        // VGZ = gzip 包装的 VGM（MIDP 无 zip 库，用自带 inflate 解开）
+        if (Gzip.isGzip(data)) {
+            try {
+                data = Gzip.decode(data);
+            } catch (Throwable t) {
+                throw new IllegalArgumentException("VGZ 解压失败: " + t);
+            }
+        }
         VgmHeader h = VgmHeader.parse(data);
         return new VgmFile(name, data, h);
     }

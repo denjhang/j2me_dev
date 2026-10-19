@@ -576,6 +576,20 @@ public class Ay2Midi {
     /**
      * 播放线程周期调用：重触发停止后关掉同步蜂鸣音，防止卡音符。
      */
+    /** v16 式平滑电平（level += (target-level)*0.3 的整数版），供可视亮度用。 */
+    private final int[] smooth = new int[3];
+
+    public int visSmoothLevel(int ch) {
+        return smooth[ch];
+    }
+
+    private void tickSmooth() {
+        for (int ch = 0; ch < 3; ch++) {
+            int target = buzzer[ch] ? buzzVol : visToneLevel(ch);
+            smooth[ch] += (target - smooth[ch]) * 3 / 10;
+        }
+    }
+
     public void tick() {
         if (syncBuzz && lastR13At != 0
                 && System.currentTimeMillis() - lastR13At > 100) {
@@ -584,6 +598,7 @@ public class Ay2Midi {
             r13Interval = 0;
         }
         tickEnvelope();
+        tickSmooth();
     }
 
     private void updateEnvStepMs() {

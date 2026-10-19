@@ -469,8 +469,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         int w1 = inRange(note1) ? WHITE_IDX[note1] : -1;
         int w2 = inRange(note2) ? WHITE_IDX[note2] : -1;
         if (w1 >= 0 && w2 >= 0 && w1 == w2) {
-            int c1 = keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]);
-            int c2 = keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]);
+            int c1 = keyColor(note1, note1, ay.visSmoothLevel(ch), CH_COLORS[ch]);
+            int c2 = keyColor(note2, note2, ay2.visSmoothLevel(ch), CH2_COLORS[ch]);
             int px = kx + (int) (w1 * step);
             g.setColor(c1);
             g.fillRect(px, y, keyW / 2, h);
@@ -480,13 +480,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (w1 >= 0) {
                 int sx = kx + (int) (w1 * step);
                 int ex = kx + (int) ((w1 + 1) * step);
-                g.setColor(keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]));
+                g.setColor(keyColor(note1, note1, ay.visSmoothLevel(ch), CH_COLORS[ch]));
                 g.fillRect(sx, y, ex - sx - 1, h);
             }
             if (w2 >= 0) {
                 int sx = kx + (int) (w2 * step);
                 int ex = kx + (int) ((w2 + 1) * step);
-                g.setColor(keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]));
+                g.setColor(keyColor(note2, note2, ay2.visSmoothLevel(ch), CH2_COLORS[ch]));
                 g.fillRect(sx, y, ex - sx - 1, h);
             }
         }
@@ -552,20 +552,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 col2 = COL_ENV2;
             }
             gateChar(g, x + w - 24 + i * 8, y, h, GATE_LETTERS[i],
-                    on1, col1, on2, col2);
+                    on1, col1, on2, col2, ay.visSmoothLevel(ch));
         }
     }
 
     private static final String[] GATE_LETTERS = {"T", "N", "E"};
 
-    /** 8px 槽内居中的一个字符：开=对应色，关=暗灰。 */
+    /** 8px 槽内居中的一个字符：开=电平渐变色，关=亮中灰。 */
     private void gateChar(Graphics g, int slotX, int y, int h, String letter,
-                          boolean on1, int col1, boolean on2, int col2) {
-        int col = 0x2A3038;
+                          boolean on1, int col1, boolean on2, int col2, int level) {
+        int col = 0x6A7488;      // 熄灭=亮中灰，暗背景下高对比
         if (on1) {
-            col = col1;
+            col = levelColor(col1, level);
         } else if (on2) {
-            col = col2;
+            col = levelColor(col2, level);
         }
         g.setFont(tiny);
         g.setColor(col);
@@ -595,19 +595,21 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         return note >= FIRST_NOTE && note <= LAST_NOTE;
     }
 
-    /** 键位高亮色：电平越高越亮。 */
-    private static int keyColor(int note, int active, int level, int base) {
+    /** v16 深浅机制：45% 基色 + 55% 白 × 电平(0-127)。低电平保色相且不贴近背景。 */
+    private static int levelColor(int base, int level) {
         int r = (base >> 16) & 0xFF;
         int gr = (base >> 8) & 0xFF;
         int b = base & 0xFF;
-        int f = 80 + level * 60 / 127;
-        r = r * f / 100;
-        gr = gr * f / 100;
-        b = b * f / 100;
-        if (r > 255) r = 255;
-        if (gr > 255) gr = 255;
-        if (b > 255) b = 255;
+        int w = 55 * level / 127;      // 白色占比 0-55%
+        r = r * (100 - w) / 100 + 255 * w / 100;
+        gr = gr * (100 - w) / 100 + 255 * w / 100;
+        b = b * (100 - w) / 100 + 255 * w / 100;
         return (r << 16) | (gr << 8) | b;
+    }
+
+    /** 键位高亮色（平滑电平版）。 */
+    private static int keyColor(int note, int active, int level, int base) {
+        return levelColor(base, level);
     }
 
     // ------------------------------------------------------------ 设置浮层

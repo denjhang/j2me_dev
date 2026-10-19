@@ -441,12 +441,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.setColor(CH_COLORS[ch]);
         g.fillRect(x, y, 3, h);
         int kx = x + 5;
-        int kw = w - 5 - 21;      // 右侧仅留 3 个字符位给 T/N/E
-        int keyW = kw / WHITE_COUNT;
-        if (keyW < 3) {
-            keyW = 3;
+        int kw = w - 5 - 22;      // 右侧 3 字符位（含字距）
+        // 浮点步进：52 键精确铺满可用宽度，无最小值回退（避免右侧空白）
+        float step = (float) kw / WHITE_COUNT;
+        int keyW = (int) step;    // 绘制宽度（留 1px 缝）
+        if (keyW < 1) {
+            keyW = 1;
         }
-        int bh = h * 5 / 8;      // 黑键凹槽高度
+        int bh = h * 5 / 8;       // 黑键凹槽高度
         int bw = keyW / 2;
         if (bw < 2) {
             bw = 2;
@@ -455,7 +457,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         // 白键底色（1px 缝隙造像素感）
         for (int i = 0; i < WHITE_COUNT; i++) {
             g.setColor(0xBEC2CC);
-            g.fillRect(kx + i * keyW, y, keyW - 1, h);
+            g.fillRect(kx + (int) (i * step), y, keyW, h);
         }
         // 活动白键点亮
         int w1 = inRange(note1) ? WHITE_IDX[note1] : -1;
@@ -463,18 +465,19 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (w1 >= 0 && w2 >= 0 && w1 == w2) {
             int c1 = keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]);
             int c2 = keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]);
+            int px = kx + (int) (w1 * step);
             g.setColor(c1);
-            g.fillRect(kx + w1 * keyW, y, (keyW - 1) / 2, h);
+            g.fillRect(px, y, keyW / 2, h);
             g.setColor(c2);
-            g.fillRect(kx + w1 * keyW + (keyW - 1) / 2, y, keyW - 1 - (keyW - 1) / 2, h);
+            g.fillRect(px + keyW / 2, y, keyW - keyW / 2, h);
         } else {
             if (w1 >= 0) {
                 g.setColor(keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]));
-                g.fillRect(kx + w1 * keyW, y, keyW - 1, h);
+                g.fillRect(kx + (int) (w1 * step), y, keyW, h);
             }
             if (w2 >= 0) {
                 g.setColor(keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]));
-                g.fillRect(kx + w2 * keyW, y, keyW - 1, h);
+                g.fillRect(kx + (int) (w2 * step), y, keyW, h);
             }
         }
         // 黑键凹槽
@@ -483,7 +486,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 continue;
             }
             int wi = WHITE_IDX[n - 1] + 1;
-            int bx = kx + wi * keyW - bw + 1;
+            int bx = kx + (int) (wi * step) - bw + 1;
             if (n == note1 && n == note2) {
                 g.setColor(CH_COLORS[ch]);
                 g.fillRect(bx, y, bw / 2, bh);
@@ -504,28 +507,28 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         // 噪声键（v16 规则：clock/(512*per) 的可视音高；本声道噪声门开着才亮）
         if (ay.visNoise(ch)) {
             int nn = ay.visNoiseNote();
-            markKey(g, kx, y, keyW, bw, bh, h, nn, COL_NOISE);
+            markKey(g, kx, y, step, keyW, bw, bh, h, nn, COL_NOISE);
         }
         if (ay2 != null && ay2.visNoise(ch)) {
             int nn = ay2.visNoiseNote();
-            markKey(g, kx, y, keyW, bw, bh, h, nn, COL_NOISE2);
+            markKey(g, kx, y, step, keyW, bw, bh, h, nn, COL_NOISE2);
         }
         // 包络键（亮在发声源声道的横条上）
         if (ay.visBuzzSrc() == ch) {
-            markKey(g, kx, y, keyW, bw, bh, h, ay.visEnvNote(), COL_ENV);
+            markKey(g, kx, y, step, keyW, bw, bh, h, ay.visEnvNote(), COL_ENV);
         }
         if (ay2 != null && ay2.visBuzzSrc() == ch) {
-            markKey(g, kx, y, keyW, bw, bh, h, ay2.visEnvNote(), COL_ENV2);
+            markKey(g, kx, y, step, keyW, bw, bh, h, ay2.visEnvNote(), COL_ENV2);
         }
 
         // T/N/E 像素字符指示：点亮变色（芯片1优先，仅芯片2开用二片色），无色块
-        gateChar(g, x + w - 21, y, h, "T",
+        gateChar(g, x + w - 22, y, h, "T",
                 ay.visToneGate(ch), CH_COLORS[ch],
                 ay2 != null && ay2.visToneGate(ch), CH2_COLORS[ch]);
-        gateChar(g, x + w - 14, y, h, "N",
+        gateChar(g, x + w - 13, y, h, "N",
                 ay.visNoiseGate(ch), COL_NOISE,
                 ay2 != null && ay2.visNoiseGate(ch), COL_NOISE2);
-        gateChar(g, x + w - 7, y, h, "E",
+        gateChar(g, x + w - 5, y, h, "E",
                 ay.visEnvGate(ch), COL_ENV,
                 ay2 != null && ay2.visEnvGate(ch), COL_ENV2);
     }
@@ -545,18 +548,18 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     /** 在横条上标记一个键：白键整高，黑键凹槽整块。 */
-    private void markKey(Graphics g, int kx, int y, int keyW, int bw,
-                         int bh, int h, int note, int color) {
+    private void markKey(Graphics g, int kx, int y, float step, int keyW,
+                         int bw, int bh, int h, int note, int color) {
         if (note < FIRST_NOTE || note > LAST_NOTE) {
             return;
         }
         g.setColor(color);
         int wi = WHITE_IDX[note];
         if (wi >= 0) {
-            g.fillRect(kx + wi * keyW, y, keyW - 1, h);
+            g.fillRect(kx + (int) (wi * step), y, keyW, h);
         } else {
             int bwi = WHITE_IDX[note - 1] + 1;
-            g.fillRect(kx + bwi * keyW - bw + 1, y, bw, bh);
+            g.fillRect(kx + (int) (bwi * step) - bw + 1, y, bw, bh);
         }
     }
 

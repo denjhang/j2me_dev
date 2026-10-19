@@ -51,10 +51,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private Thread play;
     private String err;
 
-    private int cursor;          // HUD 行光标：0=声像 1=八度 2..8=通道音色
+    private int cursor;          // HUD 行光标
     private static final int ROW_STEREO = 0;
     private static final int ROW_OCT = 1;
-    private static final int ROW_CH0 = 2;
+    private static final int ROW_NOISEMAP = 2;
+    private static final int ROW_CH0 = 3;
 
     private final Font small;
     private final Font big;
@@ -234,8 +235,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         drawRow(g, cursor == 0, y, "声像",
                 Ay2Midi.STEREO_MODES[ay.getStereoMode()]);
         y += 18;
-        drawRow(g, cursor == 1, y, "八度",
+        drawRow(g, cursor == ROW_OCT, y, "八度",
                 (ay.getOct() >= 0 ? "+" : "") + ay.getOct());
+        y += 18;
+        drawRow(g, cursor == ROW_NOISEMAP, y, "噪声映射",
+                Ay2Midi.NOISE_MAP_NAMES[ay.getNoiseMapMode()]);
         y += 18;
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
             drawRow(g, cursor == ROW_CH0 + i, y, CH_NAMES[i],
@@ -277,6 +281,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             ay.setOct(ay.getOct() + dir);
             if (ay2 != null) {
                 ay2.setOct(ay2.getOct() + dir);
+            }
+        } else if (cursor == ROW_NOISEMAP) {
+            ay.setNoiseMapMode(ay.getNoiseMapMode() + dir);
+            if (ay2 != null) {
+                ay2.setNoiseMapMode(ay2.getNoiseMapMode() + dir);
             }
         } else {
             int ch = cursor - ROW_CH0;

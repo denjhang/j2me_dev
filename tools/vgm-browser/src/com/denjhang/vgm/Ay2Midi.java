@@ -306,6 +306,7 @@ public class Ay2Midi {
         }
         applyStereoMode(src.stereoMode);
         octShift = src.octShift;
+        noiseMapMode = src.noiseMapMode;
         forceRefreshAll();
     }
 
@@ -673,13 +674,36 @@ public class Ay2Midi {
      * 最高频端(R6=0)=C8(108)，最低频端(R6=31)=A0(21)。
      * 只做映射这一件事，其余噪声行为保持旧版。
      */
-    private static final int NOISE_NOTE_LOW = 36;    // C2
-    private static final int NOISE_NOTE_HIGH = 60;   // C4 封顶（实测定版）
+    /** 噪声映射三模式：{低,高}。0=C4中央 1=C4最高(定案默认) 2=88键平均。 */
+    public static final int[][] NOISE_MAPS = {
+        {48, 72},    // C3-C5，C4 居中
+        {36, 60},    // C2-C4，C4 封顶
+        {21, 108},   // A0-C8 全键盘
+    };
+    public static final String[] NOISE_MAP_NAMES = {
+        "C4中央", "C4最高", "88键平均"
+    };
+    private int noiseMapMode = 1;
+
+    public int getNoiseMapMode() {
+        return noiseMapMode;
+    }
+
+    public void setNoiseMapMode(int mode) {
+        mode = ((mode % 3) + 3) % 3;
+        if (mode == noiseMapMode) {
+            return;
+        }
+        noiseMapMode = mode;
+        // 映射变了，当前 R6 对应的键位也变，立即重算
+        updateNoisePitch();
+    }
 
     private void updateNoisePitch() {
         int r6 = regs[6] & 0x1F;
-        int note = NOISE_NOTE_HIGH
-                - r6 * (NOISE_NOTE_HIGH - NOISE_NOTE_LOW) / 31;
+        int low = NOISE_MAPS[noiseMapMode][0];
+        int high = NOISE_MAPS[noiseMapMode][1];
+        int note = high - r6 * (high - low) / 31;
         if (note == noiseNote) {
             return;
         }

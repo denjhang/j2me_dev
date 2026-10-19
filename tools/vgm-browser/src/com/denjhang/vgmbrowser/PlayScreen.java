@@ -61,6 +61,37 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_ENVTRI_UNI = 6;
     private static final int ROW_CH0 = 7;
     private static final String[] UNI_NAMES = {"关", "上行1八度", "上行2八度"};
+    private static final int TOTAL_ROWS = 7 + Ay2Midi.SLOTS;   // 7 项设置 + 10 槽
+    private static final int ROW_H = 16;
+    private int scroll;
+
+    private String rowName(int r) {
+        switch (r) {
+            case ROW_STEREO: return "声像";
+            case ROW_OCT: return "八度";
+            case ROW_NOISEMAP: return "噪声映射";
+            case ROW_ENVSAW_OCT: return "包络锯齿八度";
+            case ROW_ENVTRI_OCT: return "包络三角八度";
+            case ROW_ENVSAW_UNI: return "锯齿上行复音";
+            case ROW_ENVTRI_UNI: return "三角上行复音";
+            default: return CH_NAMES[r - ROW_CH0];
+        }
+    }
+
+    private String rowValue(int r) {
+        switch (r) {
+            case ROW_STEREO: return Ay2Midi.STEREO_MODES[ay.getStereoMode()];
+            case ROW_OCT: return (ay.getOct() >= 0 ? "+" : "") + ay.getOct();
+            case ROW_NOISEMAP: return Ay2Midi.NOISE_MAP_NAMES[ay.getNoiseMapMode()];
+            case ROW_ENVSAW_OCT:
+                return (ay.getEnvOctSaw() >= 0 ? "+" : "") + ay.getEnvOctSaw();
+            case ROW_ENVTRI_OCT:
+                return (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri();
+            case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
+            case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
+            default: return String.valueOf(ay.getProg(r - ROW_CH0));
+        }
+    }
 
     private final Font small;
     private final Font big;
@@ -235,33 +266,46 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.drawString(ay.statusLine(), 4, y, Graphics.TOP | Graphics.LEFT);
         y += 22;
 
-        // 设置区
+        // 设置区：滚动窗口，光标跟随可见
+        int y0 = y;
+        int listH = h - y0 - 24;
+        int visible = listH / ROW_H;
+        if (visible < 1) {
+            visible = 1;
+        }
+        if (cursor < scroll) {
+            scroll = cursor;
+        }
+        if (cursor >= scroll + visible) {
+            scroll = cursor - visible + 1;
+        }
+        if (scroll + visible > TOTAL_ROWS) {
+            scroll = TOTAL_ROWS - visible;
+        }
+        if (scroll < 0) {
+            scroll = 0;
+        }
         g.setColor(0xE0E0E0);
-        drawRow(g, cursor == 0, y, "声像",
-                Ay2Midi.STEREO_MODES[ay.getStereoMode()]);
-        y += 18;
-        drawRow(g, cursor == ROW_OCT, y, "八度",
-                (ay.getOct() >= 0 ? "+" : "") + ay.getOct());
-        y += 18;
-        drawRow(g, cursor == ROW_NOISEMAP, y, "噪声映射",
-                Ay2Midi.NOISE_MAP_NAMES[ay.getNoiseMapMode()]);
-        y += 16;
-        drawRow(g, cursor == ROW_ENVSAW_OCT, y, "包络锯齿八度",
-                (ay.getEnvOctSaw() >= 0 ? "+" : "") + ay.getEnvOctSaw());
-        y += 16;
-        drawRow(g, cursor == ROW_ENVTRI_OCT, y, "包络三角八度",
-                (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri());
-        y += 16;
-        drawRow(g, cursor == ROW_ENVSAW_UNI, y, "锯齿上行复音",
-                UNI_NAMES[ay.getEnvUni(false)]);
-        y += 16;
-        drawRow(g, cursor == ROW_ENVTRI_UNI, y, "三角上行复音",
-                UNI_NAMES[ay.getEnvUni(true)]);
-        y += 16;
-        for (int i = 0; i < Ay2Midi.SLOTS; i++) {
-            drawRow(g, cursor == ROW_CH0 + i, y, CH_NAMES[i],
-                    String.valueOf(ay.getProg(i)));
-            y += 16;
+        for (int i = 0; i < visible; i++) {
+            int r = scroll + i;
+            if (r >= TOTAL_ROWS) {
+                break;
+            }
+            drawRow(g, cursor == r, y0 + i * ROW_H, rowName(r), rowValue(r));
+        }
+
+        // 纵向滚动条（右侧）
+        if (TOTAL_ROWS > visible) {
+            int trackH = visible * ROW_H;
+            g.setColor(0x2A323C);
+            g.fillRect(w - 5, y0, 3, trackH);
+            int thumbH = trackH * visible / TOTAL_ROWS;
+            if (thumbH < 8) {
+                thumbH = 8;
+            }
+            int thumbY = y0 + (trackH - thumbH) * scroll / (TOTAL_ROWS - visible);
+            g.setColor(0x64B4FF);
+            g.fillRect(w - 5, thumbY, 3, thumbH);
         }
 
         if (err != null) {

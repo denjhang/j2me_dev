@@ -724,8 +724,8 @@ public class Ay2Midi {
     private int envOctSaw;
     private int envOctTri;
     /** 上行八度复音：0=关 1=+1八度(2复音) 2=+2八度(3复音)。锯齿/三角独立。 */
-    private int envUniSaw;
-    private int envUniTri;
+    private int envUniSaw = 2;   // 定案默认：上行 2 八度（3 复音）
+    private int envUniTri = 1;   // 定案默认：上行 1 八度（2 复音）
 
     public int getNoiseMapMode() {
         return noiseMapMode;

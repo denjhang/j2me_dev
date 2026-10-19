@@ -36,6 +36,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private final BrowserMIDlet midlet;
     private final VgmFile file;
     private final Ay2Midi ay;
+    /** 第二片 PSG（双 AY 曲目），遇到 0xA0 寄存器 bit7 时惰性创建。 */
+    private Ay2Midi ay2;
     private final VgmParser parser;
     private final int listIndex;
 
@@ -66,8 +68,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         setCommandListener(this);
         small = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         big = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
+        // VGM 时钟字段高两位是标志（bit31=双芯片，bit30=YM2149），取低 30 位
         if (file.header.chipClock[0x12] != 0) {
-            ay.setClock(file.header.chipClock[0x12]);
+            ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
+        }
+        if (file.header.ayClock2 != 0) {
+            ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
+            ay2.setClock(file.header.ayClock2 & 0x3FFFFFFF);
+            if (!ay2.ready) {
+                ay2 = null;
+            }
         }
         if (!ay.ready) {
             err = ay.initError;
@@ -112,11 +122,17 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private void pausePlay() {
         playing = false;
         ay.allSoundOff();
+        if (ay2 != null) {
+            ay2.allSoundOff();
+        }
     }
 
     private void stopPlay() {
         playing = false;
         ay.allSoundOff();
+        if (ay2 != null) {
+            ay2.allSoundOff();
+        }
     }
 
     private void playLoop() {
@@ -125,6 +141,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
         while (playing) {
             ay.tick();
+            if (ay2 != null) {
+                ay2.tick();
+            }
             int t = parser.next();
 
             if (t == VgmParser.EV_END) {
@@ -136,7 +155,23 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
 
             if (t == VgmParser.EV_REG_WRITE && parser.evCmd == 0xA0) {
-                ay.write(parser.evReg, parser.evData);
+                if ((parser.evReg & 0x80) != 0) {
+                    // 第二片 PSG：寄存器 bit7 标志
+                    if (ay2 == null) {
+                        ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
+                        ay2.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
+                        if (ay2.ready) {
+                            ay2.forceRefreshAll();
+                        } else {
+                            ay2 = null;
+                        }
+                    }
+                    if (ay2 != null) {
+                        ay2.write(parser.evReg & 0x7F, parser.evData);
+                    }
+                } else {
+                    ay.write(parser.evReg, parser.evData);
+                }
             }
 
             long nowSamples = parser.getSamples();
@@ -231,8 +266,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private void adjust(int dir) {
         if (cursor == ROW_STEREO) {
             ay.setStereoMode(ay.getStereoMode() + dir);
+            if (ay2 != null) {
+                ay2.setStereoMode(ay2.getStereoMode() + dir);
+            }
         } else if (cursor == ROW_OCT) {
             ay.setOct(ay.getOct() + dir);
+            if (ay2 != null) {
+                ay2.setOct(ay2.getOct() + dir);
+            }
         } else {
             int ch = cursor - ROW_CH0;
             int cur = ay.getProg(ch);
@@ -290,6 +331,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             uiAlive = false;
             playing = false;
             ay.close();
+            if (ay2 != null) {
+                ay2.close();
+            }
             midlet.backToList();
         }
     }

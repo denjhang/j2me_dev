@@ -21,6 +21,8 @@ public class VgmHeader {
     /** AY8910 芯片类型（0=AY8910，1=YM2149 等）。 */
     public int ayChipType;
     public int ayFlags;
+    /** 第二片 AY8910 的时钟（0=单芯片）。 */
+    public int ayClock2;
 
     public int version;
     public int eofOffset;
@@ -105,10 +107,13 @@ public class VgmHeader {
         // 芯片时钟：逐字段按 libvgm 的 SoundDevs 偏移表取
         readClocks(d, h);
 
-        // AY8910 附加字段
-        if (d.length > 0x79) {
-            h.ayChipType = d[0x78] & 0xFF;
-            h.ayFlags = d[0x79] & 0xFF;
+        // AY8910 附加字段：0x78=第二片时钟，0x7C=芯片类型，0x7D=标志
+        if (d.length > 0x78) {
+            h.ayClock2 = u32(d, 0x78);
+        }
+        if (d.length > 0x7D) {
+            h.ayChipType = d[0x7C] & 0xFF;
+            h.ayFlags = d[0x7D] & 0xFF;
         }
 
         if (h.gd3Offset > 0 && h.gd3Offset + 12 <= d.length) {

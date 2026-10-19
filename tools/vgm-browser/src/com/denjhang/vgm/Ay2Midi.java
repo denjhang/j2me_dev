@@ -16,10 +16,16 @@ import javax.microedition.media.control.MIDIControl;
  */
 public class Ay2Midi {
 
-    private static final int[] TONE_CH = {0, 1, 2};
-    private static final int[] NOISE_CH = {3, 4, 5};
-    private static final int BUZZER = 6;
     public static final int CHANNELS = 7;
+
+    /** chip0：0-6 直排。 */
+    public static final int[] MAP_CHIP0 = {0, 1, 2, 3, 4, 5, 6};
+    /** chip1：避开 9 号 GM 鼓通道。方波 10-12，噪声 13-15，包络 7。 */
+    public static final int[] MAP_CHIP1 = {10, 11, 12, 13, 14, 15, 7};
+
+    private final int[] toneCh = new int[3];
+    private final int[] noiseCh = new int[3];
+    private int buzzerCh;
 
     // MIDI 状态字节（低 4 位 OR 通道号）
     private static final int NOTE_ON = 0x90;
@@ -114,6 +120,16 @@ public class Ay2Midi {
     private int syncNote = -1;
 
     public Ay2Midi() {
+        this(MAP_CHIP0);
+    }
+
+    /** map[7]：0-2 方波，3-5 噪声，6 包络；必须避开 MIDI 9（GM 鼓）。 */
+    public Ay2Midi(int[] map) {
+        for (int i = 0; i < 3; i++) {
+            toneCh[i] = map[i];
+            noiseCh[i] = map[3 + i];
+        }
+        buzzerCh = map[6];
         for (int i = 0; i < 3; i++) {
             curNote[i] = -1;
             curBend[i] = 8192;
@@ -145,7 +161,7 @@ public class Ay2Midi {
             player.prefetch();
             player.start();
             for (int i = 0; i < CHANNELS; i++) {
-                send(PROG | i, progMap[i], 0);
+                send(PROG | channelOf(i), progMap[i], 0);
             }
             sendPans();
             // 初始化所有音量为 0（防止残留），播放时再按寄存器推上去
@@ -186,10 +202,10 @@ public class Ay2Midi {
 
     private void sendPans() {
         for (int i = 0; i < 3; i++) {
-            send(CC | TONE_CH[i], CC_PAN, pan[i]);
-            send(CC | NOISE_CH[i], CC_PAN, pan[i]);
+            send(CC | toneCh[i], CC_PAN, pan[i]);
+            send(CC | noiseCh[i], CC_PAN, pan[i]);
         }
-        send(CC | BUZZER, CC_PAN, PAN_C);
+        send(CC | buzzerCh, CC_PAN, PAN_C);
     }
 
     /** 发 RPN 0x00/0x00 设置弯音范围（半音）。 */
@@ -206,35 +222,36 @@ public class Ay2Midi {
         return progMap[midiCh];
     }
 
-    /** 用户改音色：关掉该通道音符再换音色。 */
-    public void setProg(int midiCh, int prog) {
-        if (midiCh < 0 || midiCh >= CHANNELS || prog < 0 || prog > 127) {
+    /** 用户改音色：idx 是 map 索引（0-2 方波，3-5 噪声，6 包络）。 */
+    public void setProg(int idx, int prog) {
+        if (idx < 0 || idx >= CHANNELS || prog < 0 || prog > 127) {
             return;
         }
-        if (prog == progMap[midiCh]) {
+        int midiCh = channelOf(idx);
+        if (prog == progMap[idx]) {
             return;
         }
-        switch (midiCh) {
-            case 0: case 1: case 2:
-                noteOff(midiCh);
-                break;
-            case 3: case 4: case 5:
-                int i = midiCh - 3;
-                if (noiseSounding[i]) {
-                    send(NOTE_OFF | midiCh, 60, 0);
-                    noiseSounding[i] = false;
-                }
-                break;
-            default:
-                if (buzzNote >= 0) {
-                    send(NOTE_OFF | BUZZER, buzzNote, 0);
-                    buzzNote = -1;
-                    buzzSrc = -1;
-                }
-                break;
+        if (idx < 3) {
+            noteOff(idx);
+        } else if (idx < 6) {
+            int i = idx - 3;
+            if (noiseSounding[i]) {
+                send(NOTE_OFF | midiCh, 60, 0);
+                noiseSounding[i] = false;
+            }
+        } else {
+            if (buzzNote >= 0) {
+                send(NOTE_OFF | buzzerCh, buzzNote, 0);
+                buzzNote = -1;
+                buzzSrc = -1;
+            }
         }
-        progMap[midiCh] = prog;
+        progMap[idx] = prog;
         send(PROG | midiCh, prog, 0);
+    }
+
+    private int channelOf(int idx) {
+        return idx < 3 ? toneCh[idx] : (idx < 6 ? noiseCh[idx - 3] : buzzerCh);
     }
 
     public int getOct() {
@@ -266,18 +283,19 @@ public class Ay2Midi {
     /** 强制重发所有音色和 CC（每次打开新文件时调用，确保音源状态正确）。 */
     public void forceRefreshAll() {
         for (int i = 0; i < CHANNELS; i++) {
-            send(PROG | i, progMap[i], 0);
+            send(PROG | channelOf(i), progMap[i], 0);
         }
         sendPans();
         // 设置所有通道弯音范围为 ±12 半音（VGM 大范围滑音常见）
         for (int i = 0; i < CHANNELS; i++) {
-            setPitchBendRange(i, BEND_RANGE_SEMITONES);
+            setPitchBendRange(channelOf(i), BEND_RANGE_SEMITONES);
         }
         // CC7 (Main Volume) 固定 127，CC11 (Expression) 做动态音量
         for (int i = 0; i < CHANNELS; i++) {
-            send(CC | i, CC_VOLUME, 127);
-            send(CC | i, CC_EXPRESSION, i == BUZZER ? 127 : 0);
-            send(CC | i, 123, 0);   // All notes off
+            int ch = channelOf(i);
+            send(CC | ch, CC_VOLUME, 127);
+            send(CC | ch, CC_EXPRESSION, i == 6 ? 127 : 0);
+            send(CC | ch, 123, 0);   // All notes off
         }
         for (int i = 0; i < 3; i++) {
             curVol[i] = -1;
@@ -291,13 +309,13 @@ public class Ay2Midi {
             buzzer[ch] = false;
             curVol[ch] = -1;
             if (noiseSounding[ch]) {
-                send(NOTE_OFF | NOISE_CH[ch], 60, 0);
+                send(NOTE_OFF | noiseCh[ch], 60, 0);
                 noiseSounding[ch] = false;
             }
             noiseVol[ch] = -1;
         }
         if (buzzNote >= 0) {
-            send(NOTE_OFF | BUZZER, buzzNote, 0);
+            send(NOTE_OFF | buzzerCh, buzzNote, 0);
         }
         buzzSrc = -1;
         buzzNote = -1;
@@ -458,17 +476,17 @@ public class Ay2Midi {
         int bend = centsToBend(cents144);
 
         if (syncNote >= 0 && syncNote != note) {
-            send(NOTE_OFF | BUZZER, syncNote, 0);
+            send(NOTE_OFF | buzzerCh, syncNote, 0);
         }
         syncNote = note;
-        send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
-        send(CC | BUZZER, CC_EXPRESSION, 127);
-        send(NOTE_ON | BUZZER, note, 127);
+        send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
+        send(CC | buzzerCh, CC_EXPRESSION, 127);
+        send(NOTE_ON | buzzerCh, note, 127);
     }
 
     private void stopSyncBuzz() {
         if (syncNote >= 0) {
-            send(NOTE_OFF | BUZZER, syncNote, 0);
+            send(NOTE_OFF | buzzerCh, syncNote, 0);
             syncNote = -1;
         }
     }
@@ -555,7 +573,7 @@ public class Ay2Midi {
             if (envMode(ch) && !isBuzzer(ch) && v != envLastCC[ch]) {
                 envLastCC[ch] = v;
                 curVol[ch] = v;
-                send(CC | TONE_CH[ch], CC_EXPRESSION, v);
+                send(CC | toneCh[ch], CC_EXPRESSION, v);
             }
         }
     }
@@ -608,7 +626,7 @@ public class Ay2Midi {
             buzzer[ch] = buzz;
             noteOff(ch);
             if (buzzSrc == ch && buzzNote >= 0) {
-                send(NOTE_OFF | BUZZER, buzzNote, 0);
+                send(NOTE_OFF | buzzerCh, buzzNote, 0);
                 buzzNote = -1;
                 buzzSrc = -1;
             }
@@ -627,7 +645,7 @@ public class Ay2Midi {
         }
         if (v >= 0 && v != curVol[ch]) {
             curVol[ch] = v;
-            send(CC | TONE_CH[ch], CC_EXPRESSION, v);
+            send(CC | toneCh[ch], CC_EXPRESSION, v);
         }
 
         // 噪声独立声道
@@ -635,14 +653,14 @@ public class Ay2Midi {
         int nv = noiseOn ? N_ATT_TO_VOL[atten] : 0;
         if (nv > 0 && nv != noiseVol[ch]) {
             noiseVol[ch] = nv;
-            send(CC | NOISE_CH[ch], CC_EXPRESSION, nv);
+            send(CC | noiseCh[ch], CC_EXPRESSION, nv);
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
-            send(NOTE_ON | NOISE_CH[ch], 60, 100);
+            send(NOTE_ON | noiseCh[ch], 60, 100);
         } else if (!noiseOn && noiseSounding[ch]) {
             noiseSounding[ch] = false;
-            send(NOTE_OFF | NOISE_CH[ch], 60, 0);
+            send(NOTE_OFF | noiseCh[ch], 60, 0);
         }
 
         updateToneSounding(ch);
@@ -663,7 +681,7 @@ public class Ay2Midi {
 
     private void noteOff(int ch) {
         if (curNote[ch] >= 0) {
-            send(NOTE_OFF | TONE_CH[ch], curNote[ch], 0);
+            send(NOTE_OFF | toneCh[ch], curNote[ch], 0);
             curNote[ch] = -1;
             curBend[ch] = 8192;
         }
@@ -706,11 +724,11 @@ public class Ay2Midi {
             noteOff(ch);
             curNote[ch] = note;
             curBend[ch] = bend;
-            send(PITCH | TONE_CH[ch], bend & 0x7F, (bend >> 7) & 0x7F);
-            send(NOTE_ON | TONE_CH[ch], note, 100);
+            send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
+            send(NOTE_ON | toneCh[ch], note, 100);
         } else if (Math.abs(bend - curBend[ch]) > 4) {
             curBend[ch] = bend;
-            send(PITCH | TONE_CH[ch], bend & 0x7F, (bend >> 7) & 0x7F);
+            send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
         }
     }
 
@@ -718,7 +736,7 @@ public class Ay2Midi {
         int hz = envWaveHz();
         if (!buzzer[ch] || hz <= 0) {
             if (buzzSrc == ch && buzzNote >= 0) {
-                send(NOTE_OFF | BUZZER, buzzNote, 0);
+                send(NOTE_OFF | buzzerCh, buzzNote, 0);
                 buzzNote = -1;
                 buzzSrc = -1;
             }
@@ -737,15 +755,15 @@ public class Ay2Midi {
         if (buzzSrc != ch || buzzNote != note) {
             // 无条件关掉旧音符（防止通道切换时复音泄漏）
             if (buzzNote >= 0) {
-                send(NOTE_OFF | BUZZER, buzzNote, 0);
+                send(NOTE_OFF | buzzerCh, buzzNote, 0);
             }
             buzzSrc = ch;
             buzzNote = note;
-            send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
-            send(CC | BUZZER, CC_EXPRESSION, 127);  // 蜂鸣器固定最大音量
-            send(NOTE_ON | BUZZER, note, 127);
+            send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
+            send(CC | buzzerCh, CC_EXPRESSION, 127);  // 蜂鸣器固定最大音量
+            send(NOTE_ON | buzzerCh, note, 127);
         } else if (Math.abs(bend - curBend[ch]) > 4) {
-            send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
+            send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
         }
     }
 

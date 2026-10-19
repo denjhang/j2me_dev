@@ -55,7 +55,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_STEREO = 0;
     private static final int ROW_OCT = 1;
     private static final int ROW_NOISEMAP = 2;
-    private static final int ROW_CH0 = 3;
+    private static final int ROW_ENVSAW_OCT = 3;
+    private static final int ROW_ENVTRI_OCT = 4;
+    private static final int ROW_CH0 = 5;
 
     private final Font small;
     private final Font big;
@@ -240,7 +242,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         y += 18;
         drawRow(g, cursor == ROW_NOISEMAP, y, "噪声映射",
                 Ay2Midi.NOISE_MAP_NAMES[ay.getNoiseMapMode()]);
-        y += 18;
+        y += 16;
+        drawRow(g, cursor == ROW_ENVSAW_OCT, y, "包络锯齿八度",
+                (ay.getEnvOctSaw() >= 0 ? "+" : "") + ay.getEnvOctSaw());
+        y += 16;
+        drawRow(g, cursor == ROW_ENVTRI_OCT, y, "包络三角八度",
+                (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri());
+        y += 16;
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
             drawRow(g, cursor == ROW_CH0 + i, y, CH_NAMES[i],
                     String.valueOf(ay.getProg(i)));
@@ -287,6 +295,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (ay2 != null) {
                 ay2.setNoiseMapMode(ay2.getNoiseMapMode() + dir);
             }
+        } else if (cursor == ROW_ENVSAW_OCT) {
+            ay.setEnvOct(false, ay.getEnvOctSaw() + dir);
+            if (ay2 != null) {
+                ay2.setEnvOct(false, ay2.getEnvOctSaw() + dir);
+            }
+        } else if (cursor == ROW_ENVTRI_OCT) {
+            ay.setEnvOct(true, ay.getEnvOctTri() + dir);
+            if (ay2 != null) {
+                ay2.setEnvOct(true, ay2.getEnvOctTri() + dir);
+            }
         } else {
             int ch = cursor - ROW_CH0;
             int cur = ay.getProg(ch);
@@ -312,6 +330,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
         }
         return 0;
+    }
+
+    protected void keyRepeated(int keyCode) {
+        // 长按连发：方向键连选/连调，数字键忽略（避免切曲/暂停连发）
+        int action = getGameAction(keyCode);
+        if (action == UP || action == DOWN || action == LEFT || action == RIGHT) {
+            keyPressed(keyCode);
+        }
     }
 
     protected void keyPressed(int keyCode) {

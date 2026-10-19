@@ -307,6 +307,8 @@ public class Ay2Midi {
         applyStereoMode(src.stereoMode);
         octShift = src.octShift;
         noiseMapMode = src.noiseMapMode;
+        envOctSaw = src.envOctSaw;
+        envOctTri = src.envOctTri;
         forceRefreshAll();
     }
 
@@ -684,9 +686,36 @@ public class Ay2Midi {
         "C4中央", "C4最高", "88键平均"
     };
     private int noiseMapMode = 1;
+    /** 包络八度：锯齿族（含衰减/交替，32 步）与三角（64 步）分开调。 */
+    private int envOctSaw;
+    private int envOctTri;
 
     public int getNoiseMapMode() {
         return noiseMapMode;
+    }
+
+    public int getEnvOctSaw() {
+        return envOctSaw;
+    }
+
+    public int getEnvOctTri() {
+        return envOctTri;
+    }
+
+    /** tri=true 调三角八度，否则锯齿族。生效中的蜂鸣音立即重算。 */
+    public void setEnvOct(boolean tri, int oct) {
+        if (oct < -3) oct = -3;
+        if (oct > 3) oct = 3;
+        if (tri) {
+            if (oct == envOctTri) return;
+            envOctTri = oct;
+        } else {
+            if (oct == envOctSaw) return;
+            envOctSaw = oct;
+        }
+        if (buzzSrc >= 0) {
+            updateBuzzerPitch(buzzSrc);
+        }
     }
 
     public void setNoiseMapMode(int mode) {
@@ -842,9 +871,15 @@ public class Ay2Midi {
             }
             return;
         }
-        // 音高来自包络自身频率（updateBuzzerPitch 的 hz 参数即 envWaveHz），
-        // 32/64 步的八度差已包含在公式分母里
+        // 音高来自包络自身频率，32/64 步的八度差已含在公式分母里；
+        // 用户八度偏移按形状族叠加（三角族独立于锯齿族）
         long n144 = note144(hz);
+        int octSlot = shapeSlot();
+        if (octSlot == SLOT_ENV_TRI) {
+            n144 += envOctTri * 12L * 65536;
+        } else {
+            n144 += envOctSaw * 12L * 65536;
+        }
         if (n144 < 0 || n144 > 127L * 65536) {
             return;
         }

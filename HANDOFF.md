@@ -193,11 +193,18 @@ N900 的 VGM 播放器有 **AY8910 / YM2612 的 C 源码**。为避免跨仓库�
 - [x] 自动截图 `shot.ps1`（Win32 PrintWindow，不要求窗口在前台）
 - [x] 首个可玩样例：`games/brick/` 打砖块
 
-### 第 2 步：音频（✅ MIDI 路线已通）
+### 第 2 步：音频（✅ MIDI 路线已通，VGM 播放器已可玩）
 - [x] `device://midi` + `MIDIControl.shortMidiEvent` 在 KEmulator 上实测可用
-- [x] BGM 步进音序器（自己控时钟，不依赖序列文件循环）
-- [x] 音效：撞砖 / 接球 / 掉球 / 通关 / 结束
-- [ ] 真机验证 `device://midi` 支持度；不支持的机型降级到 `Manager.playTone`
+- [x] VGM→MIDI 实时播放器（`tools/vgm-browser/`）：完整 256 项命令表解析、
+      AY8910 七通道转译（3方波+3噪声+1包络）、播放列表 HUD、
+      声像(7种排列)/八度/逐通道音色实时可调
+- [x] 包络三分支：快包络波形（音高=clock/16/period/steps，锯齿32/三角64步）、
+      同步蜂鸣器（R13 高速重写）、慢包络软件仿真（emu2149 状态机→CC11）
+- [x] VGZ 支持（纯 Java inflate，字节级验证）
+- [x] 音量映射修正：AY 语义 0=静音 15=最响，yasp11 非线性表
+- [x] PCM 实时合成实验：KEmulator WAV 路径不支持无限流（mark/reset 失败），
+      块链 gap ~1.4s 为模拟器包装层开销（裸 Clip 实测切换 0ms）
+- [ ] 真机（E5）验证：device://midi、块链 gap、VGZ 内存占用
 - [ ] WAV/离线渲染路线（堆预算与流式策略见 [RESEARCH.md](./RESEARCH.md)）
 
 ### 第 3 步：VGM 播放器

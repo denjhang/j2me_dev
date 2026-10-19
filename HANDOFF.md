@@ -45,15 +45,21 @@
 
 ---
 
-## 三、环境现状
+## 三、环境现状（2026-10-19 已打通）
 
 ```
-Java:  OpenJDK 26.0.1 (Temurin)   ← 注意：KEmulator nnmod 要求 Java 8
-javac: 26.0.1
+系统 Java:  OpenJDK 26.0.1 (Temurin)   ← 保持全局不动
+项目 JDK8:  tools/jdk8/ (Temurin 1.8.0_504)  ← 编译和跑模拟器都用它
 ```
 
-**第一个待办**：确认 KEmulator nnmod 在 Java 26 下能否运行；不能的话需要装 JDK 8
-（多版本共存，用 JAVA_HOME 切换）。
+**已解决**，不需要装 Oracle 版、不需要改 `JAVA_HOME`：
+JDK 8 是免安装的绿色版，放在工作区 `tools/jdk8/`，只由 `build.sh` /
+`run-kemulator.sh` 显式指向它，不污染系统环境。
+
+必须用 JDK 8 的原因是 **`javac 26` 最低只支持 `--release 8`**，
+而 MIDP 2.0 要的是 class 版本 48（Java 1.4）。
+
+完整链路和踩坑记录见 [TOOLCHAIN.md](./TOOLCHAIN.md)。
 
 ---
 
@@ -177,23 +183,26 @@ N900 的 VGM 播放器有 **AY8910 / YM2612 的 C 源码**。为避免跨仓库�
 
 ---
 
-## 七、下一步（建议顺序）
+## 七、进度与下一步
 
-### 第 1 步：打通开发闭环（不开真机）
-- [ ] 检查 KEmulator nnmod 能否在 Java 26 下跑（不行则装 JDK 8）
-- [ ] 编译/启动 KEmulator，跑一个 Hello World MIDlet
-- [ ] 建立**自动截图验证**（模拟器窗口截图 + 像素分析，参照 N900 的
-      `Maemo_N900/docs/N900_AUTO_VISUAL_TEST.md`）
-- [ ] 建立一键构建脚本（javac → jar → 启动模拟器 → 截图）
+### 第 1 步：打通开发闭环（✅ 2026-10-19 完成）
+- [x] JDK 8 绿色版就位（`tools/jdk8/`，无需安装、不动系统环境）
+- [x] KEmulator nnmod 2.22 x64 跑通（Java 8，无 amd64 报错）
+- [x] 编译链固定：`javac 8 -source 1.4 -target 1.4` + CLDC/MIDP bootclasspath
+- [x] 一键构建 `build.sh`（javac → jar → 补 JAD）
+- [x] 自动截图 `shot.ps1`（Win32 PrintWindow，不要求窗口在前台）
+- [x] 首个可玩样例：`games/brick/` 打砖块
 
-### 第 2 步：验证音频
-- [ ] MIDlet 用 MMAPI 播一个 WAV
-- [ ] 在 KEmulator 里确认能发声
-- [ ] 确认 `audio/x-wav` content-type 被接受
+### 第 2 步：音频（✅ MIDI 路线已通）
+- [x] `device://midi` + `MIDIControl.shortMidiEvent` 在 KEmulator 上实测可用
+- [x] BGM 步进音序器（自己控时钟，不依赖序列文件循环）
+- [x] 音效：撞砖 / 接球 / 掉球 / 通关 / 结束
+- [ ] 真机验证 `device://midi` 支持度；不支持的机型降级到 `Manager.playTone`
+- [ ] WAV/离线渲染路线（堆预算与流式策略见 [RESEARCH.md](./RESEARCH.md)）
 
 ### 第 3 步：VGM 播放器
 - [ ] 决定：纯 Java 合成 vs 离线转 WAV
-- [ ] 移植 AY8910 核到 Java
+- [ ] 移植 AY8910 核到 Java（C 源码副本在 `references/psg-core/`）
 - [ ] 双世界策略落地（真机流式 / 模拟器离线）
 
 ### 第 4 步：真机部署（E5）
@@ -204,12 +213,17 @@ N900 的 VGM 播放器有 **AY8910 / YM2612 的 C 源码**。为避免跨仓库�
 
 ## 八、关键提醒
 
-1. **Java 版本冲突**：本机是 Java 26，KEmulator nnmod 要 Java 8。先解决这个。
-2. **模拟器实时流式必死**：不要尝试在模拟器里做无限流式播放，会永久阻塞。
+1. **只能用 JDK 8 编译**：`javac 26` 最低 `--release 8`，做不出 class 48。
+   别去改系统 `JAVA_HOME`，脚本里显式指向 `tools/jdk8` 就够了。
+2. **不要用 `-classpath` 编译 J2ME**：那会放行整个 Java SE，写出真机上不存在的 API。
+   必须用 `-bootclasspath` 只挂 CLDC/MIDP/MMAPI。
+3. **模拟器实时流式必死**：不要尝试在模拟器里做无限流式播放，会永久阻塞。
    开发期用"离线渲染"模式，真机才用流式。
-3. **堆预算**：S40v3 只有 1MB 堆，整曲 WAV 必然爆。写代码时按平台分档。
-4. **不要碰可选包**：JSR-172/234 等机型支持不一，只用 MIDP 2.0 + MMAPI。
-5. **.jar 无需签名**：这是 J2ME 相对塞班原生的巨大优势，别走签名那条弯路。
+4. **`device://midi` 的 `setLoopCount` 是空实现**（KEmulator 的 `MIDIImpl`）。
+   BGM 循环不要指望它，自己用步进音序器控时钟。
+5. **堆预算**：S40v3 只有 1MB 堆，整曲 WAV 必然爆。写代码时按平台分档。
+6. **不要碰可选包**：JSR-172/234 等机型支持不一，只用 MIDP 2.0 + MMAPI。
+7. **.jar 无需签名**：这是 J2ME 相对塞班原生的巨大优势，别走签名那条弯路。
 
 ---
 
@@ -217,8 +231,10 @@ N900 的 VGM 播放器有 **AY8910 / YM2612 的 C 源码**。为避免跨仓库�
 
 | 文档 | 位置 |
 |---|---|
-| J2ME 全景清单 | `references/awesome-j2me/readme.md` |
+| **编译链与验证闭环（实测记录）** | [TOOLCHAIN.md](./TOOLCHAIN.md) |
 | 音频方案源码级调研（原文） | [RESEARCH.md](./RESEARCH.md) |
+| 示例游戏（打砖块 + MIDI） | `games/brick/` |
+| J2ME 全景清单 | `references/awesome-j2me/readme.md` |
 | 可复用的 PSG 核（N900 C 源码副本） | `references/psg-core/` |
 | N900 的自动化验证方法（可移植到模拟器） | `Maemo_N900/docs/N900_AUTO_VISUAL_TEST.md` |
 | KEmulator 使用文档 | `emulators/KEmulator-nnmod/README.md` |

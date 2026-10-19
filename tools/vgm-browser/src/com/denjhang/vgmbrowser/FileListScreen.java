@@ -28,11 +28,11 @@ public class FileListScreen extends List implements CommandListener {
     private final BrowserMIDlet midlet;
     private String currentDir = null;   // null = 根列表
 
-    private final Command cmdOpen = new Command("打开", Command.OK, 1);
-    private final Command cmdUp = new Command("上级", Command.BACK, 2);
-    private final Command cmdRefresh = new Command("刷新", Command.SCREEN, 3);
-    private final Command cmdTone = new Command("方波实时测试", Command.SCREEN, 4);
-    private final Command cmdInfo = new Command("关于", Command.SCREEN, 5);
+    private final Command cmdOpen = new Command("Open", Command.OK, 1);
+    private final Command cmdUp = new Command("Up", Command.BACK, 2);
+    private final Command cmdRefresh = new Command("Refresh", Command.SCREEN, 3);
+    private final Command cmdTone = new Command("Square wave test", Command.SCREEN, 4);
+    private final Command cmdInfo = new Command("About", Command.SCREEN, 5);
     private final Command cmdNow = new Command("Now playing", Command.OK, 0);
 
     private final Vector entries = new Vector();  // Entry

@@ -17,13 +17,13 @@ public class DetailScreen extends Form implements CommandListener {
     private final BrowserMIDlet midlet;
     private final VgmFile file;
 
-    private final Command cmdBack = new Command("返回", Command.BACK, 1);
-    private final Command cmdCmd = new Command("命令流", Command.SCREEN, 2);
-    private final Command cmdHex = new Command("头部十六进制", Command.SCREEN, 3);
-    private final Command cmdPlay = new Command("实时播放(MIDI)", Command.OK, 2);
+    private final Command cmdBack = new Command("Back", Command.BACK, 1);
+    private final Command cmdCmd = new Command("Commands", Command.SCREEN, 2);
+    private final Command cmdHex = new Command("Header hex", Command.SCREEN, 3);
+    private final Command cmdPlay = new Command("Play (MIDI)", Command.OK, 2);
 
     public DetailScreen(BrowserMIDlet midlet, VgmFile file) {
-        super("详情");
+        super("Details");
         this.midlet = midlet;
         this.file = file;
 
@@ -43,19 +43,19 @@ public class DetailScreen extends Form implements CommandListener {
         if (title.length() > 0) {
             append(title + "\n");
         }
-        append("文件: " + file.name + "\n");
-        append("大小: " + file.byteSize + " 字节\n");
-        append("版本: VGM " + h.versionString() + "\n\n");
+        append("File: " + file.name + "\n");
+        append("Size: " + file.byteSize + " 字节\n");
+        append("Version: VGM " + h.versionString() + "\n\n");
 
-        append("时长: " + fmt(h.durationSeconds()) + "\n");
+        append("Duration: " + fmt(h.durationSeconds()) + "\n");
         if (h.hasLoop()) {
             double loopStart = (h.totalSamples - h.loopSamples) / 44100.0;
-            append("循环: " + fmt(loopStart) + "s 起, 长 "
+            append("Loop: " + fmt(loopStart) + "s 起, 长 "
                     + fmt(h.loopSeconds()) + "s (0x" + hex(h.loopOffset) + ")\n");
         } else {
             append("循环: 无\n");
         }
-        append("总采样: " + h.totalSamples + "\n\n");
+        append("Samples: " + h.totalSamples + "\n\n");
 
         append("数据区: 0x" + hex(h.dataOffset)
                 + " - 0x" + hex(h.dataEnd) + "\n");
@@ -80,23 +80,23 @@ public class DetailScreen extends Form implements CommandListener {
             }
         }
         if (h.chipClock[0x12] != 0) {
-            append("  AY 类型: " + h.ayChipType
+            append("  AY type: " + h.ayChipType
                     + ", flags: " + h.ayFlags + "\n");
         }
         append("\n");
 
         // GD3 其他字段
         if (h.gd3Game.length() > 0 || h.gd3GameEn.length() > 0) {
-            append("游戏: " + pick(h.gd3Game, h.gd3GameEn) + "\n");
+            append("Game: " + pick(h.gd3Game, h.gd3GameEn) + "\n");
         }
         if (h.gd3Artist.length() > 0 || h.gd3ArtistEn.length() > 0) {
-            append("作者: " + pick(h.gd3Artist, h.gd3ArtistEn) + "\n");
+            append("Artist: " + pick(h.gd3Artist, h.gd3ArtistEn) + "\n");
         }
         if (h.gd3Date.length() > 0) {
-            append("日期: " + h.gd3Date + "\n");
+            append("Date: " + h.gd3Date + "\n");
         }
         if (h.gd3Ripper.length() > 0) {
-            append("抓取: " + h.gd3Ripper + "\n");
+            append("Ripper: " + h.gd3Ripper + "\n");
         }
 
         append("\n(点\"命令流\"查看解析结果)");
@@ -146,7 +146,7 @@ public class DetailScreen extends Form implements CommandListener {
     }
 
     private void showHex() {
-        Form f = new Form("头部 hex");
+        Form f = new Form("Header hex");
         int n = file.header.headerSize;
         if (n > 0x100) {
             n = 0x100;
@@ -157,7 +157,7 @@ public class DetailScreen extends Form implements CommandListener {
             f.append(line + "\n");
         }
         f.append("");
-        f.addCommand(new Command("返回", Command.BACK, 1));
+        f.addCommand(new Command("Back", Command.BACK, 1));
         f.setCommandListener(new CommandListener() {
             public void commandAction(Command c, Displayable d) {
                 midlet.openDetail(file);

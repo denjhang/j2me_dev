@@ -76,8 +76,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private final VgmParser parser;
     private final int listIndex;
 
-    private final Command cmdSettings = new Command("设置", Command.SCREEN, 1);
-    private final Command cmdBack = new Command("列表", Command.BACK, 2);
+    private final Command cmdSettings = new Command("Settings", Command.SCREEN, 1);
+    private final Command cmdBack = new Command("List", Command.BACK, 2);
 
     private volatile boolean playing;
     private volatile boolean uiAlive = true;

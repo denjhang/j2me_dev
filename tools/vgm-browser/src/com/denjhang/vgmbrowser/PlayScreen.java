@@ -124,6 +124,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         long lastSamples = 0;
 
         while (playing) {
+            ay.tick();
             int t = parser.next();
 
             if (t == VgmParser.EV_END) {

@@ -95,6 +95,12 @@ public class Ay2Midi {
     private int buzzSrc = -1;
     private int buzzNote = -1;
 
+    // 同步蜂鸣器：软件高速重写 R13（一次性形状）时，重触发率即音高
+    private long lastR13At;
+    private long r13Interval;      // 平滑后的重写间隔 ms
+    private boolean syncBuzz;
+    private int syncNote = -1;
+
     public Ay2Midi() {
         for (int i = 0; i < 3; i++) {
             curNote[i] = -1;
@@ -282,6 +288,10 @@ public class Ay2Midi {
         }
         buzzSrc = -1;
         buzzNote = -1;
+        stopSyncBuzz();
+        syncBuzz = false;
+        r13Interval = 0;
+        lastR13At = 0;
     }
 
     private void send(int status, int d1, int d2) {
@@ -323,8 +333,12 @@ public class Ay2Midi {
             case 10:
                 updateChannelCtl(2);
                 break;
-            case 11: case 12: case 13:
-                // 包络周期/形状变化会改变蜂鸣器判定与八度，全部声道重估
+            case 11: case 12:
+                // 包络周期变化会改变蜂鸣器判定与八度，全部声道重估
+                updateAllCtl();
+                break;
+            case 13:
+                onShapeWrite();
                 updateAllCtl();
                 break;
             default:
@@ -360,6 +374,93 @@ public class Ay2Midi {
                 return 64;
             default:
                 return 0;
+        }
+    }
+
+    /**
+     * R13 写入处理。一次性形状（0-7）被高速重写时是"同步蜂鸣器"玩法：
+     * 每次写都重启包络，重触发率成为可听音高（>20Hz）。
+     * 重复形状（8-15）的重写无此含义，交给常规蜂鸣器分支。
+     */
+    private void onShapeWrite() {
+        long now = System.currentTimeMillis();
+        if (shapeSteps() == 0 && anyEnvMode()) {
+            if (lastR13At != 0) {
+                long dt = now - lastR13At;
+                if (dt > 0 && dt < 400) {
+                    // 指数平滑间隔，抗抖动
+                    r13Interval = r13Interval == 0 ? dt : (r13Interval * 3 + dt) / 4;
+                    if (r13Interval > 0 && r13Interval <= 50) {   // ≥20Hz
+                        syncBuzz = true;
+                    }
+                } else if (dt >= 400) {
+                    r13Interval = 0;
+                    syncBuzz = false;
+                }
+            }
+            if (syncBuzz) {
+                triggerSyncBuzz();
+            }
+        } else {
+            // 重复形状接管：同步音让位给常规蜂鸣器
+            stopSyncBuzz();
+            r13Interval = 0;
+            syncBuzz = false;
+        }
+        lastR13At = now;
+    }
+
+    private boolean anyEnvMode() {
+        for (int ch = 0; ch < 3; ch++) {
+            if ((regs[8 + ch] & 0x10) != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 按重触发率发/更新同步蜂鸣音；每次写入做 re-articulation（模拟包络重启）。 */
+    private void triggerSyncBuzz() {
+        if (r13Interval <= 0) {
+            return;
+        }
+        int hz = (int) (1000 / r13Interval);
+        if (hz <= 0) {
+            return;
+        }
+        long n144 = note144(hz);
+        if (n144 < 0 || n144 > 127L * 65536) {
+            return;
+        }
+        int note = (int) ((n144 + 32768) / 65536);
+        int cents144 = (int) (n144 - note * 65536);
+        int bend = centsToBend(cents144);
+
+        if (syncNote >= 0 && syncNote != note) {
+            send(NOTE_OFF | BUZZER, syncNote, 0);
+        }
+        syncNote = note;
+        send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
+        send(CC | BUZZER, CC_EXPRESSION, 127);
+        send(NOTE_ON | BUZZER, note, 127);
+    }
+
+    private void stopSyncBuzz() {
+        if (syncNote >= 0) {
+            send(NOTE_OFF | BUZZER, syncNote, 0);
+            syncNote = -1;
+        }
+    }
+
+    /**
+     * 播放线程周期调用：重触发停止后关掉同步蜂鸣音，防止卡音符。
+     */
+    public void tick() {
+        if (syncBuzz && lastR13At != 0
+                && System.currentTimeMillis() - lastR13At > 100) {
+            stopSyncBuzz();
+            syncBuzz = false;
+            r13Interval = 0;
         }
     }
 

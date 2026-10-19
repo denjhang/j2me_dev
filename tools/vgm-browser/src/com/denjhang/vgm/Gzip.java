@@ -23,10 +23,18 @@ public final class Gzip {
     }
 
     public static byte[] decode(byte[] d) throws IOException {
+        return decode(d, null);
+    }
+
+    /** 解压进度回调：inPos/inTotal 为压缩输入消费比例。 */
+    public interface Progress {
+        void onProgress(int inPos, int inTotal, int outLen);
+    }
+
+    public static byte[] decode(byte[] d, Progress cb) throws IOException {
         int p = parseHeader(d);
-        Inflater inf = new Inflater(d, p);
-        byte[] out = inf.inflate();
-        return out;
+        Inflater inf = new Inflater(d, p, cb);
+        return inf.inflate();
     }
 
     /** 解析 gzip 头，返回 deflate 数据起始偏移。 */
@@ -61,10 +69,20 @@ public final class Gzip {
         private int inPos;
         private int bitBuf;
         private int bitCnt;
+        private final Progress cb;
+        private int lastReport;
 
-        Inflater(byte[] in, int off) {
+        Inflater(byte[] in, int off, Progress cb) {
             this.in = in;
             this.inPos = off;
+            this.cb = cb;
+        }
+
+        private void report(int outLen) {
+            if (cb != null && inPos - lastReport >= 512) {
+                lastReport = inPos;
+                cb.onProgress(inPos, in.length, outLen);
+            }
         }
 
         private int bits(int need) {
@@ -200,6 +218,7 @@ public final class Gzip {
                     // 解码循环
                     int symbol;
                     while ((symbol = decode(litCount, litSymbol)) != 256) {
+                        report(g.len);
                         if (symbol < 256) {
                             g.write(symbol);
                         } else {

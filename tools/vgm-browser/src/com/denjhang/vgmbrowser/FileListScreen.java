@@ -33,6 +33,7 @@ public class FileListScreen extends List implements CommandListener {
     private final Command cmdRefresh = new Command("刷新", Command.SCREEN, 3);
     private final Command cmdTone = new Command("方波实时测试", Command.SCREEN, 4);
     private final Command cmdInfo = new Command("关于", Command.SCREEN, 5);
+    private final Command cmdNow = new Command("Now playing", Command.OK, 0);
 
     private final Vector entries = new Vector();  // Entry
 
@@ -51,6 +52,7 @@ public class FileListScreen extends List implements CommandListener {
         addCommand(cmdTone);
         addCommand(cmdInfo);
         setCommandListener(this);
+        refreshNowPlaying();
         // 直达模拟器文件系统里的 vgm 目录，省两次点击；失败再回根列表
         loadDir("file:///root/vgm/");
         if (entries.size() == 0) {
@@ -59,6 +61,13 @@ public class FileListScreen extends List implements CommandListener {
     }
 
     // ------------------------------------------------------------ 目录读取
+
+    /** 有后台播放时显示 Now playing 入口。 */
+    void refreshNowPlaying() {
+        if (midlet.playerAlive()) {
+            addCommand(cmdNow);
+        }
+    }
 
     private void loadRoots() {
         currentDir = null;
@@ -116,6 +125,10 @@ public class FileListScreen extends List implements CommandListener {
                 showAlert("目录不存在: " + url);
                 return;
             }
+            // 收集后排序：文件夹 → VGZ → VGM，组内字母序（忽略大小写）
+            Vector dirsV = new Vector();
+            Vector vgzV = new Vector();
+            Vector vgmV = new Vector();
             java.util.Enumeration e = fc.list();
             while (e.hasMoreElements()) {
                 String name = (String) e.nextElement();
@@ -124,25 +137,61 @@ public class FileListScreen extends List implements CommandListener {
                 }
                 String childUrl = url.endsWith("/") ? url + name : url + "/" + name;
                 boolean isDir = name.endsWith("/");
+                Object[] pair = {name, childUrl};
+                if (isDir) {
+                    dirsV.addElement(pair);
+                } else if (name.toLowerCase().endsWith(".vgz")) {
+                    vgzV.addElement(pair);
+                } else if (isVgm(name)) {
+                    vgmV.addElement(pair);
+                }
+            }
+            sortByName(dirsV);
+            sortByName(vgzV);
+            sortByName(vgmV);
+
+            for (int i = 0; i < dirsV.size(); i++) {
+                Object[] pair = (Object[]) dirsV.elementAt(i);
+                String name = (String) pair[0];
                 Entry en = new Entry();
                 en.name = name;
-                en.url = childUrl;
-                en.dir = isDir;
-
-                if (isDir) {
-                    append("[D] " + name, null);
-                    entries.addElement(en);
-                    dirs++;
-                } else if (isVgm(name)) {
-                    try {
-                        en.size = (int) fcSize(childUrl);
-                    } catch (Throwable t) {
-                        en.size = 0;
-                    }
-                    append(formatSize(en.size) + "  " + name, null);
-                    entries.addElement(en);
-                    files++;
+                en.url = (String) pair[1];
+                en.dir = true;
+                append("[D] " + name, null);
+                entries.addElement(en);
+                dirs++;
+            }
+            for (int i = 0; i < vgzV.size(); i++) {
+                Object[] pair = (Object[]) vgzV.elementAt(i);
+                String name = (String) pair[0];
+                Entry en = new Entry();
+                en.name = name;
+                en.url = (String) pair[1];
+                en.dir = false;
+                try {
+                    en.size = (int) fcSize(en.url);
+                } catch (Throwable t) {
+                    en.size = 0;
                 }
+                append(formatSize(en.size) + "  " + name, null);
+                entries.addElement(en);
+                files++;
+            }
+            for (int i = 0; i < vgmV.size(); i++) {
+                Object[] pair = (Object[]) vgmV.elementAt(i);
+                String name = (String) pair[0];
+                Entry en = new Entry();
+                en.name = name;
+                en.url = (String) pair[1];
+                en.dir = false;
+                try {
+                    en.size = (int) fcSize(en.url);
+                } catch (Throwable t) {
+                    en.size = 0;
+                }
+                append(formatSize(en.size) + "  " + name, null);
+                entries.addElement(en);
+                files++;
             }
         } catch (Throwable t) {
             showAlert("读取失败: " + t);
@@ -163,6 +212,24 @@ public class FileListScreen extends List implements CommandListener {
             return -1;
         } finally {
             close(fc);
+        }
+    }
+
+    /** Vector of Object[]{name,url} 按名字排序（忽略大小写，插入排序）。 */
+    private static void sortByName(Vector v) {
+        for (int i = 1; i < v.size(); i++) {
+            Object[] key = (Object[]) v.elementAt(i);
+            String kn = ((String) key[0]).toLowerCase();
+            int j = i - 1;
+            while (j >= 0) {
+                String jn = ((String) ((Object[]) v.elementAt(j))[0]).toLowerCase();
+                if (jn.compareTo(kn) <= 0) {
+                    break;
+                }
+                v.setElementAt(v.elementAt(j), j + 1);
+                j--;
+            }
+            v.setElementAt(key, j + 1);
         }
     }
 
@@ -295,6 +362,8 @@ public class FileListScreen extends List implements CommandListener {
             } else {
                 loadDir(currentDir);
             }
+        } else if (c == cmdNow) {
+            midlet.showPlayer();
         } else if (c == cmdTone) {
             midlet.openToneTest();
         } else if (c == cmdInfo) {

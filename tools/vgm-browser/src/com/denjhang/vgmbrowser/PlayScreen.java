@@ -22,17 +22,17 @@ import com.denjhang.vgm.VgmParser;
 public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     private static final String[] CH_NAMES = {
-        "方波A", "方波B", "方波C",
-        "噪声A", "噪声B", "噪声C",
-        "包络-锯齿", "包络-衰减", "包络-三角", "包络-交替"
+        "Sq A", "Sq B", "Sq C",
+        "Noi A", "Noi B", "Noi C",
+        "Env Saw", "Env Decay", "Env Tri", "Env Alt"
     };
     private static final int[] PROG_CHOICES = {
         80, 81, 83, 87, 38, 48, 33, 56, 73, 24, 19, 11, 4, 0, 52, 127
     };
-    private static final String[] UNI_NAMES = {"关", "上行1八度", "上行2八度"};
+    private static final String[] UNI_NAMES = {"Off", "+1 oct (2v)", "+2 oct (3v)"};
     private static final int[] LOOP_CHOICES = {1, 2, 3, 5, 99};
-    private static final String[] LOOP_NAMES = {"1", "2", "3", "5", "无限"};
-    private static final String[] ORDER_NAMES = {"顺序", "随机"};
+    private static final String[] LOOP_NAMES = {"1", "2", "3", "5", "inf"};
+    private static final String[] ORDER_NAMES = {"Seq", "Shuffle"};
 
     // v16 配色（高饱和版）：ChA 绿 / ChB 蓝 / ChC 红；二芯片 紫/黄/青
     private static final int COL_A = 0x4CD84C;
@@ -90,6 +90,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int masterVol = 100;
 
     private final java.util.Random rng = new java.util.Random();
+    private long marqueeTick;
     private final Font small;
     private final Font titleFont;
     private final Font tiny;
@@ -120,6 +121,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             attachChip2();
         }
         startPlay(true);
+        midlet.refreshListNowPlaying();
         Thread ui = new Thread(this);
         ui.start();
     }
@@ -320,41 +322,34 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     private void paintHud(Graphics g, int w, int h) {
-        // GD3 标签
+        // ---- 标题跑马灯（GD3 标题/文件名，超宽往返滚动）----
         String title = pick(file.header.gd3Title, file.header.gd3TitleEn);
         if (title.length() == 0) {
             title = file.name;
         }
         g.setFont(titleFont);
         g.setColor(0xF0EDE4);
-        g.drawString(clip(title, 22), 6, 4, Graphics.TOP | Graphics.LEFT);
+        g.clipRect(4, 2, w - 8, 22);
+        int mx = 0;
+        int tw = titleFont.stringWidth(title);
+        int avail = w - 12;
+        if (tw > avail) {
+            marqueeTick++;
+            int span = tw - avail + 8;
+            int period = span * 2 + 1;
+            int pos = (int) ((marqueeTick % period));
+            if (pos > span) {
+                pos = span * 2 - pos;
+            }
+            mx = -pos;
+        }
+        g.drawString(title, 6 + mx, 4, Graphics.TOP | Graphics.LEFT);
+        g.clipRect(0, 0, w, h);
 
+        // ---- 进度条 ----
         g.setFont(tiny);
-        int y = 26;
-        g.setColor(0x8894A8);
-        String game = pick(file.header.gd3Game, file.header.gd3GameEn);
-        String artist = pick(file.header.gd3Artist, file.header.gd3ArtistEn);
-        if (game.length() > 0) {
-            g.drawString(clip(game, 30), 6, y, Graphics.TOP | Graphics.LEFT);
-            y += 13;
-        }
-        if (artist.length() > 0) {
-            g.drawString(clip("by " + artist, 30), 6, y, Graphics.TOP | Graphics.LEFT);
-            y += 13;
-        }
-        if (file.header.gd3Date.length() > 0) {
-            g.drawString(clip(file.header.gd3Date, 34), 6, y, Graphics.TOP | Graphics.LEFT);
-            y += 13;
-        }
-        if (file.header.gd3Notes.length() > 0) {
-            g.drawString(clip(file.header.gd3Notes, 36), 6, y, Graphics.TOP | Graphics.LEFT);
-            y += 13;
-        }
-
-        // 进度条
-        y += 6;
+        int barY = 26;
         int barW = w - 40;
-        int barY = y;
         int barH = 10;
         long total = file.header.totalSamples;
         long cur = parser.getSamples();
@@ -372,38 +367,68 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         g.setColor(0xE8E8E8);
         g.fillArc(6 + filled - 3, barY - 2, barH + 4, barH + 4, 0, 360);
-        g.setFont(tiny);
         g.setColor(0x8894A8);
         g.drawString(fmt(cur / 44100), 6, barY + 12, Graphics.TOP | Graphics.LEFT);
-        g.drawString(fmt(total / 44100), 6 + barW, barY + 12, Graphics.TOP | Graphics.RIGHT);
+        g.drawString(fmt(total / 44100), 6 + barW, barY + 12,
+                Graphics.TOP | Graphics.RIGHT);
 
-        // 状态行
+        // ---- 状态行 ----
         int sy = barY + 27;
         g.setColor(playing ? 0x7CFC7C : 0x707A88);
         g.setFont(small);
         StringBuffer st = new StringBuffer();
-        st.append(playing ? "▶" : "‖");
+        st.append(playing ? "PLAY" : "PAUSE");
         if (file.header.hasLoop()) {
-            st.append(" ⟳").append(loopPlays).append('/').append(LOOP_NAMES[loopIdx]);
+            st.append("  loop ").append(loopPlays).append('/').append(LOOP_NAMES[loopIdx]);
         }
-        st.append(shuffle ? " 随机" : " 曲目 ").append(listIndex + 1);
-        st.append("  音量").append(masterVol);
+        st.append(shuffle ? "  shuf #" : "  #").append(listIndex + 1);
+        st.append("  vol ").append(masterVol);
         g.drawString(st.toString(), 6, sy, Graphics.TOP | Graphics.LEFT);
 
-        // 三条像素风 88 键横条
+        // ---- 三条像素钢琴条 ----
         int py = sy + 16;
         for (int ch = 0; ch < 3; ch++) {
             drawKeyStrip(g, 4, py + ch * 17, w - 8, 15, ch);
         }
 
-        g.setColor(0x4A5568);
+        // ---- GD3 标签表（键盘下方，带表头，自适应行数）----
+        int ty = py + 3 * 17 + 4;
+        int colX = w * 30 / 100;
         g.setFont(tiny);
-        g.drawString("◀▶曲目 ▲▼音量 ●播放暂停 #设置", 6, h - 18,
+        g.setColor(0x3A4656);
+        g.drawLine(4, ty - 2, w - 4, ty - 2);
+        g.setColor(0x8894A8);
+        g.drawString("TAG", 6, ty, Graphics.TOP | Graphics.LEFT);
+        g.drawString("INFO", colX, ty, Graphics.TOP | Graphics.LEFT);
+        ty += 14;
+
+        String[][] rows = {
+            {"title", pick(file.header.gd3Title, file.header.gd3TitleEn)},
+            {"game", pick(file.header.gd3Game, file.header.gd3GameEn)},
+            {"artist", pick(file.header.gd3Artist, file.header.gd3ArtistEn)},
+            {"date", file.header.gd3Date},
+            {"ripper", file.header.gd3Ripper},
+            {"notes", file.header.gd3Notes},
+        };
+        int bottom = h - 18;
+        g.setColor(0xAAB4C4);
+        for (int i = 0; i < rows.length && ty < bottom; i++) {
+            if (rows[i][1].length() == 0) {
+                continue;
+            }
+            g.drawString(rows[i][0], 6, ty, Graphics.TOP | Graphics.LEFT);
+            g.drawString(clip(rows[i][1], 30), colX, ty, Graphics.TOP | Graphics.LEFT);
+            ty += 13;
+        }
+
+        // ---- 底部提示 ----
+        g.setColor(0x4A5568);
+        g.drawString("<> track  ^ v vol  5 play  # set", 6, h - 16,
                 Graphics.TOP | Graphics.LEFT);
 
         if (err != null) {
             g.setColor(0xFF7C7C);
-            g.drawString(clip(err, 26), 6, h - 32, Graphics.TOP | Graphics.LEFT);
+            g.drawString(clip(err, 26), 6, h - 30, Graphics.TOP | Graphics.LEFT);
         }
     }
 
@@ -569,7 +594,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         g.setFont(tiny);
         g.setColor(col);
-        g.drawString(letter, slotX + 4, y + h / 2,
+        g.drawString(letter, slotX + 4, y + h,
                 Graphics.BASELINE | Graphics.HCENTER);
     }
 
@@ -617,10 +642,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private void paintSettings(Graphics g, int w, int h) {
         g.setFont(titleFont);
         g.setColor(0xF0EDE4);
-        g.drawString("设置", 6, 4, Graphics.TOP | Graphics.LEFT);
+        g.drawString("Settings", 6, 4, Graphics.TOP | Graphics.LEFT);
         g.setFont(tiny);
         g.setColor(0x4A5568);
-        g.drawString("▲▼选 ◀▶调 #返回", w - 6, 4, Graphics.TOP | Graphics.RIGHT);
+        g.drawString("^v sel  <> change  # back", w - 6, 4,
+                Graphics.TOP | Graphics.RIGHT);
 
         int y0 = 28;
         int listH = h - y0 - 8;
@@ -672,16 +698,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     private String rowName(int r) {
         switch (r) {
-            case ROW_STEREO: return "声像";
-            case ROW_OCT: return "八度";
-            case ROW_NOISEMAP: return "噪声映射";
-            case ROW_ENVSAW_OCT: return "包络锯齿八度";
-            case ROW_ENVTRI_OCT: return "包络三角八度";
-            case ROW_ENVSAW_UNI: return "锯齿上行复音";
-            case ROW_ENVTRI_UNI: return "三角上行复音";
-            case ROW_BUZZ_VOL: return "蜂鸣器音量";
-            case ROW_LOOP: return "循环次数";
-            case ROW_ORDER: return "播放顺序";
+            case ROW_STEREO: return "Stereo";
+            case ROW_OCT: return "Octave";
+            case ROW_NOISEMAP: return "Noise map";
+            case ROW_ENVSAW_OCT: return "Env saw octave";
+            case ROW_ENVTRI_OCT: return "Env tri octave";
+            case ROW_ENVSAW_UNI: return "Saw unison";
+            case ROW_ENVTRI_UNI: return "Tri unison";
+            case ROW_BUZZ_VOL: return "Buzzer vol";
+            case ROW_LOOP: return "Loop count";
+            case ROW_ORDER: return "Play order";
             default: return CH_NAMES[r - ROW_CH0];
         }
     }

@@ -734,7 +734,7 @@ public class Ay2Midi {
         {21, 108},   // A0-C8 全键盘
     };
     public static final String[] NOISE_MAP_NAMES = {
-        "C4中央", "C4最高", "88键平均"
+        "C4 center", "C4 top", "88 keys"
     };
     private int noiseMapMode = 1;
     /** 包络八度：锯齿族（含衰减/交替，32 步）与三角（64 步）分开调。 */

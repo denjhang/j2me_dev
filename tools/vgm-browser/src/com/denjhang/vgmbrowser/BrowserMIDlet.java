@@ -68,4 +68,20 @@ public class BrowserMIDlet extends MIDlet {
     int trackCount() {
         return list.entryCount();
     }
+
+    /** 后台播放是否存活。 */
+    boolean playerAlive() {
+        return play != null;
+    }
+
+    void refreshListNowPlaying() {
+        list.refreshNowPlaying();
+    }
+
+    /** 回到正在播放的界面。 */
+    void showPlayer() {
+        if (play != null) {
+            Display.getDisplay(this).setCurrent(play);
+        }
+    }
 }

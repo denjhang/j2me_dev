@@ -497,7 +497,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 键盘底图（静态，烘焙一次）：白键、黑键凹槽、通道色标、灭灯 TNE 字符。 */
     private void drawKeyStripBase(Graphics g, int y, int ch, int w) {
         int kx = 4 + 5;
-        int kw = w - 8 - 5 - 22;
+        int kw = w - 8 - 5 - 26;      // 右侧 26px = 3 个 8px 字符槽 + 边距
         float step = (float) kw / WHITE_COUNT;
         int keyW = (int) step;
         if (keyW < 1) {
@@ -534,7 +534,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             int wi = WHITE_IDX[n - 1] + 1;
             g.fillRect(kx + (int) (wi * step) - bw + 1, y, bw, bh);
         }
-        int lx = w - 8 - 24 - 4;
+        int lx = kx + kw + 2;         // 键盘终点 + 2px
         g.setFont(tiny);
         g.setColor(0x6A7488);
         g.drawString("T", lx, y + h, Graphics.BASELINE | Graphics.LEFT);
@@ -595,7 +595,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
 
         g.setFont(tiny);
-        int lx = builtW - 8 - 24 - 4;
+        int lx = builtW - 8 - 26 + 2; // 与底图同一位置
         if (ay.visToneActive(ch)) {
             g.setColor(levelColor(CH_COLORS[ch], ay.visSmoothLevel(ch)));
             g.drawString("T", lx, y + h, Graphics.BASELINE | Graphics.LEFT);

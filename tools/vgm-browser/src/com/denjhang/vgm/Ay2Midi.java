@@ -556,8 +556,28 @@ public class Ay2Midi {
         }
     }
 
+    /** 慢/快包络分界：包络波形频率低于此值按音量模拟（约 20Hz 听感分界）。 */
+    private static final int ENV_TONE_MIN_HZ = 20;
+
+    /**
+     * 包络作为波形的输出频率 = clock / (16 × period × steps)（yasp11 同款）。
+     * 64 步三角在分母里自然比 32 步锯齿低一个八度。
+     * period=0 按硬件语义视为 1。
+     */
+    private int envWaveHz() {
+        int steps = shapeSteps();
+        if (steps == 0) {
+            return 0;
+        }
+        int period = envelopePeriod();
+        if (period == 0) {
+            period = 1;
+        }
+        return (int) (clock / 16L / period / steps);
+    }
+
     private boolean isBuzzer(int ch) {
-        return envMode(ch) && envelopePeriod() < 200 && shapeSteps() > 0;
+        return envMode(ch) && envWaveHz() >= ENV_TONE_MIN_HZ;
     }
 
     private int envelopePeriod() {
@@ -691,7 +711,7 @@ public class Ay2Midi {
     }
 
     private void updateBuzzerPitch(int ch) {
-        int hz = channelFreq(ch);
+        int hz = envWaveHz();
         if (!buzzer[ch] || hz <= 0) {
             if (buzzSrc == ch && buzzNote >= 0) {
                 send(NOTE_OFF | BUZZER, buzzNote, 0);
@@ -700,11 +720,9 @@ public class Ay2Midi {
             }
             return;
         }
+        // 音高来自包络自身频率（updateBuzzerPitch 的 hz 参数即 envWaveHz），
+        // 32/64 步的八度差已包含在公式分母里
         long n144 = note144(hz);
-        // 64 步三角波形周期翻倍 → 低一个八度；32 步锯齿为基准
-        if (shapeSteps() == 64) {
-            n144 -= 12L * 65536;
-        }
         if (n144 < 0 || n144 > 127L * 65536) {
             return;
         }

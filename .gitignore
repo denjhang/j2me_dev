@@ -1,0 +1,19 @@
+# 只入库文档与自研代码；工具/模拟器/参考源码/素材（约 878MB）留本地
+tools/
+emulators/
+references/
+assets/
+
+# 构建产物
+build/
+out/
+*.class
+*.jar
+*.jad
+
+# 系统/编辑器
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.iml

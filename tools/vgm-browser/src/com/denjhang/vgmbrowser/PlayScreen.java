@@ -83,7 +83,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int loopPlays;
     private boolean shuffle;
     private int masterVol = 100;
-    private int lastKeyOct = 5;
 
     private final java.util.Random rng = new java.util.Random();
     private final Font small;
@@ -386,15 +385,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         st.append("  音量").append(masterVol);
         g.drawString(st.toString(), 6, sy, Graphics.TOP | Graphics.LEFT);
 
-        // 三个钢琴键盘
-        int py = sy + 18;
-        int kbH = h - py - 22;
-        int per = kbH / 3;
-        if (per > 40) {
-            per = 40;
-        }
+        // 三条像素风 88 键横条
+        int py = sy + 16;
         for (int ch = 0; ch < 3; ch++) {
-            drawKeyboard(g, 6, py + ch * per, w - 12, per - 4, ch);
+            drawKeyStrip(g, 4, py + ch * 17, w - 8, 15, ch);
         }
 
         g.setColor(0x4A5568);
@@ -408,104 +402,112 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
     }
 
-    /** 单个 AY 声道的键盘：两八度窗口跟随当前音，双芯片叠色。 */
-    private void drawKeyboard(Graphics g, int x, int y, int w, int h, int ch) {
+    // ---------------- 像素风 88 键横条 ----------------
+
+    private static final int FIRST_NOTE = 21;    // A0
+    private static final int LAST_NOTE = 108;    // C8
+    private static final int WHITE_COUNT = 52;
+    private static final boolean[] BLACK_PC = {
+        false, true, false, true, false, false,
+        true, false, true, false, true, false
+    };
+    /** note → 白键序号（0..51），黑键为 -1。 */
+    private static final int[] WHITE_IDX = new int[128];
+    static {
+        int wi = 0;
+        for (int n = FIRST_NOTE; n <= LAST_NOTE; n++) {
+            if (BLACK_PC[n % 12]) {
+                WHITE_IDX[n] = -1;
+            } else {
+                WHITE_IDX[n] = wi++;
+            }
+        }
+    }
+
+    /**
+     * 单声道 88 键横条：52 白键满宽（约 4px/键），黑键为顶部短凹槽。
+     * 活动键点通道色（电平调亮度）；双芯片同键左右各半。
+     */
+    private void drawKeyStrip(Graphics g, int x, int y, int w, int h, int ch) {
         int note1 = ay.visNote(ch);
         int note2 = ay2 != null ? ay2.visNote(ch) : -1;
-        boolean noise1 = ay.visNoise(ch);
-        boolean noise2 = ay2 != null && ay2.visNoise(ch);
 
-        int ref = note1 >= 0 ? note1 : note2;
-        if (ref >= 0) {
-            lastKeyOct = ref / 12;
+        // 左缘通道色标（4px）
+        g.setColor(CH_COLORS[ch]);
+        g.fillRect(x, y, 3, h);
+        int kx = x + 5;
+        int kw = w - 5;
+        int keyW = kw / WHITE_COUNT;
+        if (keyW < 3) {
+            keyW = 3;
         }
-        int octBase = lastKeyOct;
-
-        int keyH = h - 10;
-        int whiteW = w / 14;
-        if (whiteW < 8) {
-            whiteW = 8;
+        int bh = h * 5 / 8;      // 黑键凹槽高度
+        int bw = keyW / 2;
+        if (bw < 2) {
+            bw = 2;
         }
 
-        for (int i = 0; i < 14; i++) {
-            int note = (octBase + i / 7) * 12 + WHITE_PC[i % 7];
-            int c1 = keyColor(note, note1, ay.visLevel(ch), CH_COLORS[ch]);
-            int c2 = ay2 != null
-                    ? keyColor(note, note2, ay2.visLevel(ch), CH2_COLORS[ch]) : -1;
-            int kx = x + i * whiteW;
-            if (c1 >= 0 && c2 >= 0) {
-                g.setColor(0xD8D8D8);
-                g.fillRect(kx, y + 10, whiteW, keyH);
-                g.setColor(c1);
-                g.fillRect(kx, y + 10, whiteW / 2, keyH);
-                g.setColor(c2);
-                g.fillRect(kx + whiteW / 2, y + 10, whiteW - whiteW / 2, keyH);
-            } else if (c1 >= 0 || c2 >= 0) {
-                g.setColor(c1 >= 0 ? c1 : c2);
-                g.fillRect(kx, y + 10, whiteW, keyH);
-            } else {
-                g.setColor(0xD8D8D8);
-                g.fillRect(kx, y + 10, whiteW, keyH);
+        // 白键底色（1px 缝隙造像素感）
+        for (int i = 0; i < WHITE_COUNT; i++) {
+            g.setColor(0xBEC2CC);
+            g.fillRect(kx + i * keyW, y, keyW - 1, h);
+        }
+        // 活动白键点亮
+        int w1 = inRange(note1) ? WHITE_IDX[note1] : -1;
+        int w2 = inRange(note2) ? WHITE_IDX[note2] : -1;
+        if (w1 >= 0 && w2 >= 0 && w1 == w2) {
+            int c1 = keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]);
+            int c2 = keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]);
+            g.setColor(c1);
+            g.fillRect(kx + w1 * keyW, y, (keyW - 1) / 2, h);
+            g.setColor(c2);
+            g.fillRect(kx + w1 * keyW + (keyW - 1) / 2, y, keyW - 1 - (keyW - 1) / 2, h);
+        } else {
+            if (w1 >= 0) {
+                g.setColor(keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]));
+                g.fillRect(kx + w1 * keyW, y, keyW - 1, h);
             }
-            g.setColor(0x30343C);
-            g.drawRect(kx, y + 10, whiteW, keyH);
+            if (w2 >= 0) {
+                g.setColor(keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]));
+                g.fillRect(kx + w2 * keyW, y, keyW - 1, h);
+            }
         }
-        for (int i = 0; i < 14; i++) {
-            int pc = WHITE_PC[i % 7];
-            int black = blackAfter(pc);
-            if (black < 0) {
+        // 黑键凹槽
+        for (int n = FIRST_NOTE; n <= LAST_NOTE; n++) {
+            if (WHITE_IDX[n] >= 0) {
                 continue;
             }
-            int note = (octBase + i / 7) * 12 + black;
-            int kx = x + (i + 1) * whiteW - whiteW / 4;
-            int bw = whiteW / 2;
-            if (keyOn(note, note1) || keyOn(note, note2)) {
-                g.setColor(keyOn(note, note1) ? CH_COLORS[ch] : CH2_COLORS[ch]);
-                g.fillRect(kx, y + 10, bw, keyH / 2);
-                g.setColor(0x10131A);
-                g.fillRect(kx, y + 10 + keyH / 2, bw, keyH - keyH / 2);
+            int wi = WHITE_IDX[n - 1] + 1;
+            int bx = kx + wi * keyW - bw + 1;
+            if (n == note1 && n == note2) {
+                g.setColor(CH_COLORS[ch]);
+                g.fillRect(bx, y, bw / 2, bh);
+                g.setColor(CH2_COLORS[ch]);
+                g.fillRect(bx + bw / 2, y, bw - bw / 2, bh);
+            } else if (n == note1) {
+                g.setColor(CH_COLORS[ch]);
+                g.fillRect(bx, y, bw, bh);
+            } else if (n == note2) {
+                g.setColor(CH2_COLORS[ch]);
+                g.fillRect(bx, y, bw, bh);
             } else {
-                g.setColor(0x10131A);
-                g.fillRect(kx, y + 10, bw, keyH - 4);
+                g.setColor(0x14161C);
+                g.fillRect(bx, y, bw, bh);
             }
         }
-
-        g.setFont(tiny);
-        g.setColor(CH_COLORS[ch]);
-        g.drawString("Ch" + "ABC".charAt(ch), x, y, Graphics.TOP | Graphics.LEFT);
-        g.setColor(0x707A88);
-        g.drawString("C" + (octBase - 1) + "-C" + octBase, x + 26, y,
-                Graphics.TOP | Graphics.LEFT);
-        if (noise1 || noise2) {
+        // 噪声指示（右端像素点）
+        if (ay.visNoise(ch) || (ay2 != null && ay2.visNoise(ch))) {
             g.setColor(0x9AA4B4);
-            g.fillArc(x + w - 10, y, 7, 7, 0, 360);
-            g.setColor(0x4A5568);
-            g.drawArc(x + w - 10, y, 7, 7, 0, 360);
+            g.fillRect(x + w - 3, y, 3, h);
         }
     }
 
-    private static final int[] WHITE_PC = {0, 2, 4, 5, 7, 9, 11};
-
-    private static int blackAfter(int pc) {
-        switch (pc) {
-            case 0: return 1;
-            case 2: return 3;
-            case 4: return -1;
-            case 5: return 6;
-            case 7: return 8;
-            case 9: return 10;
-            default: return -1;
-        }
+    private static boolean inRange(int note) {
+        return note >= FIRST_NOTE && note <= LAST_NOTE;
     }
 
-    private static boolean keyOn(int note, int active) {
-        return active == note;
-    }
-
+    /** 键位高亮色：电平越高越亮。 */
     private static int keyColor(int note, int active, int level, int base) {
-        if (active != note) {
-            return -1;
-        }
         int r = (base >> 16) & 0xFF;
         int gr = (base >> 8) & 0xFF;
         int b = base & 0xFF;

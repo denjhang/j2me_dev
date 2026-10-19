@@ -589,6 +589,11 @@ public class Ay2Midi {
                 envLastCC[ch] = v;
                 curVol[ch] = v;
                 send(CC | toneCh[ch], CC_EXPRESSION, v);
+                // 噪声门共用同一幅度源：mixer 开着噪声时同步复制
+                if ((regs[7] & (0x8 << ch)) == 0) {
+                    noiseVol[ch] = v;
+                    send(CC | noiseCh[ch], CC_EXPRESSION, v);
+                }
             }
         }
     }
@@ -681,26 +686,29 @@ public class Ay2Midi {
 
         int atten = regs[8 + ch] & 0x0F;
 
-        // 方波音量：蜂鸣器走独立通道；慢包络近似固定 100
+        // 声道当前电平 v：固定音量 / 慢包络仿真 / 快包络波形近似。
+        // 这是该声道唯一的幅度源——方波门和噪声门都乘它（硬件语义）。
         int v;
         if (buzz) {
-            v = -1;
+            v = 100;                   // 波形近似的等效电平（噪声门共用）
         } else if (envMode(ch)) {
             v = envLevelCC();          // 慢包络：软件仿真电平
         } else {
             v = ATTN_TO_VOL[atten];
         }
-        if (v >= 0 && v != curVol[ch]) {
-            curVol[ch] = v;
-            send(CC | toneCh[ch], CC_EXPRESSION, v);
+
+        // 方波音量（蜂鸣器模式下声音走包络通道，方波通道静音）
+        int toneV = buzz ? 0 : v;
+        if (toneV != curVol[ch]) {
+            curVol[ch] = toneV;
+            send(CC | toneCh[ch], CC_EXPRESSION, toneV);
         }
 
-        // 噪声声道：音量完全复制对应方波通道（AY 同一音量寄存器管两者）
-        boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && atten > 0;
-        int nv = noiseOn ? ATTN_TO_VOL[atten] : 0;
-        if (nv > 0 && nv != noiseVol[ch]) {
-            noiseVol[ch] = nv;
-            send(CC | noiseCh[ch], CC_EXPRESSION, nv);
+        // 噪声：没有独立音量计算器，直接复用同一电平 v
+        boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && v > 0;
+        if (noiseOn && v != noiseVol[ch]) {
+            noiseVol[ch] = v;
+            send(CC | noiseCh[ch], CC_EXPRESSION, v);
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;

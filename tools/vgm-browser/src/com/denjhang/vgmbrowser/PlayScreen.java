@@ -388,6 +388,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         st.append(shuffle ? "  shuf #" : "  #").append(listIndex + 1);
         st.append("  vol ").append(masterVol);
         g.drawString(st.toString(), 6, sy, Graphics.TOP | Graphics.LEFT);
+        if (err != null) {
+            g.setColor(0xFF7C7C);
+            g.drawString(clip(err, 26), 6, sy + 14, Graphics.TOP | Graphics.LEFT);
+        }
 
         // ---- 三条像素钢琴条 ----
         int py = sy + 16;
@@ -398,6 +402,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         // ---- GD3 标签表（键盘下方，带表头，自适应行数）----
         int ty = py + 3 * 17 + 4;
         int colX = w * 30 / 100;
+        com.denjhang.vgm.VgmHeader hd = file.header;
         g.setFont(tiny);
         g.setColor(0x3A4656);
         g.drawLine(4, ty - 2, w - 4, ty - 2);
@@ -406,34 +411,73 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.drawString("INFO", colX, ty, Graphics.TOP | Graphics.LEFT);
         ty += 14;
 
+        // GD3 全部文本字段：本地名 + 英文名成对显示，长值自动换行
         String[][] rows = {
-            {"title", pick(file.header.gd3Title, file.header.gd3TitleEn)},
-            {"game", pick(file.header.gd3Game, file.header.gd3GameEn)},
-            {"artist", pick(file.header.gd3Artist, file.header.gd3ArtistEn)},
-            {"date", file.header.gd3Date},
-            {"ripper", file.header.gd3Ripper},
-            {"notes", file.header.gd3Notes},
+            {"title", hd.gd3Title},
+            {"title (en)", hd.gd3TitleEn},
+            {"game", hd.gd3Game},
+            {"game (en)", hd.gd3GameEn},
+            {"artist", hd.gd3Artist},
+            {"artist (en)", hd.gd3ArtistEn},
+            {"date", hd.gd3Date},
+            {"ripper", hd.gd3Ripper},
+            {"notes", hd.gd3Notes},
         };
-        int bottom = h - 18;
+        int bottom = h - 4;
         g.setColor(0xAAB4C4);
         for (int i = 0; i < rows.length && ty < bottom; i++) {
-            if (rows[i][1].length() == 0) {
+            String val = rows[i][1];
+            if (val == null || val.length() == 0) {
                 continue;
             }
             g.drawString(rows[i][0], 6, ty, Graphics.TOP | Graphics.LEFT);
-            g.drawString(clip(rows[i][1], 30), colX, ty, Graphics.TOP | Graphics.LEFT);
-            ty += 13;
+            String[] lines = wrap(val, tiny, w - colX - 8);
+            for (int li = 0; li < lines.length && ty < bottom; li++) {
+                g.drawString(lines[li], colX, ty, Graphics.TOP | Graphics.LEFT);
+                ty += 13;
+            }
         }
+    }
 
-        // ---- 底部提示 ----
-        g.setColor(0x4A5568);
-        g.drawString("<> track  ^ v vol  5 play  # set", 6, h - 16,
-                Graphics.TOP | Graphics.LEFT);
-
-        if (err != null) {
-            g.setColor(0xFF7C7C);
-            g.drawString(clip(err, 26), 6, h - 30, Graphics.TOP | Graphics.LEFT);
+    /** 按像素宽换行（按空格分词；单词超宽时硬切）。 */
+    private static String[] wrap(String text, Font f, int maxW) {
+        java.util.Vector lines = new java.util.Vector();
+        StringBuffer cur = new StringBuffer();
+        int pos = 0;
+        while (pos < text.length()) {
+            int sp = text.indexOf(' ', pos);
+            String word;
+            if (sp < 0) {
+                word = text.substring(pos);
+                pos = text.length();
+            } else {
+                word = text.substring(pos, sp + 1);
+                pos = sp + 1;
+            }
+            if (f.stringWidth(word) > maxW && word.length() > 2) {
+                for (int i = 0; i < word.length(); i++) {
+                    cur.append(word.charAt(i));
+                    if (f.stringWidth(cur.toString()) > maxW) {
+                        lines.addElement(cur.toString());
+                        cur.setLength(0);
+                    }
+                }
+                continue;
+            }
+            if (f.stringWidth(cur.toString() + word) > maxW && cur.length() > 0) {
+                lines.addElement(cur.toString());
+                cur.setLength(0);
+            }
+            cur.append(word);
         }
+        if (cur.length() > 0 || lines.size() == 0) {
+            lines.addElement(cur.toString());
+        }
+        String[] r = new String[lines.size()];
+        for (int i = 0; i < r.length; i++) {
+            r[i] = (String) lines.elementAt(i);
+        }
+        return r;
     }
 
     // ---------------- 像素风 88 键横条 ----------------

@@ -33,7 +33,7 @@ public class FileListScreen extends List implements CommandListener {
     private final Command cmdRefresh = new Command("Refresh", Command.SCREEN, 3);
     private final Command cmdTone = new Command("Square wave test", Command.SCREEN, 4);
     private final Command cmdInfo = new Command("About", Command.SCREEN, 5);
-    private final Command cmdNow = new Command("Now playing", Command.OK, 0);
+    private final Command cmdNow = new Command("Now playing", Command.SCREEN, 0);
 
     private final Vector entries = new Vector();  // Entry
 

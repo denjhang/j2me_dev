@@ -257,7 +257,7 @@ public class Ay2Midi {
         // CC7 (Main Volume) 固定 127，CC11 (Expression) 做动态音量
         for (int i = 0; i < CHANNELS; i++) {
             send(CC | i, CC_VOLUME, 127);
-            send(CC | i, CC_EXPRESSION, 0);
+            send(CC | i, CC_EXPRESSION, i == BUZZER ? 127 : 0);
             send(CC | i, 123, 0);   // All notes off
         }
         for (int i = 0; i < 3; i++) {
@@ -504,8 +504,8 @@ public class Ay2Midi {
             buzzSrc = ch;
             buzzNote = note;
             send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
-            send(CC | BUZZER, CC_EXPRESSION, 127);
-            send(NOTE_ON | BUZZER, note, 100);
+            send(CC | BUZZER, CC_EXPRESSION, 127);  // 蜂鸣器固定最大音量
+            send(NOTE_ON | BUZZER, note, 127);
         } else if (Math.abs(bend - curBend[ch]) > 4) {
             send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
         }

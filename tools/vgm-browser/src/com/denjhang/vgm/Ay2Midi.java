@@ -643,24 +643,17 @@ public class Ay2Midi {
     }
 
     /**
-     * 噪声音高映射（emu2149 同款换算）：
-     * 噪声频率 = clock / 16 / ((R6 & 0x1F) << 1)，R6=0 按除数 2 处理。
-     * 超出 MIDI 音域时钳位到 127（高频噪声本就是"尖"的听感）。
+     * 噪声音高映射：不按声学频率换算，而是把 R6 的 32 级
+     * 均匀摊到钢琴键位上——最高频端 = C8(108)，最低频端 = A0(21)。
+     * 每级一个键，单调分布，听感上"高周期=低音、低周期=高音"。
      */
+    private static final int NOISE_NOTE_LOW = 21;    // A0
+    private static final int NOISE_NOTE_HIGH = 108;  // C8
+
     private void updateNoisePitch() {
-        int per = (regs[6] & 0x1F) << 1;
-        if (per == 0) {
-            per = 2;
-        }
-        int hz = (int) (clock / 16L / per);
-        long n144 = note144(hz);
-        if (n144 > 127L * 65536) {
-            n144 = 127L * 65536;
-        }
-        if (n144 < 0) {
-            return;
-        }
-        int note = (int) ((n144 + 32768) / 65536);
+        int r6 = regs[6] & 0x1F;
+        int note = NOISE_NOTE_HIGH
+                - r6 * (NOISE_NOTE_HIGH - NOISE_NOTE_LOW) / 31;
         int curSemi = noiseNote + noiseBendSemi;   // 当前实际音高（基准+弯音）
         if (note == curSemi) {
             return;

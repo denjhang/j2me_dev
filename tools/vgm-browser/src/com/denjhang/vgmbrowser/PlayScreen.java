@@ -441,7 +441,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.setColor(CH_COLORS[ch]);
         g.fillRect(x, y, 3, h);
         int kx = x + 5;
-        int kw = w - 5 - 28;      // 右侧 28px 留给 T/N/E 指示灯
+        int kw = w - 5 - 21;      // 右侧仅留 3 个字符位给 T/N/E
         int keyW = kw / WHITE_COUNT;
         if (keyW < 3) {
             keyW = 3;
@@ -518,38 +518,31 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             markKey(g, kx, y, keyW, bw, bh, h, ay2.visEnvNote(), COL_ENV2);
         }
 
-        // T/N/E 门位指示灯（左半=芯片1，右半=芯片2）
-        drawGateLamp(g, x + w - 28, y, h, 0,
+        // T/N/E 像素字符指示：点亮变色（芯片1优先，仅芯片2开用二片色），无色块
+        gateChar(g, x + w - 21, y, h, "T",
                 ay.visToneGate(ch), CH_COLORS[ch],
                 ay2 != null && ay2.visToneGate(ch), CH2_COLORS[ch]);
-        drawGateLamp(g, x + w - 19, y, h, 1,
+        gateChar(g, x + w - 14, y, h, "N",
                 ay.visNoiseGate(ch), COL_NOISE,
                 ay2 != null && ay2.visNoiseGate(ch), COL_NOISE2);
-        drawGateLamp(g, x + w - 10, y, h, 2,
+        gateChar(g, x + w - 7, y, h, "E",
                 ay.visEnvGate(ch), COL_ENV,
                 ay2 != null && ay2.visEnvGate(ch), COL_ENV2);
     }
 
-    /** 8px 宽指示灯：亮=半分双芯片颜色，灭=暗底；字母叠印。 */
-    private void drawGateLamp(Graphics g, int lx, int y, int h, int which,
-                              boolean on1, int col1, boolean on2, int col2) {
-        g.setColor(0x1B2430);
-        g.fillRect(lx, y, 8, h);
+    /** 一个 7px 字符位：开=对应色，关=暗灰。 */
+    private void gateChar(Graphics g, int cx, int y, int h, String letter,
+                          boolean on1, int col1, boolean on2, int col2) {
+        int col = 0x2A3038;
         if (on1) {
-            g.setColor(col1);
-            g.fillRect(lx, y, 4, h);
-        }
-        if (on2) {
-            g.setColor(col2);
-            g.fillRect(lx + 4, y, 4, h);
+            col = col1;
+        } else if (on2) {
+            col = col2;
         }
         g.setFont(tiny);
-        g.setColor(on1 || on2 ? 0x0C1118 : 0x4A5568);
-        g.drawString(GATE_LETTERS[which], lx + 4, y + h / 2,
-                Graphics.BASELINE | Graphics.HCENTER);
+        g.setColor(col);
+        g.drawString(letter, cx, y + h / 2, Graphics.BASELINE | Graphics.LEFT);
     }
-
-    private static final String[] GATE_LETTERS = {"T", "N", "E"};
 
     /** 在横条上标记一个键：白键整高，黑键凹槽整块。 */
     private void markKey(Graphics g, int kx, int y, int keyW, int bw,

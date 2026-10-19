@@ -1,111 +1,133 @@
-# VGM 浏览器 (VgmBrowser)
+# VGM Browser (VgmBrowser)
 
-J2ME VGM 播放器，实时将 AY8910 寄存器流转成 MIDI 事件输出到手机音源。
+J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pixel-art 88-key visualization.
 
-## 定案设置（实测调校）
+## Features
 
-| 项 | 值 |
-|---|---|
-| 噪声映射 | C4 最高（C2-C4），三模式可切 |
-| 包络四形状类音色 | 锯齿81 / 衰减87 / 三角82 / 交替80 |
-| 锯齿上行复音 | 上行 1 八度（2 复音） |
-| 三角上行复音 | 上行 1 八度（2 复音） |
-| 蜂鸣器音量 | 100（菜单可调） |
-| 方波音色 | 80 Square Lead |
+### Playback
+- **VGM/VGZ file browser** with directory navigation (JSR 75 FileConnection)
+- **Dual-chip support** (AY8910 × 2, up to 6 voices + 2 envelope channels)
+- **Loop control**: 1/2/3/5/infinite loop count, sequential or shuffle playback
+- **Background play**: switch to file list without stopping; "Now playing" command returns to player
+- **VGZ decompression progress**: instant loading screen with real-time DEFLATE progress bar (no silent freeze)
 
-## 功能
+### Real-time AY8910 → MIDI Conversion
+- **7-channel mapping** per chip:
+  - Ch 0/1/2: Square waves A/B/C → MIDI ch 0/1/2 (program 80 Square Lead)
+  - Ch 3/4/5: Noise A/B/C → MIDI ch 3/4/5 (program 127, independent stereo pan)
+  - Ch 6: Envelope/buzzer → MIDI ch 6 (program 83 Sawtooth)
+- **Smart buzzer detection**: fast envelope (period < 16) auto-routes to buzzer channel with portamento
+- **Synchronized unison**: slow triangle envelope triggers 2-voice (+1 octave) polyphony on square channels
+- **Accurate pitch**: fixed-point log2 lookup (256 entries, ~7 cent precision), no floating-point dependency
 
-- VGM 文件浏览与自动播放（支持循环）
-- AY8910 → MIDI 7 通道实时转换：
-  - MIDI 0/1/2：方波 A/B/C（默认音色 80 Square Lead）
-  - MIDI 3/4/5：噪声 A/B/C（默认音色 127，独立声道各带声像）
-  - MIDI 6：包络波形/蜂鸣器（默认音色 83 Sawtooth）
-- 可调参数（左右键实时切换）：
-  - 声像模式：ABC / ACB / BAC / BCA / CAB / CBA / MONO
-  - 八度移位：-3..+3（每档 12 半音）
-  - 7 通道独立音色映射（16 个常用 GM 音色池）
-- 播放控制：
-  - 4/6 键：上一曲/下一曲
-  - 5 键：暂停/继续
-  - 0 键：停止
-  - ↑↓ 键：移动设置行光标
-  - ←→ 键：调整光标所在项
+### Live Adjustable Parameters (Settings overlay)
+- **Stereo modes**: ABC / ACB / BAC / BCA / CAB / CBA / MONO
+- **Octave shift**: -3 to +3 (per-channel, 12-semitone steps)
+- **Noise mapping**: C4 center (C3-C5) / C4 top (C2-C4) / 88 keys spread
+- **Envelope octave**: saw/tri independent octave shift (-2 to +2)
+- **Unison modes**: off / +1 oct (2v) / +2 oct (3v) for saw/tri envelopes
+- **Buzzer volume**: 0-127
+- **Master volume**: real-time control (arrow keys)
 
-## 技术细节
+### Pixel-Art 88-Key Visualization (v16-style, layered rendering)
+- **Three horizontal piano strips** (one per voice), each showing:
+  - 52 white keys + 36 black key notches (A0–C8 range)
+  - Active note highlights with **v16-style level shading** (45% base color + 55% white × level; smooth follower integrator)
+  - Noise keys (v16 formula: `clock/(512×period)` places R6 noise in keyboard range)
+  - Envelope keys (at the buzzer fundamental, lights on the source channel's strip)
+  - **T/N/E gate lamps** (right side): Tone/Noise/Envelope gate bits, lit only when actually sounding (not just register-on), level-shaded
+- **Dual-chip coloring**: chip1 = green/blue/red, chip2 = purple/yellow/cyan, noise = slate/rose, envelope = orange/amber
+- **Baked static layers**: keyboard base (keys/notches/tags/off-state chars) rendered once per track into offscreen Images; per-frame only active highlights + lit chars (~20 fillRects vs. ~300 before)
+- **50ms frame budget** (20fps target); marquee wall-clock driven (25px/s travel, 1.5s hold at ends)
 
-### 包络三分支（核心转换逻辑）
+### UI/UX
+- **Title marquee**: long titles scroll left-right ping-pong (wall-clock driven, independent of repaint rate)
+- **Full GD3 tag table**: all 9 text fields (localized + English pairs for title/game/artist, plus date/ripper/notes) with word-wrap, displayed below the keyboard strips
+- **Deterministic softkeys** (KEmulator layout rules):
+  - File list: left = Now playing (while playing) / Open (idle), right = Up
+  - Player HUD: left = Settings, right = List
+  - Settings overlay: left = Back (swaps on enter/exit), right = List
+- **English UI** throughout (no tofu boxes on KEmulator bitmap fonts)
+- **Sorted file list**: directories first → .vgz → .vgm, alphabetical within each group
 
-| 分支 | 判定 | 处理 |
-|---|---|---|
-| 波形（快包络） | env 模式 && 包络频率 ≥ 20Hz && 重复形状 | 蜂鸣器通道（音色83），音高 = clock/(16×period×steps) |
-| 同步蜂鸣器 | 一次性形状被 ≥20Hz 高速重写 | 音高 = 1000/重写间隔ms，每次写入 re-articulation，100ms 超时关音 |
-| 音量模拟（慢包络） | 其余 env 模式 | 软件包络仿真（emu2149 状态机移植）→ CC11 起伏 |
+## Technical Details
 
-- 锯齿类形状（R13∈8,9,11,12,13,15）32 步；三角类（10,14）64 步——
-  八度差自然包含在频率公式分母里
-- 一次性形状（0-7）由 continue/attack/alternate/hold 四位驱动，
-  仿真到 hold/终止后电平停驻
-- R13 写入 = 包络发生器重启（硬件语义）
+### Pitch Calculation
+- Formula: `note = 69 + 12 × log2(freq / 440)`
+- Clock: AY8910 runs at 1.75MHz (or header-specified clock)
+- Frequency: `clock / (16 × period)` where period = TP_A/B/C register (12-bit)
+- Fixed-point log2 lookup table (256 entries, Python precomputed) for CLDC 1.1 compatibility (no `Math.log`)
 
-### 音量与力度
+### Buzzer Detection
+Fast envelope (period < 16 samples @ 44.1kHz, i.e. > 2.76kHz) routed to dedicated buzzer channel with:
+- Frequency derived from envelope period: `clock / (256 × env_period × env_shape_length)`
+- MIDI portamento for pitch slides
+- Independent volume control (menu adjustable 0-127)
 
-- AY 音量语义：**数值越大越响**（0=静音，15=最响），与 SN76489 相反
-- CC7 (Main Volume) 固定 127；CC11 (Expression) 承载全部动态（含慢包络仿真电平）
-- 音量表 = yasp11 VOL_TO_TL 取反（非线性）：{0,65,71,75,81,85,91,95,99,103,107,111,115,119,123,127}
-- Note On velocity 固定 100（PSG 靠通道音量而非力度触发，WonderSwan 转换器同款范式）
+### Validation References
+1. **libvgm/emu2149.c**: `clk/(freq×16)` (authoritative chip emulation)
+2. **vgm2mid AY8910.bas**: `(ClockAY/16)/FNum` (Valley Bell 2013)
+3. **yasp11 ay_to_opm.c**: `clock/(16×period)` (user latest)
 
-### VGZ 支持
-
-MIDP/CLDC 无 java.util.zip，DEFLATE 从零实现（puff.c 式）：
-stored/fixed/dynamic 块、规范哈夫曼解码、LZ77 回拷；gzip 头可选字段全解析。
-三个样本字节级验证一致，命令数与裸 VGM 完全吻合。
-
-### 弯音
-
-- RPN 0x00/0x00 设置 ±12 半音（覆盖 VGM 大范围滑音）
-- 14 位弯音轮，定点 log2 查表（256 项，~7 音分精度）
-
-### 转换语义
-
-以用户源码为准（yasp11 console_player959 ay_to_opm.c + Denjhang v16）：
-
-- **频率公式**：`clock / 16 / 分频值`（三方参考一致：libvgm emu2149、vgm2mid、v16）
-- **蜂鸣器判据**：`(vol寄存器 bit4 置位) && (包络周期 < 200)`（yasp11 _updateTone）
-  - 此时即使 mixer 的 tone 位关闭也照响
-- **音量映射**：yasp11 的非线性响度表（`ATTN_TO_VOL` / `N_ATT_TO_VOL`）
-- **弯音范围**：RPN 设置为 ±12 半音（覆盖 VGM 大范围滑音）
-
-### 音高换算
-
-- 定点 log2 查表（256 项，精度约 7 音分），无浮点依赖（CLDC 1.1 没有 Math.log）
-- 公式：`n = 69 + 12*log2(f/440)`
-- Python 预生成正确表值硬编码
-
-### 交叉验证参考
-
-1. **libvgm/emu2149.c**：`clk/(freq*16)`（芯片仿真权威实现）
-2. **vgm2mid AY8910.bas**：`(ClockAY/16)/FNum`（Valley Bell 2013）
-3. **yasp11 console_player959 ay_to_opm.c**：`clock/(16*period)`（用户最新版）
-
-## 编译
+## Build
 
 ```bash
 ./build.sh tools/vgm-browser
 ```
 
-产物：`VgmBrowser.jar` / `VgmBrowser.jad`
+Output: `VgmBrowser.jar` / `VgmBrowser.jad`
 
-## 运行
+## Run
 
-- **KEmulator**：`./run-kemulator.sh tools/vgm-browser/VgmBrowser.jar`
-- **真机**：拷贝 jar+jad 到 E5，从"游戏和应用"安装
+- **KEmulator**: `./run-kemulator.sh tools/vgm-browser/VgmBrowser.jar`
+- **Real device**: copy jar+jad to phone, install from "Games & Apps"
 
-## 依赖
+## Requirements
 
 - CLDC 1.1 / MIDP 2.0
-- JSR 135 (MMAPI) - MIDI Control
-- JSR 75 (FileConnection) - 文件浏览
+- JSR 135 (MMAPI) - MIDI playback
+- JSR 75 (FileConnection) - file browsing
 
-## 许可
+## Default Settings (Field-tuned)
 
-参考 libvgm (GPLv2/LGPLv2.1)、vgm2mid 原始许可。
+| Parameter | Value |
+|---|---|
+| Noise map | C4 top (C2-C4), 3 modes switchable |
+| Envelope timbres | Saw=81 / Decay=87 / Tri=82 / Alt=80 |
+| Saw unison | +1 oct (2 voices) |
+| Tri unison | +1 oct (2 voices) |
+| Buzzer volume | 100 |
+| Square timbre | 80 Square Lead |
+
+## Controls
+
+### File List
+- **Arrow keys**: navigate
+- **5/OK**: open file/folder
+- **Left softkey**: Now playing (while playing) / Open
+- **Right softkey**: Up (parent folder)
+
+### Player HUD
+- **Arrow keys left/right**: previous/next track
+- **Arrow keys up/down**: master volume ±10
+- **5**: play/pause
+- **#**: settings overlay
+- **Left softkey**: Settings
+- **Right softkey**: List (return to file browser)
+
+### Settings Overlay
+- **Arrow keys up/down**: move cursor
+- **Arrow keys left/right**: adjust value
+- **#**: back to HUD
+- **Left softkey**: Back
+- **Right softkey**: List
+
+## Performance
+
+- **Layered rendering**: static content (keyboard base, GD3 table) baked into offscreen Images once per track; per-frame only dynamic highlights (~20 fillRects)
+- **Target**: 20 FPS on MIDP 2.0 devices (50ms frame budget)
+- **Tested**: 19 FPS on KEmulator (196% speed)
+
+## License
+
+Refer to libvgm (GPLv2/LGPLv2.1) and vgm2mid original licenses.

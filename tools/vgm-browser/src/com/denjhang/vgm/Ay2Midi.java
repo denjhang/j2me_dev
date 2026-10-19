@@ -498,7 +498,8 @@ public class Ay2Midi {
         int bend = centsToBend(cents144);
 
         if (buzzSrc != ch || buzzNote != note) {
-            if (buzzSrc == ch && buzzNote >= 0) {
+            // 无条件关掉旧音符（防止通道切换时复音泄漏）
+            if (buzzNote >= 0) {
                 send(NOTE_OFF | BUZZER, buzzNote, 0);
             }
             buzzSrc = ch;

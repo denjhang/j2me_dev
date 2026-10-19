@@ -47,8 +47,14 @@ public class Ay2Midi {
     private static final int PROG = 0xC0;
     private static final int PITCH = 0xE0;
 
-    /** 弯音范围（半音）：±12 覆盖 VGM 大范围滑音；KEmulator 默认 ±2。 */
-    private static final int BEND_RANGE_SEMITONES = 12;
+    /**
+     * 弯音范围（半音）：±2 = MIDI 默认值（vgm2mid 同款）。
+     * 之前用 ±12 且 RPN 在部分合成器上不生效，弯音值被按 ±2 解释
+     * 导致颤音范围异常放大/缩小。现在直接按 ±2 校准，不依赖 RPN。
+     */
+    private static final int BEND_RANGE_SEMITONES = 2;
+    /** ±2 半音下每半音的弯音步数 = 8192/2 = 4096（vgm2mid PITCHBEND_STEPS_DEFAULT）。 */
+    private static final int BEND_STEPS_PER_SEMI = 4096;
 
     public static final int PROG_SQUARE = 80;
     public static final int PROG_BUZZER = 83;
@@ -1021,14 +1027,14 @@ public class Ay2Midi {
         return 69L * 65536 + 12L * (long) lg;
     }
 
-    /** 音分偏差 → 弯音轮值（14 位，8192 居中）。
-     *  弯音范围 ±BEND_RANGE_SEMITONES 半音 = ±(BEND_RANGE*100) 音分。
+    /**
+     * 音分偏差 → 弯音轮值（14 位，8192 居中）。
+     * vgm2mid 同款：±2 半音范围内每半音 4096 步。
+     * 弯音值 = 8192 + cents × 4096/100（cents 范围 ±50，bend 偏移 ±2048）。
      */
     private int centsToBend(int cents144) {
-        // cents144 = 偏差 * 65536，单位音分
-        // bend = 8192 + cents * 8192 / (BEND_RANGE*100)
         long cents = (long) cents144 * 100 / 65536;
-        long bend = 8192 + cents * 8192 / (BEND_RANGE_SEMITONES * 100);
+        long bend = 8192 + cents * BEND_STEPS_PER_SEMI / 100;
         if (bend < 0) return 0;
         if (bend > 16383) return 16383;
         return (int) bend;
@@ -1055,7 +1061,7 @@ public class Ay2Midi {
             curBend[ch] = bend;
             send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
             send(NOTE_ON | toneCh[ch], note, 100);
-        } else if (Math.abs(bend - curBend[ch]) > 4) {
+        } else if (Math.abs(bend - curBend[ch]) > 40) {
             curBend[ch] = bend;
             send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
         }
@@ -1108,7 +1114,7 @@ public class Ay2Midi {
                     send(NOTE_ON | buzzerCh, n, 127);
                 }
             }
-        } else if (Math.abs(bend - curBend[ch]) > 4) {
+        } else if (Math.abs(bend - curBend[ch]) > 40) {
             send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
         }
     }

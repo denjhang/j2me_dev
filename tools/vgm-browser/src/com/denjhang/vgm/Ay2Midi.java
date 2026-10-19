@@ -589,6 +589,11 @@ public class Ay2Midi {
                 envLastCC[ch] = v;
                 curVol[ch] = v;
                 send(CC | toneCh[ch], CC_EXPRESSION, v);
+                // 噪声门共用同一幅度源：mixer 开着噪声时同步复制
+                if ((regs[7] & (0x8 << ch)) == 0) {
+                    noiseVol[ch] = v;
+                    send(CC | noiseCh[ch], CC_EXPRESSION, v);
+                }
             }
         }
     }
@@ -640,8 +645,8 @@ public class Ay2Midi {
      * 最高频端(R6=0)=C8(108)，最低频端(R6=31)=A0(21)。
      * 只做映射这一件事，其余噪声行为保持旧版。
      */
-    private static final int NOISE_NOTE_LOW = 21;
-    private static final int NOISE_NOTE_HIGH = 108;
+    private static final int NOISE_NOTE_LOW = 36;    // C2
+    private static final int NOISE_NOTE_HIGH = 60;   // C4 封顶（实测定版）
 
     private void updateNoisePitch() {
         int r6 = regs[6] & 0x1F;
@@ -674,26 +679,29 @@ public class Ay2Midi {
 
         int atten = regs[8 + ch] & 0x0F;
 
-        // 方波音量：蜂鸣器走独立通道；慢包络近似固定 100
+        // 声道唯一电平 v：固定音量 / 慢包络仿真 / 快包络波形近似。
+        // 方波门和噪声门都乘它（AY 硬件：一个幅度寄存器管两者）。
         int v;
         if (buzz) {
-            v = -1;
+            v = 100;                   // 波形近似电平（噪声门共用）
         } else if (envMode(ch)) {
             v = envLevelCC();          // 慢包络：软件仿真电平
         } else {
             v = ATTN_TO_VOL[atten];
         }
-        if (v >= 0 && v != curVol[ch]) {
-            curVol[ch] = v;
-            send(CC | toneCh[ch], CC_EXPRESSION, v);
+
+        // 方波音量（蜂鸣器模式下声音走包络通道，方波通道静音）
+        int toneV = buzz ? 0 : v;
+        if (toneV != curVol[ch]) {
+            curVol[ch] = toneV;
+            send(CC | toneCh[ch], CC_EXPRESSION, toneV);
         }
 
-        // 噪声独立声道
-        boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && atten > 0;
-        int nv = noiseOn ? N_ATT_TO_VOL[atten] : 0;
-        if (nv > 0 && nv != noiseVol[ch]) {
-            noiseVol[ch] = nv;
-            send(CC | noiseCh[ch], CC_EXPRESSION, nv);
+        // 噪声：复制对应方波通道的电平（无独立音量计算器）
+        boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && v > 0;
+        if (noiseOn && v != noiseVol[ch]) {
+            noiseVol[ch] = v;
+            send(CC | noiseCh[ch], CC_EXPRESSION, v);
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;

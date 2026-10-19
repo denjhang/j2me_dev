@@ -727,8 +727,8 @@ public class Ay2Midi {
     /** 上行八度复音：0=关 1=+1八度(2复音) 2=+2八度(3复音)。锯齿/三角独立。 */
     private int envUniSaw = 1;   // 定案默认：上行 1 八度（2 复音）
     private int envUniTri = 1;   // 定案默认：上行 1 八度（2 复音）
-    /** 蜂鸣器音量（CC11），默认 110。 */
-    private int buzzVol = 110;
+    /** 蜂鸣器音量（CC11），默认 100。 */
+    private int buzzVol = 100;
 
     public int getNoiseMapMode() {
         return noiseMapMode;

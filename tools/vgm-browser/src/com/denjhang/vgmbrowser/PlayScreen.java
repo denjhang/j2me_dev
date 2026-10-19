@@ -454,10 +454,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             bw = 2;
         }
 
-        // 白键底色（1px 缝隙造像素感）
+        // 白键底色：绘制宽 = 到下一键起点的距离 -1，保证每条缝严格 1px
         for (int i = 0; i < WHITE_COUNT; i++) {
+            int sx = kx + (int) (i * step);
+            int ex = kx + (int) ((i + 1) * step);
+            int wpx = ex - sx - 1;
+            if (wpx < 1) {
+                wpx = 1;
+            }
             g.setColor(0xBEC2CC);
-            g.fillRect(kx + (int) (i * step), y, keyW, h);
+            g.fillRect(sx, y, wpx, h);
         }
         // 活动白键点亮
         int w1 = inRange(note1) ? WHITE_IDX[note1] : -1;
@@ -472,12 +478,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             g.fillRect(px + keyW / 2, y, keyW - keyW / 2, h);
         } else {
             if (w1 >= 0) {
+                int sx = kx + (int) (w1 * step);
+                int ex = kx + (int) ((w1 + 1) * step);
                 g.setColor(keyColor(note1, note1, ay.visLevel(ch), CH_COLORS[ch]));
-                g.fillRect(kx + (int) (w1 * step), y, keyW, h);
+                g.fillRect(sx, y, ex - sx - 1, h);
             }
             if (w2 >= 0) {
+                int sx = kx + (int) (w2 * step);
+                int ex = kx + (int) ((w2 + 1) * step);
                 g.setColor(keyColor(note2, note2, ay2.visLevel(ch), CH2_COLORS[ch]));
-                g.fillRect(kx + (int) (w2 * step), y, keyW, h);
+                g.fillRect(sx, y, ex - sx - 1, h);
             }
         }
         // 黑键凹槽
@@ -521,24 +531,24 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             markKey(g, kx, y, step, keyW, bw, bh, h, ay2.visEnvNote(), COL_ENV2);
         }
 
-        // T/N/E 等距像素字符：各占 8px 槽（含 2px 间隔），槽内居中
+        // T/N/E 等距像素字符：点亮条件 = 门开且实际发声（否则一律灰色）
         for (int i = 0; i < 3; i++) {
             boolean on1, on2;
             int col1, col2;
             if (i == 0) {
-                on1 = ay.visToneGate(ch);
+                on1 = ay.visToneActive(ch);
                 col1 = CH_COLORS[ch];
-                on2 = ay2 != null && ay2.visToneGate(ch);
+                on2 = ay2 != null && ay2.visToneActive(ch);
                 col2 = CH2_COLORS[ch];
             } else if (i == 1) {
-                on1 = ay.visNoiseGate(ch);
+                on1 = ay.visNoiseActive(ch);
                 col1 = COL_NOISE;
-                on2 = ay2 != null && ay2.visNoiseGate(ch);
+                on2 = ay2 != null && ay2.visNoiseActive(ch);
                 col2 = COL_NOISE2;
             } else {
-                on1 = ay.visEnvGate(ch);
+                on1 = ay.visEnvActive(ch);
                 col1 = COL_ENV;
-                on2 = ay2 != null && ay2.visEnvGate(ch);
+                on2 = ay2 != null && ay2.visEnvActive(ch);
                 col2 = COL_ENV2;
             }
             gateChar(g, x + w - 24 + i * 8, y, h, GATE_LETTERS[i],
@@ -572,7 +582,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.setColor(color);
         int wi = WHITE_IDX[note];
         if (wi >= 0) {
-            g.fillRect(kx + (int) (wi * step), y, keyW, h);
+            int sx = kx + (int) (wi * step);
+            int ex = kx + (int) ((wi + 1) * step);
+            g.fillRect(sx, y, ex - sx - 1, h);
         } else {
             int bwi = WHITE_IDX[note - 1] + 1;
             g.fillRect(kx + (int) (bwi * step) - bw + 1, y, bw, bh);

@@ -830,6 +830,32 @@ public class Ay2Midi {
         return (regs[8 + ch] & 0x10) != 0;
     }
 
+    /** 方波实际电平：蜂鸣器模式下方波静音为 0；慢包络用仿真电平。 */
+    public int visToneLevel(int ch) {
+        if (buzzer[ch]) {
+            return 0;
+        }
+        if (envMode(ch)) {
+            return envLevelCC();
+        }
+        return ATTN_TO_VOL[regs[8 + ch] & 0x0F];
+    }
+
+    /** T 灯：方波门开且实际电平 > 0。 */
+    public boolean visToneActive(int ch) {
+        return visToneGate(ch) && visToneLevel(ch) > 0;
+    }
+
+    /** N 灯：噪声门开且声道电平 > 0（噪声无独立音量计算器）。 */
+    public boolean visNoiseActive(int ch) {
+        return visNoiseGate(ch) && visToneLevel(ch) > 0;
+    }
+
+    /** E 灯：包络位且包络确实在出声（快包络看蜂鸣音量，慢包络看电平）。 */
+    public boolean visEnvActive(int ch) {
+        return visEnvGate(ch) && (isBuzzer(ch) ? buzzVol > 0 : envLevelCC() > 0);
+    }
+
     /** 该声道当前电平 0-127（键盘按键亮度参考）。 */
     public int visLevel(int ch) {
         int v = curVol[ch];

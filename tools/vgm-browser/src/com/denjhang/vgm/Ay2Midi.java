@@ -103,6 +103,8 @@ public class Ay2Midi {
     private final int[] noiseVol = new int[3];
     /** 噪声发生器全局共享（一个 R6），三个噪声声道共用同一音高。 */
     private int noiseNote = 60;
+    /** 噪声弯音（相对 noiseNote 的半音偏移，避免持续噪声被重触发切断）。 */
+    private int noiseBendSemi;
 
     private int buzzSrc = -1;
     private int buzzNote = -1;
@@ -659,15 +661,32 @@ public class Ay2Midi {
             return;
         }
         int note = (int) ((n144 + 32768) / 65536);
-        if (note == noiseNote) {
+        int curSemi = noiseNote + noiseBendSemi;   // 当前实际音高（基准+弯音）
+        if (note == curSemi) {
             return;
         }
-        int oldNote = noiseNote;
-        noiseNote = note;
-        for (int ch = 0; ch < 3; ch++) {
-            if (noiseSounding[ch]) {
-                send(NOTE_OFF | noiseCh[ch], oldNote, 0);
-                send(NOTE_ON | noiseCh[ch], noiseNote, 100);
+        int diff = note - curSemi;
+        if (diff > -12 && diff < 12) {
+            // 小音程：弯音滑动，不重触发——持续噪声（长镲/风声）必须连贯
+            noiseBendSemi = note - noiseNote;
+            int bend = 8192 + noiseBendSemi * 8192 / BEND_RANGE_SEMITONES;
+            if (bend < 0) bend = 0;
+            if (bend > 16383) bend = 16383;
+            for (int ch = 0; ch < 3; ch++) {
+                if (noiseSounding[ch]) {
+                    send(PITCH | noiseCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
+                }
+            }
+        } else {
+            // 大跳变（换鼓色）：重触发
+            int oldNote = noiseNote;
+            noiseNote = note;
+            noiseBendSemi = 0;
+            for (int ch = 0; ch < 3; ch++) {
+                if (noiseSounding[ch]) {
+                    send(NOTE_OFF | noiseCh[ch], oldNote, 0);
+                    send(NOTE_ON | noiseCh[ch], noiseNote, 100);
+                }
             }
         }
     }
@@ -713,6 +732,12 @@ public class Ay2Midi {
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
             send(NOTE_ON | noiseCh[ch], noiseNote, 100);
+            if (noiseBendSemi != 0) {
+                int bend = 8192 + noiseBendSemi * 8192 / BEND_RANGE_SEMITONES;
+                if (bend < 0) bend = 0;
+                if (bend > 16383) bend = 16383;
+                send(PITCH | noiseCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
+            }
         } else if (!noiseOn && noiseSounding[ch]) {
             noiseSounding[ch] = false;
             send(NOTE_OFF | noiseCh[ch], noiseNote, 0);

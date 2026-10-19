@@ -90,7 +90,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int masterVol = 100;
 
     private final java.util.Random rng = new java.util.Random();
-    private long marqueeTick;
+    private long marqueeBaseMs;   // 跑马灯时间基准（与重绘频率解耦）
     private final Font small;
     private final Font titleFont;
     private final Font tiny;
@@ -121,6 +121,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             attachChip2();
         }
         startPlay(true);
+        marqueeBaseMs = System.currentTimeMillis();
         midlet.refreshListNowPlaying();
         Thread ui = new Thread(this);
         ui.start();
@@ -338,13 +339,24 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         int tw = titleFont.stringWidth(title);
         int avail = w - 12;
         if (tw > avail) {
-            marqueeTick++;
+            // 按墙钟时间驱动：40ms 走 1px（约 25px/秒），到头折返，头部停 1.5s
             int span = tw - avail + 8;
-            int period = span * 2 + 1;
-            int pos = (int) ((marqueeTick % period));
-            if (pos > span) {
-                pos = span * 2 - pos;
+            int holdMs = 1500;
+            int travelMs = span * 40;
+            int cycle = holdMs * 2 + travelMs * 2;
+            long t = (System.currentTimeMillis() - marqueeBaseMs) % cycle;
+            int pos;
+            if (t < holdMs) {
+                pos = 0;
+            } else if (t < holdMs + travelMs) {
+                pos = (int) ((t - holdMs) / 40);
+            } else if (t < holdMs * 2 + travelMs) {
+                pos = span;
+            } else {
+                pos = span - (int) ((t - holdMs * 2 - travelMs) / 40);
             }
+            if (pos < 0) pos = 0;
+            if (pos > span) pos = span;
             mx = -pos;
         }
         g.drawString(title, 6 + mx, 4, Graphics.TOP | Graphics.LEFT);

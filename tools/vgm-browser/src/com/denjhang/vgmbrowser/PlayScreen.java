@@ -103,6 +103,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int kbKeyW;
     private int kbBw;
     private int kbBh;
+    private int kbTneLx;          // TNE 字符 x 起点（底图/动态共用，一个公式）
     private int kbH = 15;
     private int kbPitch = 17;
     private final Font small;
@@ -341,12 +342,32 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         builtW = w;
 
         // ---- 键盘底图 ----
+        // 先算布局：键盘宽 + TNE 字符 x（底图/动态层共用）
+        int kx = 4 + 5;
+        int kw = w - 8 - 5 - 26;
+        float step = (float) kw / WHITE_COUNT;
+        int keyW = (int) step;
+        if (keyW < 1) {
+            keyW = 1;
+        }
+        int bh = kbH * 5 / 8;
+        int bw = keyW / 2;
+        if (bw < 2) {
+            bw = 2;
+        }
+        kbKx = kx;
+        kbStep = (int) (step * 256);
+        kbKeyW = keyW;
+        kbBw = bw;
+        kbBh = bh;
+        kbTneLx = kx + kw + 2;        // 键盘终点 + 2px，底图/动态共用
+
         kbImg = Image.createImage(w, 3 * kbPitch);
         Graphics kg = kbImg.getGraphics();
         kg.setColor(0x0C1118);
         kg.fillRect(0, 0, w, 3 * kbPitch);
         for (int ch = 0; ch < 3; ch++) {
-            drawKeyStripBase(kg, ch * kbPitch, ch, w);
+            drawKeyStripBase(kg, ch * kbPitch, ch);
         }
 
         // ---- GD3 表格（换行只算这一次）----
@@ -495,34 +516,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     /** 键盘底图（静态，烘焙一次）：白键、黑键凹槽、通道色标、灭灯 TNE 字符。 */
-    private void drawKeyStripBase(Graphics g, int y, int ch, int w) {
-        int kx = 4 + 5;
-        int kw = w - 8 - 5 - 26;      // 右侧 26px = 3 个 8px 字符槽 + 边距
-        float step = (float) kw / WHITE_COUNT;
-        int keyW = (int) step;
-        if (keyW < 1) {
-            keyW = 1;
-        }
+    private void drawKeyStripBase(Graphics g, int y, int ch) {
+        int kx = kbKx;
+        int step = kbStep;
+        int keyW = kbKeyW;
+        int bw = kbBw;
+        int bh = kbBh;
         int h = kbH;
-        int bh = h * 5 / 8;
-        int bw = keyW / 2;
-        if (bw < 2) {
-            bw = 2;
-        }
-        if (ch == 0) {
-            kbKx = kx;
-            kbStep = (int) (step * 256);   // 8.8 定点，动态层对齐用
-            kbKeyW = keyW;
-            kbBw = bw;
-            kbBh = bh;
-        }
 
         g.setColor(CH_COLORS[ch]);
         g.fillRect(4, y, 3, h);
 
         for (int i = 0; i < WHITE_COUNT; i++) {
-            int sx = kx + (int) (i * step);
-            int ex = kx + (int) ((i + 1) * step);
+            int sx = kx + ((i * step) >> 8);
+            int ex = kx + (((i + 1) * step) >> 8);
             g.setColor(0xBEC2CC);
             g.fillRect(sx, y, ex - sx - 1, h);
         }
@@ -532,9 +539,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 continue;
             }
             int wi = WHITE_IDX[n - 1] + 1;
-            g.fillRect(kx + (int) (wi * step) - bw + 1, y, bw, bh);
+            g.fillRect(kx + ((wi * step) >> 8) - bw + 1, y, bw, bh);
         }
-        int lx = kx + kw + 2;         // 键盘终点 + 2px
+        int lx = kbTneLx;
         g.setFont(tiny);
         g.setColor(0x6A7488);
         g.drawString("T", lx, y + h, Graphics.BASELINE | Graphics.LEFT);
@@ -595,7 +602,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
 
         g.setFont(tiny);
-        int lx = builtW - 8 - 26 + 2; // 与底图同一位置
+        int lx = kbTneLx;
         if (ay.visToneActive(ch)) {
             g.setColor(levelColor(CH_COLORS[ch], ay.visSmoothLevel(ch)));
             g.drawString("T", lx, y + h, Graphics.BASELINE | Graphics.LEFT);

@@ -103,8 +103,6 @@ public class Ay2Midi {
     private final int[] noiseVol = new int[3];
     /** 噪声发生器全局共享（一个 R6），三个噪声声道共用同一音高。 */
     private int noiseNote = 60;
-    /** 噪声弯音（相对 noiseNote 的半音偏移，避免持续噪声被重触发切断）。 */
-    private int noiseBendSemi;
 
     private int buzzSrc = -1;
     private int buzzNote = -1;
@@ -591,11 +589,6 @@ public class Ay2Midi {
                 envLastCC[ch] = v;
                 curVol[ch] = v;
                 send(CC | toneCh[ch], CC_EXPRESSION, v);
-                // 噪声门共用同一幅度源：mixer 开着噪声时同步复制
-                if ((regs[7] & (0x8 << ch)) == 0) {
-                    noiseVol[ch] = v;
-                    send(CC | noiseCh[ch], CC_EXPRESSION, v);
-                }
             }
         }
     }
@@ -643,43 +636,26 @@ public class Ay2Midi {
     }
 
     /**
-     * 噪声音高映射：不按声学频率换算，而是把 R6 的 32 级
-     * 均匀摊到钢琴键位上——最高频端 = C8(108)，最低频端 = A0(21)。
-     * 每级一个键，单调分布，听感上"高周期=低音、低周期=高音"。
+     * 噪声音高映射：R6 的 32 级均匀摊到钢琴键位，
+     * 最高频端(R6=0)=C8(108)，最低频端(R6=31)=A0(21)。
+     * 只做映射这一件事，其余噪声行为保持旧版。
      */
-    private static final int NOISE_NOTE_LOW = 21;    // A0
-    private static final int NOISE_NOTE_HIGH = 108;  // C8
+    private static final int NOISE_NOTE_LOW = 21;
+    private static final int NOISE_NOTE_HIGH = 108;
 
     private void updateNoisePitch() {
         int r6 = regs[6] & 0x1F;
         int note = NOISE_NOTE_HIGH
                 - r6 * (NOISE_NOTE_HIGH - NOISE_NOTE_LOW) / 31;
-        int curSemi = noiseNote + noiseBendSemi;   // 当前实际音高（基准+弯音）
-        if (note == curSemi) {
+        if (note == noiseNote) {
             return;
         }
-        int diff = note - curSemi;
-        if (diff > -12 && diff < 12) {
-            // 小音程：弯音滑动，不重触发——持续噪声（长镲/风声）必须连贯
-            noiseBendSemi = note - noiseNote;
-            int bend = 8192 + noiseBendSemi * 8192 / BEND_RANGE_SEMITONES;
-            if (bend < 0) bend = 0;
-            if (bend > 16383) bend = 16383;
-            for (int ch = 0; ch < 3; ch++) {
-                if (noiseSounding[ch]) {
-                    send(PITCH | noiseCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
-                }
-            }
-        } else {
-            // 大跳变（换鼓色）：重触发
-            int oldNote = noiseNote;
-            noiseNote = note;
-            noiseBendSemi = 0;
-            for (int ch = 0; ch < 3; ch++) {
-                if (noiseSounding[ch]) {
-                    send(NOTE_OFF | noiseCh[ch], oldNote, 0);
-                    send(NOTE_ON | noiseCh[ch], noiseNote, 100);
-                }
+        int oldNote = noiseNote;
+        noiseNote = note;
+        for (int ch = 0; ch < 3; ch++) {
+            if (noiseSounding[ch]) {
+                send(NOTE_OFF | noiseCh[ch], oldNote, 0);
+                send(NOTE_ON | noiseCh[ch], noiseNote, 100);
             }
         }
     }
@@ -698,39 +674,30 @@ public class Ay2Midi {
 
         int atten = regs[8 + ch] & 0x0F;
 
-        // 声道当前电平 v：固定音量 / 慢包络仿真 / 快包络波形近似。
-        // 这是该声道唯一的幅度源——方波门和噪声门都乘它（硬件语义）。
+        // 方波音量：蜂鸣器走独立通道；慢包络近似固定 100
         int v;
         if (buzz) {
-            v = 100;                   // 波形近似的等效电平（噪声门共用）
+            v = -1;
         } else if (envMode(ch)) {
             v = envLevelCC();          // 慢包络：软件仿真电平
         } else {
             v = ATTN_TO_VOL[atten];
         }
-
-        // 方波音量（蜂鸣器模式下声音走包络通道，方波通道静音）
-        int toneV = buzz ? 0 : v;
-        if (toneV != curVol[ch]) {
-            curVol[ch] = toneV;
-            send(CC | toneCh[ch], CC_EXPRESSION, toneV);
+        if (v >= 0 && v != curVol[ch]) {
+            curVol[ch] = v;
+            send(CC | toneCh[ch], CC_EXPRESSION, v);
         }
 
-        // 噪声：没有独立音量计算器，直接复用同一电平 v
-        boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && v > 0;
-        if (noiseOn && v != noiseVol[ch]) {
-            noiseVol[ch] = v;
-            send(CC | noiseCh[ch], CC_EXPRESSION, v);
+        // 噪声独立声道
+        boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && atten > 0;
+        int nv = noiseOn ? N_ATT_TO_VOL[atten] : 0;
+        if (nv > 0 && nv != noiseVol[ch]) {
+            noiseVol[ch] = nv;
+            send(CC | noiseCh[ch], CC_EXPRESSION, nv);
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
             send(NOTE_ON | noiseCh[ch], noiseNote, 100);
-            if (noiseBendSemi != 0) {
-                int bend = 8192 + noiseBendSemi * 8192 / BEND_RANGE_SEMITONES;
-                if (bend < 0) bend = 0;
-                if (bend > 16383) bend = 16383;
-                send(PITCH | noiseCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
-            }
         } else if (!noiseOn && noiseSounding[ch]) {
             noiseSounding[ch] = false;
             send(NOTE_OFF | noiseCh[ch], noiseNote, 0);

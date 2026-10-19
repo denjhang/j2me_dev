@@ -63,9 +63,13 @@ public class Ay2Midi {
         {PAN_C, PAN_C, PAN_C},   // MONO
     };
 
-    /** yasp11 VOL_TO_TL 取反 → AY 衰减到 CC7（非线性响度）。 */
+    /**
+     * AY 音量值（0=静音，15=最响，注意与 SN76489 相反）→ CC7/CC11。
+     * 由 yasp11 VOL_TO_TL 取反（cc = 127 - TL），非线性响度曲线。
+     * 首项必须是 0：音量 0 = 静音。
+     */
     static final int[] ATTN_TO_VOL = {
-        127, 65, 71, 75, 81, 85, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127
+        0, 65, 71, 75, 81, 85, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127
     };
     /** yasp11 N_VOL_TO_TL 取反 → 噪声衰减到 CC7。 */
     static final int[] N_ATT_TO_VOL = {

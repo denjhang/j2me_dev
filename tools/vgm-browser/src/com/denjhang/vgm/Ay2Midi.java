@@ -785,6 +785,36 @@ public class Ay2Midi {
         return noiseSounding[ch];
     }
 
+    /** v16 规则：噪声可视音高 = clock/(512×per)，per=(R6&31)<<1（0 按 2）。 */
+    public int visNoiseNote() {
+        int per = (regs[6] & 0x1F) << 1;
+        if (per == 0) {
+            per = 2;
+        }
+        int hz = (int) (clock / 512L / per);
+        long n144 = note144(hz);
+        if (n144 < 0 || n144 > 127L * 65536) {
+            return -1;
+        }
+        return (int) ((n144 + 32768) / 65536);
+    }
+
+    /** 包络可视音符：正在响的蜂鸣基准音（含同步蜂鸣），-1 无。 */
+    public int visEnvNote() {
+        if (buzzNote >= 0) {
+            return buzzNote;
+        }
+        return syncNote;
+    }
+
+    /** 包络发声的源声道（同步蜂鸣归 A 声道显示），-1 无。 */
+    public int visBuzzSrc() {
+        if (buzzSrc >= 0) {
+            return buzzSrc;
+        }
+        return syncNote >= 0 ? 0 : -1;
+    }
+
     /** 该声道当前电平 0-127（键盘按键亮度参考）。 */
     public int visLevel(int ch) {
         int v = curVol[ch];

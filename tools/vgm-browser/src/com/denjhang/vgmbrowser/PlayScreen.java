@@ -34,15 +34,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final String[] LOOP_NAMES = {"1", "2", "3", "5", "无限"};
     private static final String[] ORDER_NAMES = {"顺序", "随机"};
 
-    // v16 配色：ChA 绿 / ChB 蓝 / ChC 红；二芯片 紫/黄/青；噪声灰
-    private static final int COL_A = 0xA0C8A0;
-    private static final int COL_B = 0xA0A0DC;
-    private static final int COL_C = 0xDCA0A0;
-    private static final int COL_A2 = 0xC8A0C8;
-    private static final int COL_B2 = 0xC8C8A0;
-    private static final int COL_C2 = 0xA0C8C8;
+    // v16 配色（高饱和版）：ChA 绿 / ChB 蓝 / ChC 红；二芯片 紫/黄/青
+    private static final int COL_A = 0x4CD84C;
+    private static final int COL_B = 0x4C6CF0;
+    private static final int COL_C = 0xF04C4C;
+    private static final int COL_A2 = 0xC84CE0;
+    private static final int COL_B2 = 0xE8E01C;
+    private static final int COL_C2 = 0x18CCE0;
     private static final int[] CH_COLORS = {COL_A, COL_B, COL_C};
     private static final int[] CH2_COLORS = {COL_A2, COL_B2, COL_C2};
+    // 噪声 = 石板灰 / 玫瑰；包络 = 橙 / 琥珀（v16 语义，高对比）
+    private static final int COL_NOISE = 0x5A6478;
+    private static final int COL_NOISE2 = 0xB84868;
+    private static final int COL_ENV = 0xFF8C1A;
+    private static final int COL_ENV2 = 0xD06808;
 
     private static final int MODE_HUD = 0;
     private static final int MODE_SETTINGS = 1;
@@ -495,10 +500,44 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 g.fillRect(bx, y, bw, bh);
             }
         }
+
+        // 噪声键（v16 规则：clock/(512*per) 的可视音高；本声道噪声门开着才亮）
+        if (ay.visNoise(ch)) {
+            int nn = ay.visNoiseNote();
+            markKey(g, kx, y, keyW, bw, bh, h, nn, COL_NOISE);
+        }
+        if (ay2 != null && ay2.visNoise(ch)) {
+            int nn = ay2.visNoiseNote();
+            markKey(g, kx, y, keyW, bw, bh, h, nn, COL_NOISE2);
+        }
+        // 包络键（亮在发声源声道的横条上）
+        if (ay.visBuzzSrc() == ch) {
+            markKey(g, kx, y, keyW, bw, bh, h, ay.visEnvNote(), COL_ENV);
+        }
+        if (ay2 != null && ay2.visBuzzSrc() == ch) {
+            markKey(g, kx, y, keyW, bw, bh, h, ay2.visEnvNote(), COL_ENV2);
+        }
+
         // 噪声指示（右端像素点）
         if (ay.visNoise(ch) || (ay2 != null && ay2.visNoise(ch))) {
-            g.setColor(0x9AA4B4);
+            g.setColor(0x8A94A8);
             g.fillRect(x + w - 3, y, 3, h);
+        }
+    }
+
+    /** 在横条上标记一个键：白键整高，黑键凹槽整块。 */
+    private void markKey(Graphics g, int kx, int y, int keyW, int bw,
+                         int bh, int h, int note, int color) {
+        if (note < FIRST_NOTE || note > LAST_NOTE) {
+            return;
+        }
+        g.setColor(color);
+        int wi = WHITE_IDX[note];
+        if (wi >= 0) {
+            g.fillRect(kx + wi * keyW, y, keyW - 1, h);
+        } else {
+            int bwi = WHITE_IDX[note - 1] + 1;
+            g.fillRect(kx + bwi * keyW - bw + 1, y, bw, bh);
         }
     }
 

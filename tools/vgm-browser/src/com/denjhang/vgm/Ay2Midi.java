@@ -17,6 +17,16 @@ import javax.microedition.media.control.MIDIControl;
 public class Ay2Midi {
 
     public static final int CHANNELS = 7;
+    /** 配置槽数：0-2 方波，3-5 噪声，6-9 包络四形状类（锯齿/衰减/三角/交替）。 */
+    public static final int SLOTS = 10;
+    public static final int SLOT_ENV_SAW = 6;      // R13 8,12  循环锯齿
+    public static final int SLOT_ENV_DECAY = 7;    // R13 9,15  衰减锯齿
+    public static final int SLOT_ENV_TRI = 8;      // R13 10,14 三角
+    public static final int SLOT_ENV_ALT = 9;      // R13 11,13 交替锯齿
+    public static final String[] SLOT_NAMES = {
+        "包络-锯齿", "包络-衰减", "包络-三角", "包络-交替"
+    };
+    public static final int[] ENV_SHAPE_DEFAULT = {81, 87, 82, 80};
 
     /** chip0：0-6 直排。 */
     public static final int[] MAP_CHIP0 = {0, 1, 2, 3, 4, 5, 6};
@@ -44,11 +54,12 @@ public class Ay2Midi {
     public static final int PROG_BUZZER = 83;
     public static final int PROG_NOISE = 127;
 
-    /** 默认音色映射（可被用户逐通道覆盖）。 */
+    /** 默认音色映射（可被用户逐槽覆盖）。6-9 按包络形状类给不同乐器。 */
     public static final int[] DEFAULT_PROG = {
         PROG_SQUARE, PROG_SQUARE, PROG_SQUARE,
         PROG_NOISE, PROG_NOISE, PROG_NOISE,
-        PROG_BUZZER
+        ENV_SHAPE_DEFAULT[0], ENV_SHAPE_DEFAULT[1],
+        ENV_SHAPE_DEFAULT[2], ENV_SHAPE_DEFAULT[3]
     };
 
     private static final int PAN_L = 1;
@@ -91,7 +102,7 @@ public class Ay2Midi {
     private int clock = 1773400;
     private int octShift;
     private int stereoMode;
-    private final int[] progMap = new int[CHANNELS];
+    private final int[] progMap = new int[SLOTS];
     private final int[] pan = new int[3];
 
     private final int[] curNote = new int[3];
@@ -106,6 +117,7 @@ public class Ay2Midi {
 
     private int buzzSrc = -1;
     private int buzzNote = -1;
+    private int buzzProgSent = -1;   // 已发到蜂鸣器通道的音色
 
     // 软件包络仿真（慢包络的音量模拟），状态机照抄 emu2149 的 env 单元
     private int envPtr = 31;           // 0-31 电平（6 位计数器，0x20 为进/借位标志）
@@ -138,7 +150,7 @@ public class Ay2Midi {
             curVol[i] = -1;
             noiseVol[i] = -1;
         }
-        for (int i = 0; i < CHANNELS; i++) {
+        for (int i = 0; i < SLOTS; i++) {
             progMap[i] = DEFAULT_PROG[i];
         }
         applyStereoMode(0);
@@ -162,7 +174,7 @@ public class Ay2Midi {
             }
             player.prefetch();
             player.start();
-            for (int i = 0; i < CHANNELS; i++) {
+            for (int i = 0; i < 6; i++) {
                 send(PROG | channelOf(i), progMap[i], 0);
             }
             sendPans();
@@ -220,13 +232,13 @@ public class Ay2Midi {
         send(CC | ch, 100, 127);
     }
 
-    public int getProg(int midiCh) {
-        return progMap[midiCh];
+    public int getProg(int idx) {
+        return progMap[idx];
     }
 
-    /** 用户改音色：idx 是 map 索引（0-2 方波，3-5 噪声，6 包络）。 */
+    /** 用户改音色：idx 是槽位（0-2 方波，3-5 噪声，6-9 包络形状类）。 */
     public void setProg(int idx, int prog) {
-        if (idx < 0 || idx >= CHANNELS || prog < 0 || prog > 127) {
+        if (idx < 0 || idx >= SLOTS || prog < 0 || prog > 127) {
             return;
         }
         int midiCh = channelOf(idx);
@@ -242,14 +254,18 @@ public class Ay2Midi {
                 noiseSounding[i] = false;
             }
         } else {
+            // 包络四形状类共用蜂鸣器 MIDI 通道：换音色先关音
             if (buzzNote >= 0) {
                 send(NOTE_OFF | buzzerCh, buzzNote, 0);
                 buzzNote = -1;
                 buzzSrc = -1;
             }
+            buzzProgSent = -1;
         }
         progMap[idx] = prog;
-        send(PROG | midiCh, prog, 0);
+        if (idx < 6) {
+            send(PROG | midiCh, prog, 0);
+        }
     }
 
     private int channelOf(int idx) {
@@ -285,7 +301,7 @@ public class Ay2Midi {
     /** 强制重发所有音色和 CC（每次打开新文件时调用，确保音源状态正确）。 */
     /** 完整复制另一片的配置（乐器/声像/八度）并全量重发。双 PSG 用。 */
     public void copyConfigFrom(Ay2Midi src) {
-        for (int i = 0; i < CHANNELS; i++) {
+        for (int i = 0; i < SLOTS; i++) {
             progMap[i] = src.progMap[i];
         }
         applyStereoMode(src.stereoMode);
@@ -294,9 +310,10 @@ public class Ay2Midi {
     }
 
     public void forceRefreshAll() {
-        for (int i = 0; i < CHANNELS; i++) {
+        for (int i = 0; i < 6; i++) {
             send(PROG | channelOf(i), progMap[i], 0);
         }
+        buzzProgSent = -1;
         sendPans();
         // 设置所有通道弯音范围为 ±12 半音（VGM 大范围滑音常见）
         for (int i = 0; i < CHANNELS; i++) {
@@ -413,6 +430,17 @@ public class Ay2Midi {
      *   10,14           = 三角类，64 步（低一个八度）
      *   0-7             = 一次性形状，非连续波形，返回 0
      */
+    /** R13 → 包络形状类槽位（6-9）；一次性形状返回 -1。 */
+    private int shapeSlot() {
+        switch (regs[13] & 0x0F) {
+            case 8: case 12: return SLOT_ENV_SAW;
+            case 9: case 15: return SLOT_ENV_DECAY;
+            case 10: case 14: return SLOT_ENV_TRI;
+            case 11: case 13: return SLOT_ENV_ALT;
+            default: return -1;
+        }
+    }
+
     private int shapeSteps() {
         switch (regs[13] & 0x0F) {
             case 8: case 9: case 11: case 12: case 13: case 15:
@@ -800,6 +828,17 @@ public class Ay2Midi {
         int cents144 = (int) (n144 - note * 65536);
         int bend = centsToBend(cents144);
 
+        int slot = shapeSlot();
+        int prog = slot >= 0 ? progMap[slot] : progMap[SLOT_ENV_SAW];
+        if (prog != buzzProgSent) {
+            // 形状类音色变化：先关音再换音色（音源不允许演奏中换）
+            if (buzzNote >= 0) {
+                send(NOTE_OFF | buzzerCh, buzzNote, 0);
+                buzzNote = -1;
+            }
+            buzzProgSent = prog;
+            send(PROG | buzzerCh, prog, 0);
+        }
         if (buzzSrc != ch || buzzNote != note) {
             // 无条件关掉旧音符（防止通道切换时复音泄漏）
             if (buzzNote >= 0) {

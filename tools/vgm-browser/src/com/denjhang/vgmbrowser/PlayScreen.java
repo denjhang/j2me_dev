@@ -26,7 +26,9 @@ import com.denjhang.vgm.VgmParser;
 public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     private static final String[] CH_NAMES = {
-        "方波A", "方波B", "方波C", "噪声A", "噪声B", "噪声C", "包络"
+        "方波A", "方波B", "方波C",
+        "噪声A", "噪声B", "噪声C",
+        "包络-锯齿", "包络-衰减", "包络-三角", "包络-交替"
     };
     /** 可选音色（常用 GM 值）。 */
     private static final int[] PROG_CHOICES = {
@@ -235,10 +237,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         drawRow(g, cursor == 1, y, "八度",
                 (ay.getOct() >= 0 ? "+" : "") + ay.getOct());
         y += 18;
-        for (int i = 0; i < Ay2Midi.CHANNELS; i++) {
+        for (int i = 0; i < Ay2Midi.SLOTS; i++) {
             drawRow(g, cursor == ROW_CH0 + i, y, CH_NAMES[i],
                     String.valueOf(ay.getProg(i)));
-            y += 18;
+            y += 16;
         }
 
         if (err != null) {
@@ -319,10 +321,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             stopPlay();
         } else if (action == UP) {
             cursor--;
-            if (cursor < 0) cursor = ROW_CH0 + Ay2Midi.CHANNELS - 1;
+            if (cursor < 0) cursor = ROW_CH0 + Ay2Midi.SLOTS - 1;
         } else if (action == DOWN) {
             cursor++;
-            if (cursor > ROW_CH0 + Ay2Midi.CHANNELS - 1) cursor = 0;
+            if (cursor > ROW_CH0 + Ay2Midi.SLOTS - 1) cursor = 0;
         } else if (action == LEFT) {
             adjust(-1);
         } else if (action == RIGHT) {

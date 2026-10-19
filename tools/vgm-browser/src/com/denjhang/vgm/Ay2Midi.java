@@ -327,6 +327,7 @@ public class Ay2Midi {
         envOctTri = src.envOctTri;
         envUniSaw = src.envUniSaw;
         envUniTri = src.envUniTri;
+        buzzVol = src.buzzVol;
         forceRefreshAll();
     }
 
@@ -547,7 +548,7 @@ public class Ay2Midi {
         syncNote = note;
         syncVoices = voices;
         send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
-        send(CC | buzzerCh, CC_EXPRESSION, 127);
+        send(CC | buzzerCh, CC_EXPRESSION, buzzVol);
         for (int i = 0; i < voices; i++) {
             int n = note + i * 12;
             if (n <= 127) {
@@ -726,6 +727,8 @@ public class Ay2Midi {
     /** 上行八度复音：0=关 1=+1八度(2复音) 2=+2八度(3复音)。锯齿/三角独立。 */
     private int envUniSaw = 2;   // 定案默认：上行 2 八度（3 复音）
     private int envUniTri = 1;   // 定案默认：上行 1 八度（2 复音）
+    /** 蜂鸣器音量（CC11），默认 110。 */
+    private int buzzVol = 110;
 
     public int getNoiseMapMode() {
         return noiseMapMode;
@@ -741,6 +744,18 @@ public class Ay2Midi {
 
     public int getEnvUni(boolean tri) {
         return tri ? envUniTri : envUniSaw;
+    }
+
+    public int getBuzzVol() {
+        return buzzVol;
+    }
+
+    /** 蜂鸣器音量 0-127，立即推送到通道。 */
+    public void setBuzzVol(int v) {
+        if (v < 0) v = 0;
+        if (v > 127) v = 127;
+        buzzVol = v;
+        send(CC | buzzerCh, CC_EXPRESSION, v);
     }
 
     /** 上行八度复音设置（0/1/2 循环）。生效中的蜂鸣音立即重算。 */
@@ -956,7 +971,7 @@ public class Ay2Midi {
             buzzNote = note;
             buzzVoices = voices;
             send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
-            send(CC | buzzerCh, CC_EXPRESSION, 127);  // 蜂鸣器固定最大音量
+            send(CC | buzzerCh, CC_EXPRESSION, buzzVol);
             for (int i = 0; i < voices; i++) {
                 int n = note + i * 12;               // 基准 + 上行八度堆叠
                 if (n <= 127) {

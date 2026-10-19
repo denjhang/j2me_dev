@@ -59,9 +59,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_ENVTRI_OCT = 4;
     private static final int ROW_ENVSAW_UNI = 5;
     private static final int ROW_ENVTRI_UNI = 6;
-    private static final int ROW_CH0 = 7;
+    private static final int ROW_BUZZ_VOL = 7;
+    private static final int ROW_CH0 = 8;
     private static final String[] UNI_NAMES = {"关", "上行1八度", "上行2八度"};
-    private static final int TOTAL_ROWS = 7 + Ay2Midi.SLOTS;   // 7 项设置 + 10 槽
+    private static final int TOTAL_ROWS = 8 + Ay2Midi.SLOTS;   // 8 项设置 + 10 槽
     private static final int ROW_H = 16;
     private int scroll;
 
@@ -74,6 +75,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ENVTRI_OCT: return "包络三角八度";
             case ROW_ENVSAW_UNI: return "锯齿上行复音";
             case ROW_ENVTRI_UNI: return "三角上行复音";
+            case ROW_BUZZ_VOL: return "蜂鸣器音量";
             default: return CH_NAMES[r - ROW_CH0];
         }
     }
@@ -89,6 +91,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 return (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri();
             case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
             case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
+            case ROW_BUZZ_VOL: return String.valueOf(ay.getBuzzVol());
             default: return String.valueOf(ay.getProg(r - ROW_CH0));
         }
     }
@@ -369,6 +372,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             ay.setEnvUni(true, u);
             if (ay2 != null) {
                 ay2.setEnvUni(true, u);
+            }
+        } else if (cursor == ROW_BUZZ_VOL) {
+            int v = ay.getBuzzVol() + dir * 10;
+            ay.setBuzzVol(v);
+            if (ay2 != null) {
+                ay2.setBuzzVol(v);
             }
         } else {
             int ch = cursor - ROW_CH0;

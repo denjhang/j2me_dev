@@ -329,6 +329,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         g.setFont(titleFont);
         g.setColor(0xF0EDE4);
+        // MIDP clipRect 是相交语义：先存原裁剪区，画完标题后完整恢复，
+        // 否则后续所有绘制都被裁在标题条里
+        int cw = g.getClipWidth();
+        int chh = g.getClipHeight();
         g.clipRect(4, 2, w - 8, 22);
         int mx = 0;
         int tw = titleFont.stringWidth(title);
@@ -344,7 +348,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             mx = -pos;
         }
         g.drawString(title, 6 + mx, 4, Graphics.TOP | Graphics.LEFT);
-        g.clipRect(0, 0, w, h);
+        g.setClip(0, 0, cw, chh);
 
         // ---- 进度条 ----
         g.setFont(tiny);

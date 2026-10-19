@@ -25,6 +25,9 @@ public class Ay2Midi {
     private static final int NOTE_ON = 0x90;
     private static final int NOTE_OFF = 0x80;
     private static final int CC = 0xB0;
+    private static final int CC_VOLUME = 7;
+    private static final int CC_PAN = 10;
+    private static final int CC_EXPRESSION = 11;
     private static final int PROG = 0xC0;
     private static final int PITCH = 0xE0;
 
@@ -164,10 +167,10 @@ public class Ay2Midi {
 
     private void sendPans() {
         for (int i = 0; i < 3; i++) {
-            send(CC | TONE_CH[i], 10, pan[i]);
-            send(CC | NOISE_CH[i], 10, pan[i]);
+            send(CC | TONE_CH[i], CC_PAN, pan[i]);
+            send(CC | NOISE_CH[i], CC_PAN, pan[i]);
         }
-        send(CC | BUZZER, 10, PAN_C);
+        send(CC | BUZZER, CC_PAN, PAN_C);
     }
 
     /** 发 RPN 0x00/0x00 设置弯音范围（半音）。 */
@@ -251,8 +254,10 @@ public class Ay2Midi {
         for (int i = 0; i < CHANNELS; i++) {
             setPitchBendRange(i, BEND_RANGE_SEMITONES);
         }
+        // CC7 (Main Volume) 固定 127，CC11 (Expression) 做动态音量
         for (int i = 0; i < CHANNELS; i++) {
-            send(CC | i, 7, 0);
+            send(CC | i, CC_VOLUME, 127);
+            send(CC | i, CC_EXPRESSION, 0);
             send(CC | i, 123, 0);   // All notes off
         }
         for (int i = 0; i < 3; i++) {
@@ -387,7 +392,7 @@ public class Ay2Midi {
         }
         if (v >= 0 && v != curVol[ch]) {
             curVol[ch] = v;
-            send(CC | TONE_CH[ch], 7, v);
+            send(CC | TONE_CH[ch], CC_EXPRESSION, v);
         }
 
         // 噪声独立声道
@@ -395,7 +400,7 @@ public class Ay2Midi {
         int nv = noiseOn ? N_ATT_TO_VOL[atten] : 0;
         if (nv > 0 && nv != noiseVol[ch]) {
             noiseVol[ch] = nv;
-            send(CC | NOISE_CH[ch], 7, nv);
+            send(CC | NOISE_CH[ch], CC_EXPRESSION, nv);
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
@@ -499,7 +504,7 @@ public class Ay2Midi {
             buzzSrc = ch;
             buzzNote = note;
             send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);
-            send(CC | BUZZER, 7, 127);
+            send(CC | BUZZER, CC_EXPRESSION, 127);
             send(NOTE_ON | BUZZER, note, 100);
         } else if (Math.abs(bend - curBend[ch]) > 4) {
             send(PITCH | BUZZER, bend & 0x7F, (bend >> 7) & 0x7F);

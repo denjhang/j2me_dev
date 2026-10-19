@@ -101,6 +101,8 @@ public class Ay2Midi {
 
     private final boolean[] noiseSounding = new boolean[3];
     private final int[] noiseVol = new int[3];
+    /** 噪声发生器全局共享（一个 R6），三个噪声声道共用同一音高。 */
+    private int noiseNote = 60;
 
     private int buzzSrc = -1;
     private int buzzNote = -1;
@@ -361,6 +363,9 @@ public class Ay2Midi {
                 break;
             case 4: case 5:
                 updateChannel(2);
+                break;
+            case 6:
+                updateNoisePitch();
                 break;
             case 7:
                 updateAllCtl();
@@ -630,6 +635,38 @@ public class Ay2Midi {
         }
     }
 
+    /**
+     * 噪声音高映射（emu2149 同款换算）：
+     * 噪声频率 = clock / 16 / ((R6 & 0x1F) << 1)，R6=0 按除数 2 处理。
+     * 超出 MIDI 音域时钳位到 127（高频噪声本就是"尖"的听感）。
+     */
+    private void updateNoisePitch() {
+        int per = (regs[6] & 0x1F) << 1;
+        if (per == 0) {
+            per = 2;
+        }
+        int hz = (int) (clock / 16L / per);
+        long n144 = note144(hz);
+        if (n144 > 127L * 65536) {
+            n144 = 127L * 65536;
+        }
+        if (n144 < 0) {
+            return;
+        }
+        int note = (int) ((n144 + 32768) / 65536);
+        if (note == noiseNote) {
+            return;
+        }
+        int oldNote = noiseNote;
+        noiseNote = note;
+        for (int ch = 0; ch < 3; ch++) {
+            if (noiseSounding[ch]) {
+                send(NOTE_OFF | noiseCh[ch], oldNote, 0);
+                send(NOTE_ON | noiseCh[ch], noiseNote, 100);
+            }
+        }
+    }
+
     private void updateChannelCtl(int ch) {
         boolean buzz = isBuzzer(ch);
         if (buzz != buzzer[ch]) {
@@ -658,19 +695,19 @@ public class Ay2Midi {
             send(CC | toneCh[ch], CC_EXPRESSION, v);
         }
 
-        // 噪声独立声道
+        // 噪声声道：音量完全复制对应方波通道（AY 同一音量寄存器管两者）
         boolean noiseOn = (regs[7] & (0x8 << ch)) == 0 && atten > 0;
-        int nv = noiseOn ? N_ATT_TO_VOL[atten] : 0;
+        int nv = noiseOn ? ATTN_TO_VOL[atten] : 0;
         if (nv > 0 && nv != noiseVol[ch]) {
             noiseVol[ch] = nv;
             send(CC | noiseCh[ch], CC_EXPRESSION, nv);
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
-            send(NOTE_ON | noiseCh[ch], 60, 100);
+            send(NOTE_ON | noiseCh[ch], noiseNote, 100);
         } else if (!noiseOn && noiseSounding[ch]) {
             noiseSounding[ch] = false;
-            send(NOTE_OFF | noiseCh[ch], 60, 0);
+            send(NOTE_OFF | noiseCh[ch], noiseNote, 0);
         }
 
         updateToneSounding(ch);

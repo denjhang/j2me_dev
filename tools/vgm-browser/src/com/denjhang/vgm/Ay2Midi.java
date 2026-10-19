@@ -281,6 +281,16 @@ public class Ay2Midi {
     }
 
     /** 强制重发所有音色和 CC（每次打开新文件时调用，确保音源状态正确）。 */
+    /** 完整复制另一片的配置（乐器/声像/八度）并全量重发。双 PSG 用。 */
+    public void copyConfigFrom(Ay2Midi src) {
+        for (int i = 0; i < CHANNELS; i++) {
+            progMap[i] = src.progMap[i];
+        }
+        applyStereoMode(src.stereoMode);
+        octShift = src.octShift;
+        forceRefreshAll();
+    }
+
     public void forceRefreshAll() {
         for (int i = 0; i < CHANNELS; i++) {
             send(PROG | channelOf(i), progMap[i], 0);

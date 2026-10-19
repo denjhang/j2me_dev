@@ -75,7 +75,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (file.header.ayClock2 != 0) {
             ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
             ay2.setClock(file.header.ayClock2 & 0x3FFFFFFF);
-            if (!ay2.ready) {
+            if (ay2.ready) {
+                ay2.copyConfigFrom(ay);
+            } else {
                 ay2 = null;
             }
         }
@@ -161,7 +163,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                         ay2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
                         ay2.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
                         if (ay2.ready) {
-                            ay2.forceRefreshAll();
+                            ay2.copyConfigFrom(ay);
                         } else {
                             ay2 = null;
                         }
@@ -286,6 +288,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 if (PROG_CHOICES[next] != cur) break;
             }
             ay.setProg(ch, PROG_CHOICES[next]);
+            if (ay2 != null) {
+                ay2.setProg(ch, PROG_CHOICES[next]);
+            }
         }
     }
 

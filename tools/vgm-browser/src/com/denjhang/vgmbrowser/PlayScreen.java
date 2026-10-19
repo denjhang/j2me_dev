@@ -6,6 +6,7 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
 
 import com.denjhang.vgm.Ay2Midi;
 import com.denjhang.vgm.VgmFile;
@@ -92,6 +93,18 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     private final java.util.Random rng = new java.util.Random();
     private long marqueeBaseMs;   // 跑马灯时间基准（与重绘频率解耦）
+
+    // ---- 性能分层：静态内容烘焙进离屏图，每帧只画动态部分 ----
+    private Image kbImg;          // 三条键盘底图（白键/黑键/通道标/灭灯字符）
+    private Image gd3Img;         // GD3 表格整块（含换行结果）
+    private int builtW = -1;      // 构建时的屏宽（变了才重建）
+    private int kbStep;           // 键盘布局缓存（动态高亮要与底图对齐）
+    private int kbKx;
+    private int kbKeyW;
+    private int kbBw;
+    private int kbBh;
+    private int kbH = 15;
+    private int kbPitch = 17;
     private final Font small;
     private final Font titleFont;
     private final Font tiny;
@@ -158,7 +171,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 repaint();
             }
             try {
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 break;
             }
@@ -323,6 +336,67 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         paintHud(g, w, h);
     }
 
+    /** 烘焙静态层：键盘底图 + GD3 表格。仅曲目打开/屏宽变化时调用。 */
+    private void buildLayers(int w) {
+        builtW = w;
+
+        // ---- 键盘底图 ----
+        kbImg = Image.createImage(w, 3 * kbPitch);
+        Graphics kg = kbImg.getGraphics();
+        kg.setColor(0x0C1118);
+        kg.fillRect(0, 0, w, 3 * kbPitch);
+        for (int ch = 0; ch < 3; ch++) {
+            drawKeyStripBase(kg, ch * kbPitch, ch, w);
+        }
+
+        // ---- GD3 表格（换行只算这一次）----
+        int colX = w * 30 / 100;
+        java.util.Vector flat = new java.util.Vector();
+        com.denjhang.vgm.VgmHeader hd = file.header;
+        String[][] rows = {
+            {"title", hd.gd3Title},
+            {"title (en)", hd.gd3TitleEn},
+            {"game", hd.gd3Game},
+            {"game (en)", hd.gd3GameEn},
+            {"artist", hd.gd3Artist},
+            {"artist (en)", hd.gd3ArtistEn},
+            {"date", hd.gd3Date},
+            {"ripper", hd.gd3Ripper},
+            {"notes", hd.gd3Notes},
+        };
+        for (int i = 0; i < rows.length; i++) {
+            String val = rows[i][1];
+            if (val == null || val.length() == 0) {
+                continue;
+            }
+            String[] lines = wrap(val, tiny, w - colX - 8);
+            for (int li = 0; li < lines.length; li++) {
+                flat.addElement(rows[i][0]);
+                flat.addElement(lines[li]);
+            }
+        }
+        int gd3H = 16 + flat.size() / 2 * 13 + 2;
+        gd3Img = Image.createImage(w, gd3H);
+        Graphics gg = gd3Img.getGraphics();
+        gg.setColor(0x0C1118);
+        gg.fillRect(0, 0, w, gd3H);
+        gg.setFont(tiny);
+        gg.setColor(0x3A4656);
+        gg.drawLine(4, 0, w - 4, 0);
+        gg.setColor(0x8894A8);
+        gg.drawString("TAG", 6, 3, Graphics.TOP | Graphics.LEFT);
+        gg.drawString("INFO", colX, 3, Graphics.TOP | Graphics.LEFT);
+        int yy = 16;
+        gg.setColor(0xAAB4C4);
+        for (int i = 0; i + 1 < flat.size(); i += 2) {
+            gg.drawString((String) flat.elementAt(i), 6, yy,
+                    Graphics.TOP | Graphics.LEFT);
+            gg.drawString((String) flat.elementAt(i + 1), colX, yy,
+                    Graphics.TOP | Graphics.LEFT);
+            yy += 13;
+        }
+    }
+
     private void paintHud(Graphics g, int w, int h) {
         // ---- 标题跑马灯（GD3 标题/文件名，超宽往返滚动）----
         String title = pick(file.header.gd3Title, file.header.gd3TitleEn);
@@ -406,49 +480,166 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             g.drawString(clip(err, 26), 6, sy + 14, Graphics.TOP | Graphics.LEFT);
         }
 
-        // ---- 三条像素钢琴条 ----
+        // ---- 键盘（底图烘焙）+ 动态高亮 ----
+        if (kbImg == null || builtW != w) {
+            buildLayers(w);
+        }
         int py = sy + 16;
+        g.drawImage(kbImg, 0, py, Graphics.TOP | Graphics.LEFT);
         for (int ch = 0; ch < 3; ch++) {
-            drawKeyStrip(g, 4, py + ch * 17, w - 8, 15, ch);
+            drawKeyStripDyn(g, py + ch * kbPitch, ch);
         }
 
-        // ---- GD3 标签表（键盘下方，带表头，自适应行数）----
-        int ty = py + 3 * 17 + 4;
-        int colX = w * 30 / 100;
-        com.denjhang.vgm.VgmHeader hd = file.header;
-        g.setFont(tiny);
-        g.setColor(0x3A4656);
-        g.drawLine(4, ty - 2, w - 4, ty - 2);
-        g.setColor(0x8894A8);
-        g.drawString("TAG", 6, ty, Graphics.TOP | Graphics.LEFT);
-        g.drawString("INFO", colX, ty, Graphics.TOP | Graphics.LEFT);
-        ty += 14;
+        // ---- GD3 表格（整块贴图）----
+        g.drawImage(gd3Img, 0, py + 3 * kbPitch + 4, Graphics.TOP | Graphics.LEFT);
+    }
 
-        // GD3 全部文本字段：本地名 + 英文名成对显示，长值自动换行
-        String[][] rows = {
-            {"title", hd.gd3Title},
-            {"title (en)", hd.gd3TitleEn},
-            {"game", hd.gd3Game},
-            {"game (en)", hd.gd3GameEn},
-            {"artist", hd.gd3Artist},
-            {"artist (en)", hd.gd3ArtistEn},
-            {"date", hd.gd3Date},
-            {"ripper", hd.gd3Ripper},
-            {"notes", hd.gd3Notes},
-        };
-        int bottom = h - 4;
-        g.setColor(0xAAB4C4);
-        for (int i = 0; i < rows.length && ty < bottom; i++) {
-            String val = rows[i][1];
-            if (val == null || val.length() == 0) {
+    /** 键盘底图（静态，烘焙一次）：白键、黑键凹槽、通道色标、灭灯 TNE 字符。 */
+    private void drawKeyStripBase(Graphics g, int y, int ch, int w) {
+        int kx = 4 + 5;
+        int kw = w - 8 - 5 - 22;
+        float step = (float) kw / WHITE_COUNT;
+        int keyW = (int) step;
+        if (keyW < 1) {
+            keyW = 1;
+        }
+        int h = kbH;
+        int bh = h * 5 / 8;
+        int bw = keyW / 2;
+        if (bw < 2) {
+            bw = 2;
+        }
+        if (ch == 0) {
+            kbKx = kx;
+            kbStep = (int) (step * 256);   // 8.8 定点，动态层对齐用
+            kbKeyW = keyW;
+            kbBw = bw;
+            kbBh = bh;
+        }
+
+        g.setColor(CH_COLORS[ch]);
+        g.fillRect(4, y, 3, h);
+
+        for (int i = 0; i < WHITE_COUNT; i++) {
+            int sx = kx + (int) (i * step);
+            int ex = kx + (int) ((i + 1) * step);
+            g.setColor(0xBEC2CC);
+            g.fillRect(sx, y, ex - sx - 1, h);
+        }
+        g.setColor(0x14161C);
+        for (int n = FIRST_NOTE; n <= LAST_NOTE; n++) {
+            if (WHITE_IDX[n] >= 0) {
                 continue;
             }
-            g.drawString(rows[i][0], 6, ty, Graphics.TOP | Graphics.LEFT);
-            String[] lines = wrap(val, tiny, w - colX - 8);
-            for (int li = 0; li < lines.length && ty < bottom; li++) {
-                g.drawString(lines[li], colX, ty, Graphics.TOP | Graphics.LEFT);
-                ty += 13;
+            int wi = WHITE_IDX[n - 1] + 1;
+            g.fillRect(kx + (int) (wi * step) - bw + 1, y, bw, bh);
+        }
+        int lx = w - 8 - 24 - 4;
+        g.setFont(tiny);
+        g.setColor(0x6A7488);
+        g.drawString("T", lx, y + h, Graphics.BASELINE | Graphics.LEFT);
+        g.drawString("N", lx + 8, y + h, Graphics.BASELINE | Graphics.LEFT);
+        g.drawString("E", lx + 16, y + h, Graphics.BASELINE | Graphics.LEFT);
+    }
+
+    /** 键盘动态层（每帧）：活动键高亮、噪声/包络标记、点亮 TNE 字符。 */
+    private void drawKeyStripDyn(Graphics g, int y, int ch) {
+        int kx = kbKx;
+        int step = kbStep;
+        int keyW = kbKeyW;
+        int bw = kbBw;
+        int bh = kbBh;
+        int h = kbH;
+
+        int note1 = ay.visNote(ch);
+        int note2 = ay2 != null ? ay2.visNote(ch) : -1;
+
+        int w1 = inRange(note1) ? WHITE_IDX[note1] : -1;
+        int w2 = inRange(note2) ? WHITE_IDX[note2] : -1;
+        if (w1 >= 0) {
+            int sx = kx + ((w1 * step) >> 8);
+            g.setColor(levelColor(CH_COLORS[ch], ay.visSmoothLevel(ch)));
+            g.fillRect(sx, y, keyW, h);
+            g.setColor(0x0C1118);
+            g.fillRect(sx + keyW - 1, y, 1, h);
+        }
+        if (w2 >= 0) {
+            int sx = kx + ((w2 * step) >> 8);
+            g.setColor(levelColor(CH2_COLORS[ch], ay2.visSmoothLevel(ch)));
+            g.fillRect(sx, y, keyW, h);
+            g.setColor(0x0C1118);
+            g.fillRect(sx + keyW - 1, y, 1, h);
+        }
+        if (inRange(note1) && WHITE_IDX[note1] < 0) {
+            int wi = WHITE_IDX[note1 - 1] + 1;
+            g.setColor(CH_COLORS[ch]);
+            g.fillRect(kx + ((wi * step) >> 8) - bw + 1, y, bw, bh);
+        }
+        if (inRange(note2) && WHITE_IDX[note2] < 0) {
+            int wi = WHITE_IDX[note2 - 1] + 1;
+            g.setColor(CH2_COLORS[ch]);
+            g.fillRect(kx + ((wi * step) >> 8) - bw + 1, y, bw, bh);
+        }
+
+        if (ay.visNoise(ch)) {
+            markKeyDyn(g, kx, step, keyW, bw, bh, y, h, ay.visNoiseNote(), COL_NOISE);
+        }
+        if (ay2 != null && ay2.visNoise(ch)) {
+            markKeyDyn(g, kx, step, keyW, bw, bh, y, h, ay2.visNoiseNote(), COL_NOISE2);
+        }
+        if (ay.visBuzzSrc() == ch) {
+            markKeyDyn(g, kx, step, keyW, bw, bh, y, h, ay.visEnvNote(), COL_ENV);
+        }
+        if (ay2 != null && ay2.visBuzzSrc() == ch) {
+            markKeyDyn(g, kx, step, keyW, bw, bh, y, h, ay2.visEnvNote(), COL_ENV2);
+        }
+
+        g.setFont(tiny);
+        int lx = builtW - 8 - 24 - 4;
+        if (ay.visToneActive(ch)) {
+            g.setColor(levelColor(CH_COLORS[ch], ay.visSmoothLevel(ch)));
+            g.drawString("T", lx, y + h, Graphics.BASELINE | Graphics.LEFT);
+        }
+        if (ay.visNoiseActive(ch)) {
+            g.setColor(levelColor(COL_NOISE, ay.visSmoothLevel(ch)));
+            g.drawString("N", lx + 8, y + h, Graphics.BASELINE | Graphics.LEFT);
+        }
+        if (ay.visEnvActive(ch)) {
+            g.setColor(COL_ENV);
+            g.drawString("E", lx + 16, y + h, Graphics.BASELINE | Graphics.LEFT);
+        }
+        if (ay2 != null) {
+            if (ay2.visToneActive(ch)) {
+                g.setColor(levelColor(CH2_COLORS[ch], ay2.visSmoothLevel(ch)));
+                g.drawString("T", lx + 1, y + h, Graphics.BASELINE | Graphics.LEFT);
             }
+            if (ay2.visNoiseActive(ch)) {
+                g.setColor(levelColor(COL_NOISE2, ay2.visSmoothLevel(ch)));
+                g.drawString("N", lx + 9, y + h, Graphics.BASELINE | Graphics.LEFT);
+            }
+            if (ay2.visEnvActive(ch)) {
+                g.setColor(COL_ENV2);
+                g.drawString("E", lx + 17, y + h, Graphics.BASELINE | Graphics.LEFT);
+            }
+        }
+    }
+
+    /** 动态标记一个键（与底图同布局）。 */
+    private void markKeyDyn(Graphics g, int kx, int step, int keyW,
+                            int bw, int bh, int y, int h, int note, int color) {
+        if (note < FIRST_NOTE || note > LAST_NOTE) {
+            return;
+        }
+        g.setColor(color);
+        int wi = WHITE_IDX[note];
+        if (wi >= 0) {
+            int sx = kx + ((wi * step) >> 8);
+            g.fillRect(sx, y, keyW, h);
+            g.setColor(0x0C1118);
+            g.fillRect(sx + keyW - 1, y, 1, h);
+        } else {
+            int bwi = WHITE_IDX[note - 1] + 1;
+            g.fillRect(kx + ((bwi * step) >> 8) - bw + 1, y, bw, bh);
         }
     }
 

@@ -95,6 +95,14 @@ public class Ay2Midi {
     private int buzzSrc = -1;
     private int buzzNote = -1;
 
+    // 软件包络仿真（慢包络的音量模拟），状态机照抄 emu2149 的 env 单元
+    private int envPtr = 31;           // 0-31 电平（6 位计数器，0x20 为进/借位标志）
+    private boolean envFaceUp;         // true=上升
+    private boolean envPause;
+    private long envNextStepAt;
+    private int envStepMs = -1;        // 每步毫秒 = 16*period*1000/clock
+    private final int[] envLastCC = new int[3];
+
     // 同步蜂鸣器：软件高速重写 R13（一次性形状）时，重触发率即音高
     private long lastR13At;
     private long r13Interval;      // 平滑后的重写间隔 ms
@@ -150,6 +158,7 @@ public class Ay2Midi {
     public void setClock(int hz) {
         if (hz > 100000 && hz < 100000000) {
             clock = hz;
+            updateEnvStepMs();
         }
     }
 
@@ -335,6 +344,7 @@ public class Ay2Midi {
                 break;
             case 11: case 12:
                 // 包络周期变化会改变蜂鸣器判定与八度，全部声道重估
+                updateEnvStepMs();
                 updateAllCtl();
                 break;
             case 13:
@@ -384,6 +394,13 @@ public class Ay2Midi {
      */
     private void onShapeWrite() {
         long now = System.currentTimeMillis();
+        // 硬件语义：写 R13 重启包络发生器（attack 位决定起始方向）
+        boolean attack = (regs[13] & 0x04) != 0;
+        envPtr = attack ? 0 : 31;
+        envFaceUp = attack;
+        envPause = false;
+        envNextStepAt = now;
+        updateEnvStepMs();
         if (shapeSteps() == 0 && anyEnvMode()) {
             if (lastR13At != 0) {
                 long dt = now - lastR13At;
@@ -462,6 +479,81 @@ public class Ay2Midi {
             syncBuzz = false;
             r13Interval = 0;
         }
+        tickEnvelope();
+    }
+
+    private void updateEnvStepMs() {
+        if (clock <= 0) {
+            envStepMs = -1;
+            return;
+        }
+        // 包络每步 = 16 * period 个时钟（emu2149 同款换算）
+        envStepMs = (int) (16L * envelopePeriod() * 1000 / clock);
+        if (envStepMs < 1) {
+            envStepMs = 1;
+        }
+    }
+
+    /** 撫放线程节拍：推进软件包络，把电平推给慢包络声道的 CC11。 */
+    private void tickEnvelope() {
+        if (envStepMs <= 0 || envPause) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (envNextStepAt == 0) {
+            envNextStepAt = now;
+        }
+        int guard = 64;   // 防止长时间无人调 tick 后的补偿风暴
+        while (now >= envNextStepAt && guard-- > 0) {
+            stepEnvelope();
+            envNextStepAt += envStepMs;
+        }
+        if (envNextStepAt < now - 500) {
+            envNextStepAt = now;
+        }
+        pushEnvVolume();
+    }
+
+    /** emu2149 update_output() 包络单元的整数化移植。 */
+    private void stepEnvelope() {
+        if (envPause) {
+            return;
+        }
+        envPtr += envFaceUp ? 1 : -1;
+        if ((envPtr & 0x20) != 0) {          // 进位/借位
+            boolean cont = (regs[13] & 0x08) != 0;
+            boolean alt = (regs[13] & 0x02) != 0;
+            boolean hold = (regs[13] & 0x01) != 0;
+            if (cont) {
+                if (alt != hold) {
+                    envFaceUp = !envFaceUp;
+                }
+                if (hold) {
+                    envPause = true;
+                }
+                envPtr = envFaceUp ? 0 : 31;
+            } else {
+                envPause = true;
+                envPtr = 0;
+            }
+        }
+    }
+
+    /** 当前电平 → CC11（线性近似；AY 的 voltbl 是对数曲线，后续可换表）。 */
+    private int envLevelCC() {
+        int p = envPtr & 0x1F;
+        return p * 127 / 31;
+    }
+
+    private void pushEnvVolume() {
+        int v = envLevelCC();
+        for (int ch = 0; ch < 3; ch++) {
+            if (envMode(ch) && !isBuzzer(ch) && v != envLastCC[ch]) {
+                envLastCC[ch] = v;
+                curVol[ch] = v;
+                send(CC | TONE_CH[ch], CC_EXPRESSION, v);
+            }
+        }
     }
 
     private boolean isBuzzer(int ch) {
@@ -505,7 +597,7 @@ public class Ay2Midi {
         if (buzz) {
             v = -1;
         } else if (envMode(ch)) {
-            v = 100;
+            v = envLevelCC();          // 慢包络：软件仿真电平
         } else {
             v = ATTN_TO_VOL[atten];
         }

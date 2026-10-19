@@ -521,20 +521,35 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             markKey(g, kx, y, step, keyW, bw, bh, h, ay2.visEnvNote(), COL_ENV2);
         }
 
-        // T/N/E 像素字符指示：点亮变色（芯片1优先，仅芯片2开用二片色），无色块
-        gateChar(g, x + w - 22, y, h, "T",
-                ay.visToneGate(ch), CH_COLORS[ch],
-                ay2 != null && ay2.visToneGate(ch), CH2_COLORS[ch]);
-        gateChar(g, x + w - 13, y, h, "N",
-                ay.visNoiseGate(ch), COL_NOISE,
-                ay2 != null && ay2.visNoiseGate(ch), COL_NOISE2);
-        gateChar(g, x + w - 5, y, h, "E",
-                ay.visEnvGate(ch), COL_ENV,
-                ay2 != null && ay2.visEnvGate(ch), COL_ENV2);
+        // T/N/E 等距像素字符：各占 8px 槽（含 2px 间隔），槽内居中
+        for (int i = 0; i < 3; i++) {
+            boolean on1, on2;
+            int col1, col2;
+            if (i == 0) {
+                on1 = ay.visToneGate(ch);
+                col1 = CH_COLORS[ch];
+                on2 = ay2 != null && ay2.visToneGate(ch);
+                col2 = CH2_COLORS[ch];
+            } else if (i == 1) {
+                on1 = ay.visNoiseGate(ch);
+                col1 = COL_NOISE;
+                on2 = ay2 != null && ay2.visNoiseGate(ch);
+                col2 = COL_NOISE2;
+            } else {
+                on1 = ay.visEnvGate(ch);
+                col1 = COL_ENV;
+                on2 = ay2 != null && ay2.visEnvGate(ch);
+                col2 = COL_ENV2;
+            }
+            gateChar(g, x + w - 24 + i * 8, y, h, GATE_LETTERS[i],
+                    on1, col1, on2, col2);
+        }
     }
 
-    /** 一个 7px 字符位：开=对应色，关=暗灰。 */
-    private void gateChar(Graphics g, int cx, int y, int h, String letter,
+    private static final String[] GATE_LETTERS = {"T", "N", "E"};
+
+    /** 8px 槽内居中的一个字符：开=对应色，关=暗灰。 */
+    private void gateChar(Graphics g, int slotX, int y, int h, String letter,
                           boolean on1, int col1, boolean on2, int col2) {
         int col = 0x2A3038;
         if (on1) {
@@ -544,7 +559,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         g.setFont(tiny);
         g.setColor(col);
-        g.drawString(letter, cx, y + h / 2, Graphics.BASELINE | Graphics.LEFT);
+        g.drawString(letter, slotX + 4, y + h / 2,
+                Graphics.BASELINE | Graphics.HCENTER);
     }
 
     /** 在横条上标记一个键：白键整高，黑键凹槽整块。 */

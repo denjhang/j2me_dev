@@ -97,7 +97,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int loopPlays;
     private boolean shuffle;
     private int masterVol = 100;
-    private int engineIdx = 1;          // 默认 Tone（诺基亚兼容）
+    private int engineIdx = 0;          // 0=MIDI：默认自动（MIDI 可用就用 MIDI，失败落 Tone）
 
     private final java.util.Random rng = new java.util.Random();
     private long marqueeBaseMs;   // 跑马灯时间基准（与重绘频率解耦）
@@ -132,6 +132,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.parser = null;
         this.ay = new Ay2Midi();
         applyPersisted();
+        engineIdx = ay.toneEngine ? 1 : 0;
         pendingName = name;
         pendingBytes = rawBytes;
         initCommon();
@@ -201,6 +202,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.parser = file.getParser();
         this.ay = new Ay2Midi();
         applyPersisted();
+        engineIdx = ay.toneEngine ? 1 : 0;
         initCommon();
         if (file.header.chipClock[0x12] != 0) {
             ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
@@ -247,7 +249,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         Ay2Midi.preferTone = (v[14] == 1);
         engineIdx = v[14] == 1 ? 1 : 0;
-        // 构造已完成（可能已按默认 tone 打开），按持久化选择校正
         ay.setEngineTone(engineIdx == 1);
         try {
             ay.setStereoMode(v[1]);

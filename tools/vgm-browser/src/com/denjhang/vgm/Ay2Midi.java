@@ -190,7 +190,7 @@ public class Ay2Midi {
     private String midiPath = "?";
 
     // ToneControl 兜底引擎：MIDIControl 不可用/哑巴的真机上保底出声（3 个方波声部）
-    private boolean toneEngine = false;
+    public boolean toneEngine = false;
     private final Player[] tonePlayer = new Player[3];
     private final ToneControl[] toneCtrl = new ToneControl[3];
 
@@ -677,7 +677,7 @@ public class Ay2Midi {
             return "FAIL: " + initError;
         }
         if (toneEngine) {
-            return "TONE (MIDIControl unavailable)";
+            return "Tone";
         }
         StringBuffer sb = new StringBuffer(midiPath);
         if (sendErr.length() > 0) {

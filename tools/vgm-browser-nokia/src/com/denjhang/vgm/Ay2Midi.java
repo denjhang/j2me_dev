@@ -226,33 +226,34 @@ public class Ay2Midi {
         return false;
     }
 
-    /** device://tone + 专职线程（ToneControl 兜底）。 */
+    /** device://tone + 专职线程（ToneControl 兜底）。声部级容错：
+     *  个别声部拿不到 ToneControl 不整体失败（5300 模拟器实测），全坏才返回 false。 */
     private boolean openToneEngine() {
-        try {
-            for (int i = 0; i < 3; i++) {
+        int okCount = 0;
+        for (int i = 0; i < 3; i++) {
+            try {
                 tonePlayer[i] = Manager.createPlayer("device://tone");
                 tonePlayer[i].realize();
                 toneCtrl[i] = (ToneControl) tonePlayer[i].getControl("ToneControl");
                 if (toneCtrl[i] == null) {
-                    return false;
-                }
-                tonePlayer[i].prefetch();
-            }
-            startToneThread();
-            return true;
-        } catch (Throwable t) {
-            initError = "tone:" + t;
-            for (int i = 0; i < 3; i++) {
-                if (tonePlayer[i] != null) {
                     try { tonePlayer[i].close(); } catch (Throwable ignored) {}
                     tonePlayer[i] = null;
-                    toneCtrl[i] = null;
+                    continue;                  // 这个声部废了，其他继续
                 }
+                tonePlayer[i].prefetch();
+                okCount++;
+            } catch (Throwable t) {
+                tonePlayer[i] = null;
+                toneCtrl[i] = null;
             }
+        }
+        if (okCount == 0) {
+            initError = "tone: all voices failed";
             return false;
         }
+        startToneThread();
+        return true;
     }
-
     // 播放线程只写愿望（want*），专职 tone 线程低频消化——
     // 高频 stop/setSequence/start 会拖死 KEmulator 音频（实测 2 秒卡死）
     private final int[] wantNote = {-1, -1, -1};

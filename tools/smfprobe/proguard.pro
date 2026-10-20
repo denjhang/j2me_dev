@@ -1,0 +1,7 @@
+-microedition
+-keep public class com.denjhang.smfprobe.SmfProbeMIDlet
+-keep class com.denjhang.smfprobe.SmfProbe { *; }
+-keepclasseswithmembers public class ** extends javax.microedition.midlet.MIDlet
+-dontwarn
+-dontnote
+-optimizationpasses 1

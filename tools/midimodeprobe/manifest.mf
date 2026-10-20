@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+MIDlet-Name: MidiModeProbe
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: Denjhang
+MIDlet-1: MidiModeProbe,,com.denjhang.midimode.MidiModeProbeMIDlet
+MicroEdition-Profile: MIDP-2.0
+MicroEdition-Configuration: CLDC-1.1

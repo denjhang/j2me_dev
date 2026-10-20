@@ -1,0 +1,7 @@
+-microedition
+-keep public class com.denjhang.midimode.MidiModeProbeMIDlet
+-keep class com.denjhang.midimode.MidiModeProbe { *; }
+-keepclasseswithmembers public class ** extends javax.microedition.midlet.MIDlet
+-dontwarn
+-dontnote
+-optimizationpasses 1

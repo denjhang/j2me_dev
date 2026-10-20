@@ -579,17 +579,34 @@ public class Ay2Midi {
         }
     }
 
-    /** HUD 诊断：引擎路径 + 发送统计。 */
+    /** HUD 诊断：引擎与首个异常。 */
     public String midiStatus() {
         if (!ready) {
-            return "FAIL:" + initError;
+            return "FAIL: " + initError;
         }
-        StringBuffer sb = new StringBuffer(toneEngine ? "TONE " : midiPath);
-        sb.append(' ').append(sendOk).append('/').append(sendFail);
+        if (toneEngine) {
+            return "TONE (MIDIControl unavailable)";
+        }
+        StringBuffer sb = new StringBuffer(midiPath);
         if (sendErr.length() > 0) {
-            sb.append(' ').append(sendErr);
+            sb.append(" E:").append(clip(sendErr, 40));
         }
         return sb.toString();
+    }
+
+    /** 事件发送统计（成功/失败 + 异常摘要）。 */
+    public String eventStats() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(sendOk).append(" ok / ").append(sendFail).append(" fail");
+        if (sendErr.length() > 0) {
+            sb.append(" - ").append(clip(sendErr, 60));
+        }
+        return sb.toString();
+    }
+
+    private static String clip(String s, int n) {
+        if (s == null) return "";
+        return s.length() > n ? s.substring(0, n) : s;
     }
 
     // ------------------------------------------------------------ 寄存器入口

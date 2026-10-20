@@ -103,6 +103,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private Image kbImg;          // 三条键盘底图（白键/黑键/通道标/灭灯字符）
     private Image gd3Img;         // GD3 表格整块（含换行结果）
     private int gd3Scroll;        // GD3 表格纵向滚动（2/8 键）
+    private int colX;             // 信息表键值分列 x（烘焙/动态调试行共用）
     private int builtW = -1;      // 构建时的屏宽（变了才重建）
     private int kbStep;           // 键盘布局缓存（动态高亮要与底图对齐）
     private int kbKx;
@@ -516,7 +517,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
 
         // ---- 信息表（换行只算这一次）----
-        int colX = w * 30 / 100;
+        colX = w * 30 / 100;
         java.util.Vector flat = new java.util.Vector();
         com.denjhang.vgm.VgmHeader hd = file.header;
         // 芯片/时钟信息置顶（无表头行，直接内容）
@@ -694,7 +695,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         st.append(shuffle ? "  shuf #" : "  #").append(listIndex + 1);
         st.append("  vol ").append(masterVol);
-        st.append("  MIDI ").append(ay.midiStatus());
         g.drawString(st.toString(), 6, sy, Graphics.TOP | Graphics.LEFT);
         if (err != null) {
             g.setColor(0xFF7C7C);
@@ -727,20 +727,59 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (gd3Scroll < 0) {
             gd3Scroll = 0;
         }
+        // 调试区：标签下面多行（Engine/事件计数/首个异常/时钟等）
+        String[][] dbg = debugRows();
+        int dbgH = dbg.length * 13 + 4;
+        int contentH = gd3Img.getHeight() + dbgH;
+        int gd3Max2 = contentH - gh;
+        if (gd3Max2 < 0) {
+            gd3Max2 = 0;
+        }
+        if (gd3Scroll > gd3Max2) {
+            gd3Scroll = gd3Max2;
+        }
         int cw2 = g.getClipWidth();
         int ch2 = g.getClipHeight();
         g.clipRect(0, gy, w, gh);
         g.drawImage(gd3Img, 0, gy - gd3Scroll, Graphics.TOP | Graphics.LEFT);
+        g.setFont(tiny);
+        int dy = gy - gd3Scroll + gd3Img.getHeight() + 2;
+        g.setColor(0x3A4656);
+        g.drawLine(4, dy, w - 4, dy);
+        dy += 2;
+        for (int i = 0; i < dbg.length; i++) {
+            g.setColor(0x7FA0C8);
+            g.drawString(dbg[i][0], 6, dy, Graphics.TOP | Graphics.LEFT);
+            g.setColor(0xC8D4E4);
+            g.drawString(dbg[i][1], colX, dy, Graphics.TOP | Graphics.LEFT);
+            dy += 13;
+        }
         g.setClip(0, 0, cw2, ch2);
-        if (gd3Max > 0) {
-            // 滚动条（真机屏幕矮，标签经常放不下）
-            int thumbH = Math.max(14, gh * gh / gd3Img.getHeight());
-            int thumbY = gy + (gh - thumbH) * gd3Scroll / gd3Max;
+        if (gd3Max2 > 0) {
+            // 滚动条（真机屏幕矮，标签+调试经常放不下）
+            int thumbH = Math.max(14, gh * gh / contentH);
+            int thumbY = gy + (gh - thumbH) * gd3Scroll / gd3Max2;
             g.setColor(0x2A3242);
             g.fillRect(w - 5, gy, 3, gh);
             g.setColor(0x8FA3C8);
             g.fillRect(w - 5, thumbY, 3, thumbH);
         }
+    }
+
+    /** 调试信息行（信息表底部，随标签区一起滚动）。 */
+    private String[][] debugRows() {
+        com.denjhang.vgm.VgmHeader hd = file.header;
+        long clk = hd.chipClock[0x12] & 0x3FFFFFFF;
+        boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
+        return new String[][]{
+            {"Engine", ay.midiStatus()},
+            {"Clock", clk + " Hz" + (dual ? " x2" : "")},
+            {"Events", ay.eventStats()},
+            {"Bend", ay.getBendSensText() + " / " + ay.getBendRangePct() + "%"},
+            {"Master", String.valueOf(masterVol)},
+            {"Track", (listIndex + 1) + " " + (shuffle ? "shuffle" : "seq")
+                + " loop " + LOOP_NAMES[loopIdx]},
+        };
     }
 
     /** 键盘底图（静态，烘焙一次）：白键、黑键凹槽、通道色标、灭灯 TNE 字符。 */

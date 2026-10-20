@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+MIDlet-Name: VgmBrowserToneRT
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: Denjhang
+MIDlet-1: VgmBrowserToneRT,,com.denjhang.vgmbrowser.BrowserMIDlet
+MIDlet-Icon: /icon.png
+Nokia-MIDlet-On-Screen-Keypad: no
+Nokia-MIDlet-No-Exit: true
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
+MIDlet-Permissions: javax.microedition.io.Connector.file.read
+MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write

@@ -363,7 +363,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             ay2.recBaseMs = ay.recBaseMs;
             ay2.rec.removeAllElements();
         }
-        smf = new com.denjhang.vgm.SmfStreamEngine(ay);
+        smf = new com.denjhang.vgm.SmfStreamEngine(ay, ay2);
         smf.volume = masterVol * 75 / 100 + 20;
         smf.start();
         play = new Thread(new Runnable() {

@@ -16,26 +16,30 @@ import javax.microedition.media.control.VolumeControl;
  * 前一个 END_OF_MEDIA 时无缝 start 下一个。
  */
 public class SmfStreamEngine implements PlayerListener {
-    private static final int CHUNK_MS = 1200;
+    private static final int CHUNK_MS = 3000;
     private static final int PPQ = 480;
     private static final int MS_PER_Q = 500;
 
     private final Ay2Midi ay;
+    private final Ay2Midi ay2;      // 第二芯片（无则 null）
     private Thread feeder;
     private volatile boolean quit;
     private Player current;      // 播放中
     private Player next;         // 预备
     private long windowStart;    // 已消费到的 ms（相对 recBase）
     private int consumedIdx;
+    private int consumed2Idx;
     public int volume = 75;      // VolumeControl 0-100
 
-    public SmfStreamEngine(Ay2Midi ay) {
+    public SmfStreamEngine(Ay2Midi ay, Ay2Midi ay2) {
         this.ay = ay;
+        this.ay2 = ay2;
     }
 
     public void start() {
         quit = false;
         consumedIdx = 0;
+        consumed2Idx = 0;
         windowStart = 0;
         feeder = new Thread(new Runnable() {
             public void run() {
@@ -61,18 +65,16 @@ public class SmfStreamEngine implements PlayerListener {
         while (!quit) {
             long wall = System.currentTimeMillis() - t0;
             long target = windowStart + CHUNK_MS;
-            if (wall < target) {
-                // 到窗口终点前：把下一块预备好
-                if (next == null) {
-                    byte[] smf = buildChunk(windowStart, target);
-                    next = makePlayer(smf);
-                }
+            // 先把下一块预备好（realize+prefetch 重，提前做）
+            if (next == null) {
+                byte[] smf = buildChunk(windowStart, target);
+                next = makePlayer(smf);
+                drainConsumed();          // 立即裁剪已消费事件，内存有界
+            }
+            // 窗口到期 且 下一块已就绪 才滚动；否则等（避免接力空档）
+            if (wall < target || next == null) {
                 try { Thread.sleep(40); } catch (InterruptedException e) { break; }
                 continue;
-            }
-            // 窗口到期：滚一块
-            if (next == null) {
-                next = makePlayer(buildChunk(windowStart, target));
             }
             Player startMe = next;
             next = null;
@@ -82,6 +84,20 @@ public class SmfStreamEngine implements PlayerListener {
             } else {
                 pending = startMe;   // END_OF_MEDIA 时接力
             }
+        }
+    }
+
+    /** 裁掉两路录制流中已消费的事件（OOM 根治：录制缓冲有界）。 */
+    private void drainConsumed() {
+        for (int i = 0; i < consumedIdx; i++) {
+            ay.rec.removeElementAt(0);
+        }
+        consumedIdx = 0;
+        if (ay2 != null) {
+            for (int i = 0; i < consumed2Idx; i++) {
+                ay2.rec.removeElementAt(0);
+            }
+            consumed2Idx = 0;
         }
     }
 

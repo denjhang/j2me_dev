@@ -195,6 +195,22 @@ public class Ay2Midi {
     private final Player[] tonePlayer = new Player[3];
     private final ToneControl[] toneCtrl = new ToneControl[3];
 
+    // ---- 离线 SMF 渲染支持 ----
+    /** >=0 时启用虚拟时钟（离线渲染用），否则走墙钟。 */
+    public long vtime = -1;
+    /** 渲染模式：send() 的每个事件按 recTick 记入 rec。 */
+    public boolean recording;
+    public long recTick;
+    public final java.util.Vector rec = new java.util.Vector();
+
+    private long nowMs() {
+        return vtime >= 0 ? vtime : System.currentTimeMillis();
+    }
+
+    /** SMF 流引擎：只录制事件，不打开任何音频 Player。 */
+    public static boolean RECORD_ONLY = false;
+    /** 录制时间基准（毫秒墙钟）。 */
+    public long recBaseMs;
     /** 主版标志（本分支恒 false，固定 tone）。 */
     public static boolean FORCE_MIDI = false;
     /** 分支版：强制 tone（诺基亚）引擎，禁用一切 MIDI 尝试。 */
@@ -203,6 +219,11 @@ public class Ay2Midi {
     public static boolean preferTone = false;
 
     private boolean init() {
+        if (RECORD_ONLY) {
+            ready = true;
+            midiPath = "SMF";
+            return true;
+        }
         if (!FORCE_MIDI && (FORCE_TONE || preferTone) && openToneEngine()) {
             midiPath = "TONE";
             toneEngine = true;
@@ -707,6 +728,12 @@ public class Ay2Midi {
     private String sendErr = "";
 
     private void send(int status, int d1, int d2) {
+        if (recording) {
+            if (vtime < 0) {
+                recTick = System.currentTimeMillis() - recBaseMs;
+            }
+            rec.addElement(new long[]{recTick, status, d1, d2});
+        }
         if (!ready || toneEngine || midi == null) {
             return;
         }
@@ -846,7 +873,7 @@ public class Ay2Midi {
      * 重复形状（8-15）的重写无此含义，交给常规蜂鸣器分支。
      */
     private void onShapeWrite() {
-        long now = System.currentTimeMillis();
+        long now = nowMs();
         // 硬件语义：写 R13 重启包络发生器（attack 位决定起始方向）
         boolean attack = (regs[13] & 0x04) != 0;
         envPtr = attack ? 0 : 31;
@@ -961,7 +988,7 @@ public class Ay2Midi {
 
     public void tick() {
         if (syncBuzz && lastR13At != 0
-                && System.currentTimeMillis() - lastR13At > 100) {
+                && nowMs() - lastR13At > 100) {
             stopSyncBuzz();
             syncBuzz = false;
             r13Interval = 0;
@@ -987,7 +1014,7 @@ public class Ay2Midi {
         if (envStepMs <= 0 || envPause) {
             return;
         }
-        long now = System.currentTimeMillis();
+        long now = nowMs();
         if (envNextStepAt == 0) {
             envNextStepAt = now;
         }

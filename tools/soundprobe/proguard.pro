@@ -5,3 +5,4 @@
 -dontwarn
 -dontnote
 -optimizationpasses 1
+-keep class com.denjhang.soundprobe.SoundProbe { *; }

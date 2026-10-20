@@ -61,7 +61,7 @@ public class SoundProbe extends Canvas implements Runnable {
             y += small.getHeight() + 4;
         }
         g.setColor(0x667788);
-        g.drawString("auto:1,2,5-10 | 3,4=ToneCtrl(manual,crash risk) | 5=reset 0=exit", 4, h - small.getHeight() - 2,
+        g.drawString("auto:1,2,5-9 | 3,4=ToneCtrl(#)  #=NokiaSound | 5=reset 0=exit", 4, h - small.getHeight() - 2,
                 Graphics.TOP | Graphics.LEFT);
     }
 
@@ -89,7 +89,7 @@ public class SoundProbe extends Canvas implements Runnable {
                 test7(); pause(600);
                 test8(); pause(600);
                 test9(); pause(600);
-                testA(); pause(600);
+                // A（Nokia UI Sound）手动：按 #（S40 缺 init，编译期引用危险）
             } catch (Throwable t) {
                 if (cur >= 0) results[cur] = "EX " + t;
             }
@@ -394,7 +394,6 @@ public class SoundProbe extends Canvas implements Runnable {
                     new com.nokia.mid.sound.Sound(POP_OTT, com.nokia.mid.sound.Sound.SOUND_FORMAT_TONE);
             StringBuffer api = new StringBuffer("ctor");
             try { snd.setGain(255); api.append("+gain"); } catch (Throwable ignored) {}
-            try { snd.init(); api.append("+init"); } catch (Throwable ignored) {}
             try {
                 snd.play(3);
                 api.append("+play");
@@ -416,6 +415,8 @@ public class SoundProbe extends Canvas implements Runnable {
             test3();
         } else if (keyCode == KEY_NUM4) {
             test4();
+        } else if (keyCode == KEY_POUND) {
+            testA();
         } else if (keyCode == KEY_NUM5) {
             for (int i = 0; i < results.length; i++) {
                 results[i] = null;

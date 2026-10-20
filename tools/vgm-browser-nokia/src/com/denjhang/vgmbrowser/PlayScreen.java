@@ -97,6 +97,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int loopPlays;
     private boolean shuffle;
     private int masterVol = 100;
+    private com.denjhang.vgm.SmfStreamEngine smf;
+    static {
+        com.denjhang.vgm.Ay2Midi.RECORD_ONLY = true;   // 诺基亚分支：SMF 流引擎
+    }
     private int engineIdx = 0;          // 0=MIDI：默认自动（MIDI 可用就用 MIDI，失败落 Tone）
 
     private final java.util.Random rng = new java.util.Random();
@@ -348,6 +352,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
         }
         playing = true;
+        if (smf != null) {
+            smf.stop();
+        }
+        ay.recording = true;
+        ay.recBaseMs = System.currentTimeMillis();
+        ay.rec.removeAllElements();
+        if (ay2 != null) {
+            ay2.recording = true;
+            ay2.recBaseMs = ay.recBaseMs;
+            ay2.rec.removeAllElements();
+        }
+        smf = new com.denjhang.vgm.SmfStreamEngine(ay);
+        smf.volume = masterVol * 75 / 100 + 20;
+        smf.start();
         play = new Thread(new Runnable() {
             public void run() {
                 playLoop();
@@ -406,6 +424,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         if (playing) {
             playing = false;
+            ay.recording = false;
+            if (ay2 != null) {
+                ay2.recording = false;
+            }
+            if (smf != null) {
+                smf.stop();
+                smf = null;
+            }
             ay.allSoundOff();
             if (ay2 != null) {
                 ay2.allSoundOff();
@@ -1432,6 +1458,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         } else if (action == FIRE || keyCode == KEY_NUM5) {
             if (playing) {
                 playing = false;
+                ay.recording = false;
+                if (ay2 != null) {
+                    ay2.recording = false;
+                }
+                if (smf != null) {
+                    smf.stop();
+                    smf = null;
+                }
                 ay.allSoundOff();
                 if (ay2 != null) {
                     ay2.allSoundOff();

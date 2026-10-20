@@ -186,39 +186,76 @@ public class Ay2Midi {
     }
 
     private boolean init() {
+        // nescube 精确复刻：createPlayer → prefetch() → getControl(全类名)。
+        // 没有 realize、没有 start、初始化零 CC（音色照 nescube 打开后按需发）。
+        // 任一步失败再走 MeBoy 兜底链（realize → start → getControl）。
+        if (openMidiNescube()) {
+            sendInitProgs();
+            return true;
+        }
+        if (openMidiMeboy()) {
+            sendInitProgs();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean openMidiNescube() {
         try {
             player = Manager.createPlayer("device://midi");
             if (player == null) {
                 initError = "device://midi unavailable";
                 return false;
             }
-            // nescube 顺序：prefetch 后取控制；控制名先用全类名（真机），再退短名（模拟器）
-            player.realize();
             player.prefetch();
             midi = (MIDIControl) player.getControl("javax.microedition.media.control.MIDIControl");
             if (midi == null) {
                 midi = (MIDIControl) player.getControl("MIDIControl");
             }
-            if (midi == null) {
-                player.close();
-                player = null;
-                initError = "no MIDIControl";
-                return false;
-            }
-            player.start();
-            for (int i = 0; i < 6; i++) {
-                send(PROG | channelOf(i), progMap[i], 0);
-            }
-            sendPans();
-            // CC7 直接给主音量（真机上预置 0 可能不被后续 CC 覆盖）
-            for (int i = 0; i < CHANNELS; i++) {
-                send(CC | i, 7, masterVol);
-            }
-            return true;
+            return midi != null;
         } catch (Throwable t) {
             initError = t.toString();
+            safeClose();
             return false;
         }
+    }
+
+    private boolean openMidiMeboy() {
+        try {
+            player = Manager.createPlayer("device://midi");
+            if (player == null) {
+                return false;
+            }
+            player.realize();
+            player.start();
+            midi = (MIDIControl) player.getControl("javax.microedition.media.control.MIDIControl");
+            if (midi == null) {
+                midi = (MIDIControl) player.getControl("MIDIControl");
+            }
+            return midi != null;
+        } catch (Throwable t) {
+            initError = t.toString();
+            safeClose();
+            return false;
+        }
+    }
+
+    private void safeClose() {
+        if (player != null) {
+            try {
+                player.close();
+            } catch (Throwable ignored) {
+            }
+            player = null;
+        }
+    }
+
+    /** 打开后只发音色 + 声像，其余 CC 一律不发（nescube 同款）。 */
+    private void sendInitProgs() {
+        for (int i = 0; i < 6; i++) {
+            send(PROG | channelOf(i), progMap[i], 0);
+        }
+        sendPans();
     }
 
     /** nescube 音量模型：电平直接做 note-on 力度（最小 1，0 等于 note-off）。 */

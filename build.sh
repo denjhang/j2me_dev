@@ -41,6 +41,11 @@ BOOTCP="$LIB_W\\cldc_1.1.jar;$LIB_W\\midp_2.0.jar;$MMAPI_W"
 if [ -f "$FILEAPI" ]; then
   BOOTCP="$BOOTCP;$FILEAPI_W"
 fi
+# Nokia UI API 编译期 stub（真机由固件提供；不打包进 jar）
+NOKIAUI="$ROOT/tools/nokia-ui-api/nokia-ui-api.jar"
+if [ -f "$NOKIAUI" ]; then
+  BOOTCP="$BOOTCP;$(win "$NOKIAUI")"
+fi
 
 # 工程里应只有一个 .jad 模板，产物名跟它走（Brick.jad -> Brick.jar）
 cd "$PROJ"
@@ -128,7 +133,8 @@ grep -v -E '^MIDlet-Jar-(Size|URL):' "$JAD" > "$JAD.tmp"
 echo "MIDlet-Jar-Size: $SIZE" >> "$JAD.tmp"
 echo "MIDlet-Jar-URL: $JAR_NAME" >> "$JAD.tmp"
 # JAD 统一 CRLF（部分诺基亚固件对 LF 解析异常）
-sed -i 's/$//' "$JAD.tmp" 2>/dev/null || unix2dos "$JAD.tmp" 2>/dev/null
+sed -i 's/$/
+/' "$JAD.tmp" 2>/dev/null || unix2dos "$JAD.tmp" 2>/dev/null
 mv "$JAD.tmp" "$JAD"
 
 # --- 4. 一致性自检：jar/jad 属性逐项比对，不一致直接失败 ---

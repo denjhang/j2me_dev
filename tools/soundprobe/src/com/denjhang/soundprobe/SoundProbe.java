@@ -24,6 +24,8 @@ public class SoundProbe extends Canvas implements Runnable {
         "6 MIDI meboy order",           // device://midi realize+start
         "7 MIDI ch6 nescube style",     // nescube 3.2 通道/音色/音量全套
         "8 MIDI file stream (SMF)",     // City Bloxx 路径：audio/midi 字节流
+        "9 SMF stream x3 chunks",       // 逐块接力（我们的流引擎形态）
+        "A Nokia UI Sound (.ott)",      // Bounce 的 com.nokia.mid.sound.Sound
     };
     private String[] results = new String[NAMES.length];
     private int cur = -1;
@@ -87,6 +89,8 @@ public class SoundProbe extends Canvas implements Runnable {
                 test6(); pause(600);
                 test7(); pause(600);
                 test8(); pause(600);
+                test9(); pause(600);
+                testA(); pause(600);
             } catch (Throwable t) {
                 if (cur >= 0) results[cur] = "EX " + t;
             }
@@ -331,6 +335,73 @@ public class SoundProbe extends Canvas implements Runnable {
         } catch (Throwable t) {
             show(7, "EX " + t);
             closeHeld();
+        }
+    }
+
+    /** 三块 SMF 接力播放（模拟流引擎）。 */
+    private void test9() {
+        show(8, "playing 3 chunks");
+        try {
+            int[] starts = {60, 62, 64};
+            for (int c = 0; c < 3; c++) {
+                byte[] smf = buildSmfFrom(starts[c]);
+                Player p = Manager.createPlayer(new java.io.ByteArrayInputStream(smf), "audio/midi");
+                p.realize();
+                p.prefetch();
+                VolumeControl vc = (VolumeControl) p.getControl("VolumeControl");
+                if (vc != null) vc.setLevel(75);
+                p.start();
+                pause(1800);
+                p.close();
+            }
+            show(8, "OK (seamless?)");
+        } catch (Throwable t) {
+            show(8, "EX " + t);
+        }
+    }
+
+    /** 指定起始音的 5 音上行 SMF。 */
+    private static byte[] buildSmfFrom(int start) {
+        int[] notes = {start, start + 4, start + 7, start + 12, start + 7};
+        java.io.ByteArrayOutputStream tr = new java.io.ByteArrayOutputStream();
+        tr.write(0x00); tr.write(0xC0); tr.write(80);
+        for (int i = 0; i < notes.length; i++) {
+            tr.write(0x00); tr.write(0x90); tr.write(notes[i]); tr.write(110);
+            tr.write(0x81); tr.write(0x60);
+            tr.write(0x80); tr.write(notes[i]); tr.write(0);
+        }
+        tr.write(0x00); tr.write(0xFF); tr.write(0x2F); tr.write(0x00);
+        byte[] track = tr.toByteArray();
+        java.io.ByteArrayOutputStream s = new java.io.ByteArrayOutputStream();
+        s.write('M'); s.write('T'); s.write('h'); s.write('d');
+        write32(s, 6); write16(s, 0); write16(s, 1); write16(s, 480);
+        s.write('M'); s.write('T'); s.write('r'); s.write('k');
+        write32(s, track.length);
+        s.write(track, 0, track.length);
+        return s.toByteArray();
+    }
+
+    /** Bounce 原版 pop.ott 字节（com.nokia.mid.sound.Sound 固件解析实证样本）。 */
+    private static final byte[] POP_OTT = {
+        2, 74, 58, 64, 4, 0, 15, 28, (byte) 197, 24, (byte) 161, (byte) 202, 36, (byte) 140, 0, 0
+    };
+
+    /** Nokia UI API 1.0：com.nokia.mid.sound.Sound（编译期 stub，真机走固件实现）。 */
+    private void testA() {
+        show(9, "creating");
+        try {
+            Class.forName("com.nokia.mid.sound.Sound");   // 真机存在性检查
+            com.nokia.mid.sound.Sound snd =
+                    new com.nokia.mid.sound.Sound(POP_OTT, com.nokia.mid.sound.Sound.SOUND_FORMAT_TONE);
+            snd.init();
+            snd.setGain(255);
+            snd.play(3);
+            pause(2500);
+            snd.stop();
+            snd.release();
+            show(9, "OK (heard?)");
+        } catch (Throwable t) {
+            show(9, "EX " + t);
         }
     }
 

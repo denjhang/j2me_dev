@@ -211,6 +211,11 @@ public class Ay2Midi {
     public static boolean RECORD_ONLY = false;
     /** 录制时间基准（毫秒墙钟）。 */
     public long recBaseMs;
+    /** 双缓冲可视化重放：寄存器写录制 {ms, reg, data}。 */
+    public boolean recordingReg;
+    public final java.util.Vector regRec = new java.util.Vector();
+    /** 本段 SMF 估算字节数（send 录制时累加）。 */
+    public int recBytes;
     /** 主版标志（本分支恒 false，固定 tone）。 */
     public static boolean FORCE_MIDI = false;
     /** 分支版：强制 tone（诺基亚）引擎，禁用一切 MIDI 尝试。 */
@@ -753,6 +758,7 @@ public class Ay2Midi {
                 recTick = System.currentTimeMillis() - recBaseMs;
             }
             rec.addElement(new long[]{recTick, status, d1, d2});
+            recBytes += 5;
         }
         if (!ready || toneEngine || midi == null) {
             return;
@@ -804,6 +810,11 @@ public class Ay2Midi {
     public void write(int reg, int data) {
         if (reg < 0 || reg > 15) {
             return;
+        }
+        if (recordingReg) {
+            regRec.addElement(new long[]{
+                    (vtime >= 0 ? vtime : System.currentTimeMillis()) - recBaseMs,
+                    reg, data});
         }
         regs[reg] = data & 0xFF;
         switch (reg) {

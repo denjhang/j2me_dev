@@ -1,1 +1,1 @@
-v1.1.18: PC-identical channel map (no ch9); per-chunk instrument/pan/volume re-init (fixes all-piano); drift-skip; Gen size setting 100k-800k (persisted)
+v1.1.18: double-buffer model (fill->play alternation, viz+progress follow audio), PC channel map, per-chunk synth re-init, Gen size 4k-256k, BufA/BufB debug rows

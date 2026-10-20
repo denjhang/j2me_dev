@@ -1,6 +1,7 @@
 package com.denjhang.vgm;
 
 import javax.microedition.media.Manager;
+import javax.microedition.media.control.ToneControl;
 import javax.microedition.media.Player;
 import javax.microedition.media.control.MIDIControl;
 
@@ -187,6 +188,11 @@ public class Ay2Midi {
 
     private String midiPath = "?";
 
+    // ToneControl 兜底引擎：MIDIControl 不可用/哑巴的真机上保底出声（3 个方波声部）
+    private boolean toneEngine = false;
+    private final Player[] tonePlayer = new Player[3];
+    private final ToneControl[] toneCtrl = new ToneControl[3];
+
     private boolean init() {
         // nescube 精确复刻：createPlayer → prefetch() → getControl(全类名)。
         // 没有 realize、没有 start、初始化零 CC（音色照 nescube 打开后按需发）。
@@ -201,8 +207,87 @@ public class Ay2Midi {
             sendInitProgs();
             return true;
         }
+        if (openToneEngine()) {
+            midiPath = "TONE";
+            toneEngine = true;
+            return true;
+        }
         return false;
     }
+
+    /** device://tone：MIDP 标配，任何设备都能出声。3 个方波声部，无噪声/包络。 */
+    private boolean openToneEngine() {
+        try {
+            for (int i = 0; i < 3; i++) {
+                tonePlayer[i] = Manager.createPlayer("device://tone");
+                tonePlayer[i].realize();
+                toneCtrl[i] = (ToneControl) tonePlayer[i].getControl("ToneControl");
+                if (toneCtrl[i] == null) {
+                    return false;
+                }
+                toneCtrl[i].setSequence(silenceSeq());
+                tonePlayer[i].prefetch();
+                tonePlayer[i].start();
+            }
+            return true;
+        } catch (Throwable t) {
+            initError = "tone:" + t;
+            for (int i = 0; i < 3; i++) {
+                if (tonePlayer[i] != null) {
+                    try { tonePlayer[i].close(); } catch (Throwable ignored) {}
+                    tonePlayer[i] = null;
+                    toneCtrl[i] = null;
+                }
+            }
+            return false;
+        }
+    }
+
+    private static byte[] silenceSeq() {
+        return new byte[]{
+            ToneControl.VERSION, 1,
+            ToneControl.TEMPO, 30,
+            ToneControl.BLOCK_START, 0,
+            ToneControl.SILENCE, 16,
+            ToneControl.BLOCK_END, 0,
+            ToneControl.PLAY_BLOCK, 0,
+        };
+    }
+
+    /** tone 引擎：给第 ch 个方波声部设连续音（vol 0-127 → 0-100）。 */
+    private void toneSeq(int ch, int note, int vol) {
+        if (ch < 0 || ch > 2 || toneCtrl[ch] == null) {
+            return;
+        }
+        int v = vol * 100 / 127;
+        if (v > 100) v = 100;
+        if (v < 1) v = 1;
+        if (note < 0) note = 60;
+        if (note > 126) note = 126;
+        try {
+            toneCtrl[ch].setSequence(new byte[]{
+                ToneControl.VERSION, 1,
+                ToneControl.TEMPO, 30,
+                ToneControl.SET_VOLUME, (byte) v,
+                ToneControl.BLOCK_START, 0,
+                (byte) note, 64,
+                ToneControl.BLOCK_END, 0,
+                ToneControl.REPEAT, 127, 0,
+            });
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void toneSilence(int ch) {
+        if (ch < 0 || ch > 2 || toneCtrl[ch] == null) {
+            return;
+        }
+        try {
+            toneCtrl[ch].setSequence(silenceSeq());
+        } catch (Throwable ignored) {
+        }
+    }
+
 
     private boolean openMidiNescube() {
         try {
@@ -244,6 +329,17 @@ public class Ay2Midi {
         }
     }
 
+    private void closeAll() {
+        safeClose();
+        for (int i = 0; i < 3; i++) {
+            if (tonePlayer[i] != null) {
+                try { tonePlayer[i].close(); } catch (Throwable ignored) {}
+                tonePlayer[i] = null;
+                toneCtrl[i] = null;
+            }
+        }
+    }
+
     private void safeClose() {
         if (player != null) {
             try {
@@ -264,6 +360,12 @@ public class Ay2Midi {
 
     /** MeBoy advanced 模式：每个 note-on 前重发 CC7，不依赖设备记住任何 CC 状态。 */
     private void noteOn(int ch, int note, int velocity) {
+        if (toneEngine) {
+            if (ch >= 0 && ch <= 2) {
+                toneSeq(ch, note, velocity);
+            }
+            return;
+        }
         send(CC | ch, CC_VOLUME, masterVol);
         send(NOTE_ON | ch, note, velocity);
     }
@@ -383,6 +485,13 @@ public class Ay2Midi {
             }
             player = null;
         }
+        for (int i = 0; i < 3; i++) {
+            if (tonePlayer[i] != null) {
+                try { tonePlayer[i].close(); } catch (Throwable ignored) {}
+                tonePlayer[i] = null;
+                toneCtrl[i] = null;
+            }
+        }
         midi = null;
         ready = false;
     }
@@ -431,6 +540,9 @@ public class Ay2Midi {
 
     public void allSoundOff() {
         for (int ch = 0; ch < 3; ch++) {
+            if (toneEngine) {
+                toneSilence(ch);
+            }
             noteOff(ch);
             buzzer[ch] = false;
             curVol[ch] = -1;
@@ -452,7 +564,7 @@ public class Ay2Midi {
     private String sendErr = "";
 
     private void send(int status, int d1, int d2) {
-        if (!ready) {
+        if (!ready || toneEngine || midi == null) {
             return;
         }
         try {
@@ -472,7 +584,7 @@ public class Ay2Midi {
         if (!ready) {
             return "FAIL:" + initError;
         }
-        StringBuffer sb = new StringBuffer(midiPath);
+        StringBuffer sb = new StringBuffer(toneEngine ? "TONE " : midiPath);
         sb.append(' ').append(sendOk).append('/').append(sendFail);
         if (sendErr.length() > 0) {
             sb.append(' ').append(sendErr);
@@ -1120,7 +1232,11 @@ public class Ay2Midi {
             curVol[ch] = toneV;
             send(CC | toneCh[ch], CC_EXPRESSION, toneV);
             // nescube 模型：力度重发，CC11 不被支持的真机上音量仍然生效
-            if (old >= 0 && toneV > 0 && Math.abs(toneV - old) >= 16) {
+            if (toneEngine) {
+                if (curNote[ch] >= 0 && toneV > 0) {
+                    toneSeq(ch, curNote[ch], toneV);
+                }
+            } else if (old >= 0 && toneV > 0 && Math.abs(toneV - old) >= 16) {
                 retriggerVel(toneCh[ch], curNote[ch], toneV);
             }
         }
@@ -1157,7 +1273,11 @@ public class Ay2Midi {
 
     private void noteOff(int ch) {
         if (curNote[ch] >= 0) {
-            send(NOTE_OFF | toneCh[ch], curNote[ch], 0);
+            if (toneEngine) {
+                toneSilence(ch);
+            } else {
+                send(NOTE_OFF | toneCh[ch], curNote[ch], 0);
+            }
             curNote[ch] = -1;
             curBend[ch] = 8192;
         }

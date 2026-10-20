@@ -68,8 +68,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_MASTER = 11;
     private static final int ROW_ENGINE = 12;
     private static final int ROW_BEND_RANGE = 13;
-    private static final int ROW_CH0 = 14;
-    private static final int TOTAL_ROWS = 14 + Ay2Midi.SLOTS;
+    private static final int ROW_CHUNK = 14;
+    private static final int ROW_CH0 = 15;
+    private static final int TOTAL_ROWS = 15 + Ay2Midi.SLOTS;
+    private static final String[] CHUNK_NAMES = com.denjhang.vgm.SmfStreamEngine.CHUNK_NAMES;
+    private int chunkIdx = 1;                 // 默认 200k
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
     private static final int ROW_H = 16;
     private int cursor;
@@ -253,6 +256,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         Ay2Midi.preferTone = (v[14] == 1);
         engineIdx = v[14] == 1 ? 1 : 0;
+        if (v[15] >= 0 && v[15] < CHUNK_NAMES.length) {
+            chunkIdx = v[15];
+        }
         ay.setEngineTone(engineIdx == 1);
         try {
             ay.setStereoMode(v[1]);
@@ -268,8 +274,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             masterVol = v[11];
             loopIdx = v[12];
             shuffle = v[13] != 0;
-            for (int i = 0; i < Ay2Midi.SLOTS && 15 + i < v.length; i++) {
-                ay.setProg(i, v[15 + i]);
+            for (int i = 0; i < Ay2Midi.SLOTS && 16 + i < v.length; i++) {
+                ay.setProg(i, v[16 + i]);
             }
         } catch (Throwable t) {
             // 单项越界忽略，保其余
@@ -294,8 +300,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         v[12] = loopIdx;
         v[13] = shuffle ? 1 : 0;
         v[14] = engineIdx;
+        v[15] = chunkIdx;
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
-            v[15 + i] = ay.getProg(i);
+            v[16 + i] = ay.getProg(i);
         }
         SettingsStore.save(v);
     }
@@ -364,6 +371,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             ay2.rec.removeAllElements();
         }
         smf = new com.denjhang.vgm.SmfStreamEngine(ay, ay2);
+        smf.setChunkIdx(chunkIdx);
         smf.volume = masterVol * 75 / 100 + 20;
         smf.start();
         play = new Thread(new Runnable() {
@@ -1265,6 +1273,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ORDER: return "Play order";
             case ROW_MASTER: return "Master vol";
             case ROW_ENGINE: return "Engine";
+            case ROW_CHUNK: return "Gen size";
             case ROW_BEND_RANGE: return "Bend range";
             default: return CH_NAMES[r - ROW_CH0];
         }
@@ -1287,6 +1296,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ORDER: return ORDER_NAMES[shuffle ? 1 : 0];
             case ROW_MASTER: return String.valueOf(masterVol);
             case ROW_ENGINE: return ENGINE_NAMES[engineIdx];
+            case ROW_CHUNK: return CHUNK_NAMES[chunkIdx];
             case ROW_BEND_RANGE: return ay.getBendRangePct() + "%";
             default: return String.valueOf(ay.getProg(r - ROW_CH0));
         }
@@ -1358,6 +1368,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_MASTER:
                 setMaster(masterVol + dir * 10);
                 break;
+            case ROW_CHUNK: {
+                chunkIdx = (chunkIdx + dir + CHUNK_NAMES.length) % CHUNK_NAMES.length;
+                if (smf != null) {
+                    smf.setChunkIdx(chunkIdx);
+                }
+                break;
+            }
             case ROW_ENGINE: {
                 int e = (engineIdx + dir + 2) % 2;
                 try {

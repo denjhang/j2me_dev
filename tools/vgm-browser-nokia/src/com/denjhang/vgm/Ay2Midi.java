@@ -31,10 +31,10 @@ public class Ay2Midi {
     public static final int[] ENV_SHAPE_DEFAULT = {81, 87, 82, 80};
 
     /** chip0：0-6 直排。 */
-    // nescube 3.2 通道映射（反编译定案）：方波 6/7/8、噪声 9-11（9=GM鼓）、包络 12
-    public static final int[] MAP_CHIP0 = {6, 7, 8, 9, 10, 11, 12};
+    // PC 版同款映射（方波 0-2、噪声 3-5、包络 6），无鼓通道 9
+    public static final int[] MAP_CHIP0 = {0, 1, 2, 3, 4, 5, 6};
     /** chip1：避开 9 号 GM 鼓通道。方波 10-12，噪声 13-15，包络 7。 */
-    public static final int[] MAP_CHIP1 = {0, 1, 2, 3, 4, 5, 13};
+    public static final int[] MAP_CHIP1 = {10, 11, 12, 13, 14, 15, 7};
 
     private final int[] toneCh = new int[3];
     private final int[] noiseCh = new int[3];
@@ -587,6 +587,26 @@ public class Ay2Midi {
         send(CC | ch, 38, 0);          // Data Entry LSB = 0
         send(CC | ch, 101, 127);       // RPN reset
         send(CC | ch, 100, 127);
+    }
+
+    /** SMF 流用：每块头部重发的事件（新 Player = 全新合成器，音色会复位成钢琴）。 */
+    public long[][] initEvents() {
+        long[][] ev = new long[3 * CHANNELS][];
+        int n = 0;
+        for (int i = 0; i < SLOTS; i++) {
+            ev[n++] = new long[]{PROG | channelOf(i), progMap[i], 0};
+        }
+        for (int i = 0; i < 3; i++) {
+            ev[n++] = new long[]{CC | toneCh[i], CC_PAN, pan[i]};
+            ev[n++] = new long[]{CC | noiseCh[i], CC_PAN, pan[i]};
+        }
+        ev[n++] = new long[]{CC | buzzerCh, CC_PAN, PAN_C};
+        for (int i = 0; i < CHANNELS; i++) {
+            ev[n++] = new long[]{CC | channelOf(i), CC_VOLUME, masterVol};
+        }
+        long[][] out = new long[n][];
+        System.arraycopy(ev, 0, out, 0, n);
+        return out;
     }
 
     public int getProg(int idx) {

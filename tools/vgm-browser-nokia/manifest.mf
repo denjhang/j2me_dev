@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 MIDlet-Name: VgmBrowserNokia
-MIDlet-Version: 1.1.17
+MIDlet-Version: 1.1.18
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowserNokia,,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Icon: /icon.png

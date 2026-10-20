@@ -15,9 +15,17 @@ import javax.microedition.media.control.VolumeControl;
  * 前一个 END_OF_MEDIA 时无缝 start 下一个。
  */
 public class SmfStreamEngine {
-    private static final int CHUNK_MS = 2000;
-    private static final int LEAD_MS = 300;      // 提前起块余量（容纳播放器创建耗时）
+    private int chunkMs = 4000;                  // 由"生成大小"设置驱动
     private static final int OVERLAP_MS = 250;   // 新块起后旧块延迟停（消除缝）
+    /** 生成大小设置（KB 标签 → 块时长 ms）。 */
+    public static final int[] CHUNK_CHOICES_MS = {2000, 4000, 8000, 15000};
+    public static final String[] CHUNK_NAMES = {"100k", "200k", "400k", "800k"};
+
+    public void setChunkIdx(int idx) {
+        if (idx < 0) idx = 0;
+        if (idx >= CHUNK_CHOICES_MS.length) idx = CHUNK_CHOICES_MS.length - 1;
+        chunkMs = CHUNK_CHOICES_MS[idx];
+    }
     private static final int PPQ = 480;
     private static final int MS_PER_Q = 500;
 
@@ -64,8 +72,15 @@ public class SmfStreamEngine {
         long t0 = System.currentTimeMillis();
         while (!quit) {
             long wall = System.currentTimeMillis() - t0;
-            long target = windowStart + CHUNK_MS;
-            if (wall < target + LEAD_MS) {
+            long target = windowStart + chunkMs;
+            // 漂移保护：落后超过 2 块就跳块（块创建耗时会累积，跳回实时附近）
+            while (wall - target > 2 * chunkMs) {
+                windowStart = target;
+                target = windowStart + chunkMs;
+                // 跳过的窗口事件直接作废
+                skipConsumed(windowStart);
+            }
+            if (wall < target) {
                 try { Thread.sleep(20); } catch (InterruptedException e) { break; }
                 continue;
             }
@@ -114,6 +129,21 @@ public class SmfStreamEngine {
             }
             consumed2Idx = 0;
         }
+    }
+
+    /** 跳块：把 [旧位置, toMs) 的事件直接标记消费掉。 */
+    private void skipConsumed(long toMs) {
+        while (consumedIdx < ay.rec.size()
+                && ((long[]) ay.rec.elementAt(consumedIdx))[0] < toMs) {
+            consumedIdx++;
+        }
+        if (ay2 != null) {
+            while (consumed2Idx < ay2.rec.size()
+                    && ((long[]) ay2.rec.elementAt(consumed2Idx))[0] < toMs) {
+                consumed2Idx++;
+            }
+        }
+        drainConsumed();
     }
 
     private Player makePlayer(byte[] smf) {

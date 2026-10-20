@@ -166,6 +166,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 }
             }
         }).start();
+        // UI 线程（repaint 循环 + 按键）必须立即启动，否则界面卡死
+        midlet.refreshListNowPlaying();
+        Thread ui = new Thread(this);
+        ui.start();
     }
 
     public PlayScreen(BrowserMIDlet midlet, VgmFile file, int listIndex) {

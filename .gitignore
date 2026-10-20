@@ -21,3 +21,31 @@ desktop.ini
 .idea/
 *.iml
 *.class
+
+# 临时/分析目录不入库
+.tmp*
+.overlay_progress.py
+.regjre5.cmd
+docs/_tmp/
+games/_tmp/
+games/_audit/
+games/_vp/
+games/_vp_dec/
+new=SIZE=
+
+# tools 整体本地，但自研引擎源码例外（不含构建产物）
+!tools/vgm-browser/
+!tools/vgm-browser-nokia/
+!tools/vgm-browser-single/
+!tools/vgm-browser-tonert/
+!tools/dbtest/
+!tools/rtprobe/
+!tools/tonert/
+!tools/midimodeprobe/
+!tools/soundprobe/
+!tools/smfprobe/
+!tools/toneprobe/
+tools/*/classes/
+tools/*/*.jar
+tools/*/.sources
+tools/*/jar/

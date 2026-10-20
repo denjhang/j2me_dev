@@ -754,9 +754,9 @@ public class Ay2Midi {
 
     private void send(int status, int d1, int d2) {
         if (recording) {
-            if (vtime < 0) {
-                recTick = System.currentTimeMillis() - recBaseMs;
-            }
+            // 时间戳：虚拟时间优先（不限速填充/流水线），否则墙钟
+            recTick = vtime >= 0 ? vtime - recBaseMs
+                    : System.currentTimeMillis() - recBaseMs;
             rec.addElement(new long[]{recTick, status, d1, d2});
             recBytes += 5;
         }

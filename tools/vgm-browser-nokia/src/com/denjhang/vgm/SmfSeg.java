@@ -117,6 +117,14 @@ public final class SmfSeg {
             }
         }
 
+        /** 复用内部缓冲（跨段覆盖填充，避免每段重建数组的 GC 开销）。 */
+        public void reset() {
+            tr.reset();
+            lastTick = 0;
+            tr.write(0x00); tr.write(0xFF); tr.write(0x51); tr.write(0x03);
+            tr.write(0x07); tr.write(0xA1); tr.write(0x20);   // 120bpm
+        }
+
         /** relTick 相对段起点（非减）。 */
         public void event(long relTick, int status, int d1, int d2) {
             vlq(tr, (int) Math.max(0, relTick * PPQ / MS_PER_Q - lastTick));

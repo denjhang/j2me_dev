@@ -21,6 +21,7 @@ public class MidiModeProbe extends Canvas implements Runnable {
         "2 MeBoy simple (velocity vol)",
         "3 nescube v1.2 (prefetch, no CC)",
         "4 nescube v3.2 (ch6-8+setProgram)",
+        "5 file playback + MIDIControl",
     };
     private static final int MASTER_VOLUME = 8;   // MeBoy 原值
     private static final int[] MIDI_VOL = {       // nescube v1.2 原表
@@ -69,6 +70,7 @@ public class MidiModeProbe extends Canvas implements Runnable {
                 case 1: meboy(false, t0); break;
                 case 2: nescube12(t0); break;
                 case 3: nescube32(t0); break;
+                case 4: fileInteractive(t0); break;
             }
         } catch (Throwable t) {
             lastErr = "open: " + t;
@@ -212,6 +214,95 @@ public class MidiModeProbe extends Canvas implements Runnable {
         }
     }
 
+    /**
+     * 官方文档第三条路："MIDI file playback with interaction"。
+     * 用一个真实 SMF 循环播放保持合成器活着，取该 Player 的 MIDIControl
+     * 实时叠加音符（文档：事件在 player started 后生效）。
+     * 底层 SMF 每 2 秒一个低音量音符（若只听见它=叠加失败；能听见
+     * 叠加的彩色音阶=实时合成通，S40 低内存实时方案成立）。
+     */
+    private void fileInteractive(long t0) throws Exception {
+        player = Manager.createPlayer(
+                new java.io.ByteArrayInputStream(loopSmf()), "audio/midi");
+        player.realize();
+        player.prefetch();
+        player.setLoopCount(-1);
+        javax.microedition.media.control.VolumeControl vc =
+                (javax.microedition.media.control.VolumeControl) player.getControl("VolumeControl");
+        if (vc != null) vc.setLevel(60);
+        player.start();
+        synth = (MIDIControl) player.getControl("MIDIControl");
+        if (synth == null) { status = "loop plays, no MIDIControl"; return; }
+        try { synth.setProgram(1, -1, 81); } catch (Throwable ignored) {}
+        try { synth.setProgram(2, -1, 38); } catch (Throwable ignored) {}
+        try { synth.setProgram(3, -1, 56); } catch (Throwable ignored) {}
+        status = "loop+overlay";
+        repaint();
+        int[] tones = new int[3];
+        long[] lastChange = new long[3];
+        int ni = 0;
+        while (System.currentTimeMillis() - t0 < 12000 && !quit) {
+            for (int c = 0; c < 3; c++) {
+                if (System.currentTimeMillis() - lastChange[c] < 220) continue;
+                lastChange[c] = System.currentTimeMillis();
+                int ch = 1 + c;
+                int tone = SCALE[(ni + c * 2) % SCALE.length];
+                if (tones[c] != 0) ev(0x80 + ch, tones[c], 0);
+                ev(0x90 + ch, tone, 110);
+                tones[c] = tone;
+            }
+            ni++;
+            sleep(20);
+        }
+        for (int c = 0; c < 3; c++) {
+            if (tones[c] != 0) ev(0x80 + (1 + c), tones[c], 0);
+        }
+    }
+
+    /** 8 秒小 SMF：ch0 每 2 秒一个低音量 C4（循环衬底）。 */
+    private static byte[] loopSmf() {
+        java.io.ByteArrayOutputStream o = new java.io.ByteArrayOutputStream(128);
+        o.write('M'); o.write('T'); o.write('h'); o.write('d');
+        w32(o, 6); w16(o, 0); w16(o, 1); w16(o, 480);
+        java.io.ByteArrayOutputStream t = new java.io.ByteArrayOutputStream(64);
+        t.write(0x00); t.write(0xFF); t.write(0x51); t.write(0x03);
+        t.write(0x07); t.write(0xA1); t.write(0x20);       // 120bpm
+        for (int i = 0; i < 4; i++) {                       // 4 音符 ×2s = 8s
+            if (i > 0) vlq(t, 1920);                        // 2s delta
+            t.write(0x90); t.write(60); t.write(40);
+            vlq(t, 240);                                    // 0.25s
+            t.write(0x80); t.write(60); t.write(0);
+        }
+        vlq(t, 1920);
+        t.write(0xFF); t.write(0x2F); t.write(0x00);
+        byte[] tr = t.toByteArray();
+        o.write('M'); o.write('T'); o.write('r'); o.write('k');
+        w32(o, tr.length);
+        o.write(tr, 0, tr.length);
+        return o.toByteArray();
+    }
+
+    private static void vlq(java.io.ByteArrayOutputStream o, int v) {
+        long b = v & 0x7F;
+        while ((v >>= 7) > 0) {
+            b <<= 8;
+            b |= ((v & 0x7F) | 0x80);
+        }
+        while (true) {
+            o.write((int) (b & 0xFF));
+            if (b < 0x80) return;
+            b >>>= 8;
+        }
+    }
+
+    private static void w32(java.io.ByteArrayOutputStream o, int v) {
+        o.write(v >> 24); o.write(v >> 16); o.write(v >> 8); o.write(v);
+    }
+
+    private static void w16(java.io.ByteArrayOutputStream o, int v) {
+        o.write(v >> 8); o.write(v);
+    }
+
     private void releasePlayer() {
         if (player != null) {
             try { player.close(); } catch (Throwable ignored) {}
@@ -258,11 +349,11 @@ public class MidiModeProbe extends Canvas implements Runnable {
         g.setColor(lastErr.length() > 0 ? 0xFF8A8A : 0x667788);
         g.drawString("err: " + (lastErr.length() > 0 ? lastErr : "-"), 4, y, Graphics.TOP | Graphics.LEFT);
         g.setColor(0x667788);
-        g.drawString("1-4=mode 0=exit (auto 12s each)", 4, h - sm.getHeight() - 2, Graphics.TOP | Graphics.LEFT);
+        g.drawString("1-5=mode 0=exit (auto 12s each)", 4, h - sm.getHeight() - 2, Graphics.TOP | Graphics.LEFT);
     }
 
     protected void keyPressed(int k) {
-        if (k >= KEY_NUM1 && k <= KEY_NUM4) {
+        if (k >= KEY_NUM1 && k <= KEY_NUM5) {
             final int m = k - KEY_NUM1;
             new Thread(new Runnable() {
                 public void run() { runMode(m); }

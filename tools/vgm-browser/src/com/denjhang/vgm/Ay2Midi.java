@@ -236,6 +236,7 @@ public class Ay2Midi {
                 }
                 tonePlayer[i].prefetch();
             }
+            startToneThread();
             return true;
         } catch (Throwable t) {
             initError = "tone:" + t;
@@ -250,71 +251,30 @@ public class Ay2Midi {
         }
     }
 
-    // tone 去重/节流状态：setSequence 会重启音符，频繁调用等于永远在重启（无声）
+    // 播放线程只写愿望（want*），专职 tone 线程低频消化——
+    // 高频 stop/setSequence/start 会拖死 KEmulator 音频（实测 2 秒卡死）
+    private final int[] wantNote = {-1, -1, -1};
     private final int[] toneLastNote = {-1, -1, -1};
-    private final int[] toneLastVol = {-1, -1, -1};
-    private final long[] toneLastMs = new long[3];
     private final int[] toneFail = new int[3];
-    private static final int TONE_MIN_INTERVAL_MS = 100;
-    private static final int TONE_VOL_STEP = 12;
+    private Thread toneThread;
+    private boolean toneQuit;
 
     /** tone 引擎：给第 ch 个方波声部设连续音（vol 0-127 → 0-100）。
      *  音符变化立即更新；只有音量变化时按 12 级量化 + 100ms 节流。 */
     private void toneSeq(int ch, int note, int vol) {
-        if (ch < 0 || ch > 2 || toneCtrl[ch] == null) {
+        if (ch < 0 || ch > 2) {
             return;
         }
         if (note < 0) note = 60;
         if (note > 126) note = 126;
-        int v = vol * 100 / 127;
-        if (v > 100) v = 100;
-        if (v < 1) v = 1;
-        v = v / TONE_VOL_STEP * TONE_VOL_STEP;      // 量化，减少重发
-        if (v < 1) v = 1;
-        long now = System.currentTimeMillis();
-        boolean noteCh = note != toneLastNote[ch];
-        boolean volCh = v != toneLastVol[ch];
-        if (!noteCh && !volCh) {
-            return;                                   // 完全没变
-        }
-        if (!noteCh && now - toneLastMs[ch] < TONE_MIN_INTERVAL_MS) {
-            return;                                   // 纯音量变化且太密，跳过
-        }
-        try {
-            // 探针实测：KEmulator 只认 VERSION+TEMPO+裸音符对；必须 setSequence 后 start
-            // （预启动的播放器上换序列不发声）。stop 状态下 setSequence+start = 探针 H 路径。
-            byte n = (byte) note;
-            if (tonePlayer[ch].getState() >= Player.STARTED) {
-                tonePlayer[ch].stop();
-            }
-            toneCtrl[ch].setSequence(new byte[]{
-                ToneControl.VERSION, 1,
-                ToneControl.TEMPO, 30,
-                n, 127, n, 127, n, 127, n, 127, n, 127, n, 127,
-            });
-            tonePlayer[ch].start();
-            toneLastNote[ch] = note;
-            toneLastVol[ch] = v;
-            toneLastMs[ch] = now;
-        } catch (Throwable t) {
-            // 连续失败的通道熔断，避免异常风暴卡死（真机上遇到怪实现时）
-            if (++toneFail[ch] > 8) {
-                toneCtrl[ch] = null;
-            }
-        }
+        wantNote[ch] = note;      // 只记愿望，tone 线程消化
     }
 
     private void toneSilence(int ch) {
-        if (ch < 0 || ch > 2 || tonePlayer[ch] == null) {
+        if (ch < 0 || ch > 2) {
             return;
         }
-        try {
-            if (tonePlayer[ch].getState() >= Player.STARTED) {
-                tonePlayer[ch].stop();
-            }
-        } catch (Throwable ignored) {
-        }
-        toneLastNote[ch] = -1;
+        wantNote[ch] = -1;
     }
 
 
@@ -361,6 +321,7 @@ public class Ay2Midi {
     }
 
     private void closeAll() {
+        stopToneThread();
         safeClose();
         for (int i = 0; i < 3; i++) {
             if (tonePlayer[i] != null) {
@@ -369,6 +330,58 @@ public class Ay2Midi {
                 toneCtrl[i] = null;
             }
         }
+    }
+
+    private void stopToneThread() {
+        toneQuit = true;
+        toneThread = null;
+    }
+
+    private void startToneThread() {
+        if (toneThread != null) {
+            return;
+        }
+        toneQuit = false;
+        toneThread = new Thread(new Runnable() {
+            public void run() {
+                while (!toneQuit) {
+                    for (int ch = 0; ch < 3; ch++) {
+                        int want = wantNote[ch];
+                        if (want == toneLastNote[ch]) {
+                            continue;
+                        }
+                        try {
+                            Player tp = tonePlayer[ch];
+                            if (tp == null) {
+                                continue;
+                            }
+                            if (tp.getState() >= Player.STARTED) {
+                                tp.stop();
+                            }
+                            if (want < 0) {
+                                toneLastNote[ch] = -1;
+                                continue;
+                            }
+                            byte n = (byte) want;
+                            toneCtrl[ch].setSequence(new byte[]{
+                                ToneControl.VERSION, 1,
+                                ToneControl.TEMPO, 30,
+                                n, 127, n, 127, n, 127, n, 127, n, 127, n, 127,
+                            });
+                            tp.start();
+                            toneLastNote[ch] = want;
+                        } catch (Throwable t) {
+                            if (++toneFail[ch] > 32) {
+                                toneCtrl[ch] = null;
+                            }
+                        }
+                    }
+                    try { Thread.sleep(50); } catch (InterruptedException e) { break; }
+                }
+            }
+        });
+        toneThread.setPriority(Thread.NORM_PRIORITY - 1);
+        toneThread.start();
     }
 
     /** Tower Bloxx（诺基亚原厂）做法：显式把 Player 音量推到最大，默认可能是 0。 */
@@ -438,6 +451,7 @@ public class Ay2Midi {
             return;
         }
         // 1) 全停 + 全拆
+        stopToneThread();
         allSoundOff();
         if (midi != null) {
             safeClose();          // 关 MIDI player，midi 置空
@@ -587,6 +601,7 @@ public class Ay2Midi {
     }
 
     public void close() {
+        stopToneThread();
         allSoundOff();
         if (player != null) {
             try {

@@ -149,7 +149,7 @@ public class MidiModeProbe extends Canvas implements Runnable {
             for (int ch = 0; ch < 3; ch++) {
                 if (System.currentTimeMillis() - lastChange[ch] < 200) continue;
                 lastChange[ch] = System.currentTimeMillis();
-                int tone = SCALE[(ni + ch * 2) % SCALE.length];
+                int tone = SCALE[(ni + ch) % SCALE.length];
                 int volume = (int) (System.currentTimeMillis() / 400) % 16;
                 // —— engine.PlayTone 原序 ——
                 if (tone != tones[ch] && tones[ch] != 0) {

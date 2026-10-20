@@ -203,6 +203,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         if (!ay.ready) {
             err = ay.initError;
+            try {
+                javax.microedition.media.Manager.playTone(72, 150, 100);
+                Thread.sleep(200);
+                javax.microedition.media.Manager.playTone(72, 150, 100);
+                Thread.sleep(200);
+                javax.microedition.media.Manager.playTone(72, 150, 100);
+            } catch (Throwable ignored) {
+            }
         } else {
             ay.forceRefreshAll();
             ay.setMasterVol(masterVol);
@@ -686,6 +694,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         st.append(shuffle ? "  shuf #" : "  #").append(listIndex + 1);
         st.append("  vol ").append(masterVol);
+        st.append("  MIDI ").append(ay.midiStatus());
         g.drawString(st.toString(), 6, sy, Graphics.TOP | Graphics.LEFT);
         if (err != null) {
             g.setColor(0xFF7C7C);

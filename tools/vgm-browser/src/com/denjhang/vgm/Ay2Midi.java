@@ -185,15 +185,19 @@ public class Ay2Midi {
         ready = init();
     }
 
+    private String midiPath = "?";
+
     private boolean init() {
         // nescube 精确复刻：createPlayer → prefetch() → getControl(全类名)。
         // 没有 realize、没有 start、初始化零 CC（音色照 nescube 打开后按需发）。
         // 任一步失败再走 MeBoy 兜底链（realize → start → getControl）。
         if (openMidiNescube()) {
+            midiPath = "S3";
             sendInitProgs();
             return true;
         }
         if (openMidiMeboy()) {
+            midiPath = "MB";
             sendInitProgs();
             return true;
         }
@@ -443,14 +447,37 @@ public class Ay2Midi {
         lastR13At = 0;
     }
 
+    private int sendOk;
+    private int sendFail;
+    private String sendErr = "";
+
     private void send(int status, int d1, int d2) {
         if (!ready) {
             return;
         }
         try {
             midi.shortMidiEvent(status, d1, d2);
-        } catch (Throwable ignored) {
+            sendOk++;
+        } catch (Throwable t) {
+            // SecurityException 等不能吞掉不报——真机诊断关键
+            sendFail++;
+            if (sendErr.length() == 0) {
+                sendErr = t.toString();
+            }
         }
+    }
+
+    /** HUD 诊断：引擎路径 + 发送统计。 */
+    public String midiStatus() {
+        if (!ready) {
+            return "FAIL:" + initError;
+        }
+        StringBuffer sb = new StringBuffer(midiPath);
+        sb.append(' ').append(sendOk).append('/').append(sendFail);
+        if (sendErr.length() > 0) {
+            sb.append(' ').append(sendErr);
+        }
+        return sb.toString();
     }
 
     // ------------------------------------------------------------ 寄存器入口

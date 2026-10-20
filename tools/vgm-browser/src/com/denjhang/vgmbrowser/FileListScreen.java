@@ -401,8 +401,14 @@ public class FileListScreen extends List implements CommandListener {
         } catch (Throwable t) {
             f.append("Denjhang / Dianjiang Open-Source Digital");
         }
-        f.addCommand(new Command("Back", Command.BACK, 1));
-        f.setCommandListener(this);
+        final FileListScreen self = this;
+        Command back = new Command("Back", Command.BACK, 1);
+        f.addCommand(back);
+        f.setCommandListener(new javax.microedition.lcdui.CommandListener() {
+            public void commandAction(Command c, javax.microedition.lcdui.Displayable d) {
+                javax.microedition.lcdui.Display.getDisplay(midlet).setCurrent(self);
+            }
+        });
         javax.microedition.lcdui.Display.getDisplay(midlet).setCurrent(f);
     }
 

@@ -32,6 +32,7 @@ public class FileListScreen extends List implements CommandListener {
     private final Command cmdUp = new Command("Up", Command.BACK, 2);
     private final Command cmdRefresh = new Command("Refresh", Command.SCREEN, 3);
     private final Command cmdTone = new Command("Square wave test", Command.SCREEN, 4);
+    private final Command cmdMidi = new Command("MIDI test", Command.SCREEN, 5);
     private final Command cmdInfo = new Command("About", Command.SCREEN, 5);
     private final Command cmdNow = new Command("Now playing", Command.OK, 1);
     private boolean advancedShown;
@@ -56,6 +57,7 @@ public class FileListScreen extends List implements CommandListener {
         // 高级命令常驻：多条命令时左软键自动变成菜单（KEmulator/S60 行为）
         addCommand(cmdRefresh);
         addCommand(cmdTone);
+        addCommand(cmdMidi);
         addCommand(cmdInfo);
         refreshNowPlaying();
         // 模拟器直达 file:///root/vgm/；真机没有 root，静默失败回根列表
@@ -433,6 +435,8 @@ public class FileListScreen extends List implements CommandListener {
             midlet.showPlayer();
         } else if (c == cmdTone) {
             midlet.openToneTest();
+        } else if (c == cmdMidi) {
+            midlet.openMidiTest();
         } else if (c == cmdInfo) {
             showAbout();
         }

@@ -1,0 +1,1 @@
+VgmBrowser v1.1.11: MIDI test screen (menu) - 11 standalone tests: nescube/meboy order, pure velocity, per-note CC7, piano, channel sweep, setChannelVolume, longMidiEvent, bend slide, ToneControl & playTone reference

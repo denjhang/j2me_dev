@@ -1,0 +1,14 @@
+MIDlet-Name: VgmBrowser
+MIDlet-Version: 1.1.11
+MIDlet-Vendor: Denjhang
+MIDlet-1: VgmBrowser,/icon.png,com.denjhang.vgmbrowser.BrowserMIDlet
+MIDlet-Description: AY8910 VGM Player with MIDI visualization
+MicroEdition-Profile: MIDP-2.0
+MicroEdition-Configuration: CLDC-1.1
+Nokia-MIDlet-On-Screen-Keypad: no
+Nokia-MIDlet-No-Exit: true
+MIDlet-Splash-Screen-Image: suppress
+MIDlet-Permissions: javax.microedition.io.Connector.file.read
+MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write
+MIDlet-Jar-Size: 86631
+MIDlet-Jar-URL: VgmBrowser.jar

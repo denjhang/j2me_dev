@@ -44,6 +44,10 @@ public class BrowserMIDlet extends MIDlet {
         Display.getDisplay(this).setCurrent(new ToneTestScreen(this));
     }
 
+    void openMidiTest() {
+        Display.getDisplay(this).setCurrent(new MidiTestScreen(this));
+    }
+
     void openPlayRaw(String name, byte[] rawBytes, int listIndex) {
         releasePlay();
         play = new PlayScreen(this, name, rawBytes, listIndex);

@@ -1,0 +1,8 @@
+MIDlet-Name: SoundProbe
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: Denjhang
+MIDlet-1: SoundProbe,,com.denjhang.soundprobe.SoundProbeMIDlet
+MicroEdition-Profile: MIDP-2.0
+MicroEdition-Configuration: CLDC-1.1
+MIDlet-Jar-Size: 6474
+MIDlet-Jar-URL: SoundProbe.jar

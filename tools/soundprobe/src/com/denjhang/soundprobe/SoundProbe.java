@@ -61,7 +61,7 @@ public class SoundProbe extends Canvas implements Runnable {
             y += small.getHeight() + 4;
         }
         g.setColor(0x667788);
-        g.drawString("5=restart  0=exit  (auto loops)", 4, h - small.getHeight() - 2,
+        g.drawString("auto:1,2,5-10 | 3,4=ToneCtrl(manual,crash risk) | 5=reset 0=exit", 4, h - small.getHeight() - 2,
                 Graphics.TOP | Graphics.LEFT);
     }
 
@@ -83,8 +83,7 @@ public class SoundProbe extends Canvas implements Runnable {
             try {
                 test1(); pause(600);
                 test2(); pause(600);
-                test3(); pause(600);
-                test4(); pause(600);
+                // 3/4（ToneControl）S40 上会崩 VM，改为手动：按 3 / 按 4
                 test5(); pause(600);
                 test6(); pause(600);
                 test7(); pause(600);
@@ -413,7 +412,11 @@ public class SoundProbe extends Canvas implements Runnable {
     }
 
     protected void keyPressed(int keyCode) {
-        if (keyCode == KEY_NUM5) {
+        if (keyCode == KEY_NUM3) {
+            test3();
+        } else if (keyCode == KEY_NUM4) {
+            test4();
+        } else if (keyCode == KEY_NUM5) {
             for (int i = 0; i < results.length; i++) {
                 results[i] = null;
             }

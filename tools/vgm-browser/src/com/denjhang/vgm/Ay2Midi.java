@@ -197,12 +197,11 @@ public class Ay2Midi {
                 initError = "device://midi 不可用";
                 return false;
             }
+            // nescube 顺序：prefetch 后取控制；控制名先用全类名（真机），再退短名（模拟器）
             player.realize();
-            player.start();
-            // MeBoy 顺序：必须 start 之后才能拿到有效的 MIDIControl（诺基亚真机）
+            player.prefetch();
             midi = (MIDIControl) player.getControl("javax.microedition.media.control.MIDIControl");
             if (midi == null) {
-                // 部分实现只认短名（KEmulator），部分只认全名（nescube 用全名）
                 midi = (MIDIControl) player.getControl("MIDIControl");
             }
             if (midi == null) {
@@ -211,6 +210,7 @@ public class Ay2Midi {
                 initError = "无 MIDIControl";
                 return false;
             }
+            player.start();
             for (int i = 0; i < 6; i++) {
                 send(PROG | channelOf(i), progMap[i], 0);
             }
@@ -223,6 +223,18 @@ public class Ay2Midi {
         } catch (Throwable t) {
             initError = t.toString();
             return false;
+        }
+    }
+
+    /** nescube 音量模型：电平直接做 note-on 力度（最小 1，0 等于 note-off）。 */
+    private static int vel(int level) {
+        return level > 0 ? level : 1;
+    }
+
+    /** 电平变化时力度重发（参数为 MIDI 通道号）。 */
+    private void retriggerVel(int midiCh, int note, int level) {
+        if (note >= 0) {
+            send(NOTE_ON | midiCh, note, vel(level));
         }
     }
 
@@ -571,7 +583,7 @@ public class Ay2Midi {
         for (int i = 0; i < voices; i++) {
             int n = note + i * 12;
             if (n <= 127) {
-                send(NOTE_ON | buzzerCh, n, 127);
+                send(NOTE_ON | buzzerCh, n, vel(buzzVol));
             }
         }
     }
@@ -975,7 +987,7 @@ public class Ay2Midi {
         for (int ch = 0; ch < 3; ch++) {
             if (noiseSounding[ch]) {
                 send(NOTE_OFF | noiseCh[ch], oldNote, 0);
-                send(NOTE_ON | noiseCh[ch], noiseNote, 100);
+                send(NOTE_ON | noiseCh[ch], noiseNote, noiseVol[ch] > 0 ? vel(noiseVol[ch]) : 100);
             }
         }
     }
@@ -1006,8 +1018,13 @@ public class Ay2Midi {
         // 方波音量（蜂鸣器模式下声音走包络通道，方波通道静音）
         int toneV = buzz ? 0 : v;
         if (toneV != curVol[ch]) {
+            int old = curVol[ch];
             curVol[ch] = toneV;
             send(CC | toneCh[ch], CC_EXPRESSION, toneV);
+            // nescube 模型：力度重发，CC11 不被支持的真机上音量仍然生效
+            if (old >= 0 && toneV > 0 && Math.abs(toneV - old) >= 16) {
+                retriggerVel(toneCh[ch], curNote[ch], toneV);
+            }
         }
 
         // 噪声：复制对应方波通道的电平（无独立音量计算器）
@@ -1018,7 +1035,7 @@ public class Ay2Midi {
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
-            send(NOTE_ON | noiseCh[ch], noiseNote, 100);
+            send(NOTE_ON | noiseCh[ch], noiseNote, noiseVol[ch] > 0 ? vel(noiseVol[ch]) : 100);
         } else if (!noiseOn && noiseSounding[ch]) {
             noiseSounding[ch] = false;
             send(NOTE_OFF | noiseCh[ch], noiseNote, 0);
@@ -1087,7 +1104,7 @@ public class Ay2Midi {
             curNote[ch] = note;
             curBend[ch] = bend;
             send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
-            send(NOTE_ON | toneCh[ch], note, 100);
+            send(NOTE_ON | toneCh[ch], note, curVol[ch] > 0 ? vel(curVol[ch]) : 100);
         } else if (Math.abs(bend - curBend[ch]) > 40) {
             curBend[ch] = bend;
             send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
@@ -1138,7 +1155,7 @@ public class Ay2Midi {
             for (int i = 0; i < voices; i++) {
                 int n = note + i * 12;               // 基准 + 上行八度堆叠
                 if (n <= 127) {
-                    send(NOTE_ON | buzzerCh, n, 127);
+                    send(NOTE_ON | buzzerCh, n, vel(buzzVol));
                 }
             }
         } else if (Math.abs(bend - curBend[ch]) > 40) {

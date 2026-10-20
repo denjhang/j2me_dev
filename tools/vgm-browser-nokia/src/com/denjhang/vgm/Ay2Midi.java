@@ -596,7 +596,7 @@ public class Ay2Midi {
 
     /** SMF 流用：每块头部重发的事件（新 Player = 全新合成器，音色会复位成钢琴）。 */
     public long[][] initEvents() {
-        long[][] ev = new long[3 * CHANNELS][];
+        long[][] ev = new long[SLOTS + 7 + CHANNELS][];   // 10 音色 + 7 声像 + 7 音量
         int n = 0;
         for (int i = 0; i < SLOTS; i++) {
             ev[n++] = new long[]{PROG | channelOf(i), progMap[i], 0};

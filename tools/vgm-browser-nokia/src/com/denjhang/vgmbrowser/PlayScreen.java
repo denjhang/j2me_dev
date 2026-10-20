@@ -882,7 +882,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         // 调试区：标签下面多行（Engine/事件计数/首个异常/时钟等）
         String[][] dbg = debugRows();
         int dbgH = dbg.length * 13 + 4;
-        int contentH = gd3Img.getHeight() + dbgH;
+        int contentH = gd3Img.getHeight() + dbgH + 16;   // 底部预留一行空行
         int gd3Max2 = contentH - gh;
         if (gd3Max2 < 0) {
             gd3Max2 = 0;

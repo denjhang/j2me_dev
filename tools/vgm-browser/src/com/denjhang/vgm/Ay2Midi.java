@@ -256,10 +256,7 @@ public class Ay2Midi {
         return new byte[]{
             ToneControl.VERSION, 1,
             ToneControl.TEMPO, 30,
-            ToneControl.BLOCK_START, 0,
             ToneControl.SILENCE, 16,
-            ToneControl.BLOCK_END, 0,
-            ToneControl.PLAY_BLOCK, 0,
         };
     }
 
@@ -267,6 +264,7 @@ public class Ay2Midi {
     private final int[] toneLastNote = {-1, -1, -1};
     private final int[] toneLastVol = {-1, -1, -1};
     private final long[] toneLastMs = new long[3];
+    private final int[] toneFail = new int[3];
     private static final int TONE_MIN_INTERVAL_MS = 100;
     private static final int TONE_VOL_STEP = 12;
 
@@ -293,22 +291,22 @@ public class Ay2Midi {
             return;                                   // 纯音量变化且太密，跳过
         }
         try {
+            // 探针实测：KEmulator 只认 VERSION+TEMPO+裸音符对（BLOCK/REPEAT/SET_VOLUME 全拒）；
+            // 同音符重复多段获得持续音，音高变化时重设序列（播放中重设安全，探针 G 验证）
+            byte n = (byte) note;
             toneCtrl[ch].setSequence(new byte[]{
                 ToneControl.VERSION, 1,
                 ToneControl.TEMPO, 30,
-                ToneControl.SET_VOLUME, (byte) v,
-                ToneControl.BLOCK_START, 0,
-                (byte) note, 64,
-                ToneControl.BLOCK_END, 0,
-                ToneControl.REPEAT, 0, 127,
+                n, 127, n, 127, n, 127, n, 127, n, 127, n, 127,
             });
-            if (tonePlayer[ch] != null) {
-                tonePlayer[ch].start();               // 部分实现 setSequence 后需重新 start
-            }
             toneLastNote[ch] = note;
             toneLastVol[ch] = v;
             toneLastMs[ch] = now;
-        } catch (Throwable ignored) {
+        } catch (Throwable t) {
+            // 连续失败的通道熔断，避免异常风暴卡死（真机上遇到怪实现时）
+            if (++toneFail[ch] > 8) {
+                toneCtrl[ch] = null;
+            }
         }
     }
 

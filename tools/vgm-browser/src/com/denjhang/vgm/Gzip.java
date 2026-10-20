@@ -57,7 +57,7 @@ public final class Gzip {
             p += 2;
         }
         if (p >= d.length) {
-            throw new IOException("gzip 头越界");
+            throw new IOException("gzip header out of bounds");
         }
         return p;
     }
@@ -89,7 +89,7 @@ public final class Gzip {
             int val = bitBuf;
             while (bitCnt < need) {
                 if (inPos >= in.length) {
-                    throw new RuntimeException("deflate 流意外结束");
+                    throw new RuntimeException("unexpected end of deflate stream");
                 }
                 val |= (in[inPos++] & 0xFF) << bitCnt;
                 bitCnt += 8;
@@ -117,7 +117,7 @@ public final class Gzip {
                 first = (first + c) << 1;
                 code <<= 1;
             }
-            throw new RuntimeException("无效哈夫曼码");
+            throw new RuntimeException("invalid huffman code");
         }
 
         private static final short[] LEN_BASE = {
@@ -154,7 +154,7 @@ public final class Gzip {
                     int len = bits(16);
                     int nlen = bits(16);
                     if ((len ^ 0xFFFF) != nlen) {
-                        throw new RuntimeException("stored 块长度校验失败");
+                        throw new RuntimeException("stored block length mismatch");
                     }
                     for (int i = 0; i < len; i++) {
                         g.write(bits(8));
@@ -194,7 +194,7 @@ public final class Gzip {
                             if (sym < 16) {
                                 lens[i++] = sym;
                             } else if (sym == 16) {
-                                if (i == 0) throw new RuntimeException("重复码无前值");
+                                if (i == 0) throw new RuntimeException("repeat code with no previous value");
                                 int prev = lens[i - 1];
                                 int rep = 3 + bits(2);
                                 while (rep-- > 0 && i < hlit + hdist) lens[i++] = prev;
@@ -223,12 +223,12 @@ public final class Gzip {
                             g.write(symbol);
                         } else {
                             symbol -= 257;
-                            if (symbol >= 29) throw new RuntimeException("长度码越界");
+                            if (symbol >= 29) throw new RuntimeException("length code out of range");
                             int len = LEN_BASE[symbol] + bits(LEN_EXTRA[symbol]);
                             int dsym = decode(distCount, distSymbol);
-                            if (dsym >= 30) throw new RuntimeException("距离码越界");
+                            if (dsym >= 30) throw new RuntimeException("distance code out of range");
                             int dist = DIST_BASE[dsym] + bits(DIST_EXTRA[dsym]);
-                            if (dist > g.len) throw new RuntimeException("距离超出历史");
+                            if (dist > g.len) throw new RuntimeException("distance beyond window");
                             int from = g.len - dist;
                             for (int k = 0; k < len; k++) {
                                 g.write(g.buf[from + k]);
@@ -236,7 +236,7 @@ public final class Gzip {
                         }
                     }
                 } else {
-                    throw new RuntimeException("非法块类型 3");
+                    throw new RuntimeException("illegal block type 3");
                 }
             } while (!last);
 

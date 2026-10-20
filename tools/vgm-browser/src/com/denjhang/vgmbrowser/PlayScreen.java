@@ -65,8 +65,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_BEND_SENS = 8;
     private static final int ROW_LOOP = 9;
     private static final int ROW_ORDER = 10;
-    private static final int ROW_CH0 = 11;
-    private static final int TOTAL_ROWS = 11 + Ay2Midi.SLOTS;
+    private static final int ROW_MASTER = 11;
+    private static final int ROW_BEND_RANGE = 12;
+    private static final int ROW_CH0 = 13;
+    private static final int TOTAL_ROWS = 13 + Ay2Midi.SLOTS;
     private static final int ROW_H = 16;
     private int cursor;
     private int scroll;
@@ -100,6 +102,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     // ---- 性能分层：静态内容烘焙进离屏图，每帧只画动态部分 ----
     private Image kbImg;          // 三条键盘底图（白键/黑键/通道标/灭灯字符）
     private Image gd3Img;         // GD3 表格整块（含换行结果）
+    private int gd3Scroll;        // GD3 表格纵向滚动（2/8 键）
     private int builtW = -1;      // 构建时的屏宽（变了才重建）
     private int kbStep;           // 键盘布局缓存（动态高亮要与底图对齐）
     private int kbKx;
@@ -124,6 +127,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.listIndex = listIndex;
         this.parser = null;
         this.ay = new Ay2Midi();
+        applyPersisted();
         pendingName = name;
         pendingBytes = rawBytes;
         initCommon();
@@ -192,6 +196,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.listIndex = listIndex;
         this.parser = file.getParser();
         this.ay = new Ay2Midi();
+        applyPersisted();
         initCommon();
         if (file.header.chipClock[0x12] != 0) {
             ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
@@ -220,6 +225,57 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         small = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         titleFont = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
         tiny = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+    }
+
+    /** 启动时从 RMS 恢复设置（失败保持默认）。 */
+    private void applyPersisted() {
+        int[] v = SettingsStore.load();
+        if (v == null) {
+            return;
+        }
+        try {
+            ay.setStereoMode(v[1]);
+            ay.setOct(v[2]);
+            ay.setNoiseMapMode(v[3]);
+            ay.setEnvOct(false, v[4]);
+            ay.setEnvOct(true, v[5]);
+            ay.setEnvUni(false, v[6]);
+            ay.setEnvUni(true, v[7]);
+            ay.setBuzzVol(v[8]);
+            ay.setBendSensPct(v[9]);
+            ay.setBendRangePct(v[10]);
+            masterVol = v[11];
+            loopIdx = v[12];
+            shuffle = v[13] != 0;
+            for (int i = 0; i < Ay2Midi.SLOTS && 14 + i < v.length; i++) {
+                ay.setProg(i, v[14 + i]);
+            }
+        } catch (Throwable t) {
+            // 单项越界忽略，保其余
+        }
+    }
+
+    /** 当前设置写入 RMS（每次调整后调用）。 */
+    private void persist() {
+        int[] v = new int[SettingsStore.FIELDS];
+        v[0] = 1;
+        v[1] = ay.getStereoMode();
+        v[2] = ay.getOct();
+        v[3] = ay.getNoiseMapMode();
+        v[4] = ay.getEnvOctSaw();
+        v[5] = ay.getEnvOctTri();
+        v[6] = ay.getEnvUni(false);
+        v[7] = ay.getEnvUni(true);
+        v[8] = ay.getBuzzVol();
+        v[9] = ay.getBendSensPct();
+        v[10] = ay.getBendRangePct();
+        v[11] = masterVol;
+        v[12] = loopIdx;
+        v[13] = shuffle ? 1 : 0;
+        for (int i = 0; i < Ay2Midi.SLOTS; i++) {
+            v[14 + i] = ay.getProg(i);
+        }
+        SettingsStore.save(v);
     }
 
     private void attachChip2() {
@@ -420,6 +476,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 烘焙静态层：键盘底图 + GD3 表格。仅曲目打开/屏宽变化时调用。 */
     private void buildLayers(int w) {
         builtW = w;
+        gd3Scroll = 0;
 
         // ---- 键盘底图 ----
         // 先算布局：键盘宽 + TNE 字符 x（底图/动态层共用）
@@ -450,20 +507,44 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             drawKeyStripBase(kg, ch * kbPitch, ch);
         }
 
-        // ---- GD3 表格（换行只算这一次）----
+        // ---- 信息表（换行只算这一次）----
         int colX = w * 30 / 100;
         java.util.Vector flat = new java.util.Vector();
         com.denjhang.vgm.VgmHeader hd = file.header;
+        // 芯片/时钟信息置顶（无表头行，直接内容）
+        long clk1 = hd.chipClock[0x12] & 0x3FFFFFFF;
+        boolean ym = (hd.chipClock[0x12] & 0x40000000) != 0 || hd.ayChipType != 0;
+        boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
+        java.util.Vector top = new java.util.Vector();
+        if (clk1 > 0) {
+            top.addElement("Chip");
+            top.addElement(ym ? "YM2149 x1" : "AY8910 x1");
+            top.addElement("Clock");
+            top.addElement(fmtHz(clk1));
+        }
+        if (dual) {
+            long clk2 = hd.ayClock2 != 0 ? (hd.ayClock2 & 0x3FFFFFFF) : clk1;
+            top.addElement("Chip2");
+            top.addElement(ym ? "YM2149 x2" : "AY8910 x2");
+            top.addElement("Clock2");
+            top.addElement(fmtHz(clk2));
+        }
+        top.addElement("VGM");
+        top.addElement("v" + (hd.version >> 8) + "." + (hd.version & 0xFF));
+        for (int i = 0; i + 1 < top.size(); i += 2) {
+            flat.addElement(top.elementAt(i));
+            flat.addElement(top.elementAt(i + 1));
+        }
         String[][] rows = {
-            {"title", hd.gd3Title},
-            {"title (en)", hd.gd3TitleEn},
-            {"game", hd.gd3Game},
-            {"game (en)", hd.gd3GameEn},
-            {"artist", hd.gd3Artist},
-            {"artist (en)", hd.gd3ArtistEn},
-            {"date", hd.gd3Date},
-            {"ripper", hd.gd3Ripper},
-            {"notes", hd.gd3Notes},
+            {"Title", hd.gd3Title},
+            {"Title (en)", hd.gd3TitleEn},
+            {"Game", hd.gd3Game},
+            {"Game (en)", hd.gd3GameEn},
+            {"Artist", hd.gd3Artist},
+            {"Artist (en)", hd.gd3ArtistEn},
+            {"Date", hd.gd3Date},
+            {"Ripper", hd.gd3Ripper},
+            {"Notes", hd.gd3Notes},
         };
         for (int i = 0; i < rows.length; i++) {
             String val = rows[i][1];
@@ -476,7 +557,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 flat.addElement(lines[li]);
             }
         }
-        int gd3H = 16 + flat.size() / 2 * 13 + 2;
+        int gd3H = flat.size() / 2 * 13 + 4;
         gd3Img = Image.createImage(w, gd3H);
         Graphics gg = gd3Img.getGraphics();
         gg.setColor(0x0C1118);
@@ -484,10 +565,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         gg.setFont(tiny);
         gg.setColor(0x3A4656);
         gg.drawLine(4, 0, w - 4, 0);
-        gg.setColor(0x8894A8);
-        gg.drawString("TAG", 6, 3, Graphics.TOP | Graphics.LEFT);
-        gg.drawString("INFO", colX, 3, Graphics.TOP | Graphics.LEFT);
-        int yy = 16;
+        int yy = 2;
         gg.setColor(0xAAB4C4);
         for (int i = 0; i + 1 < flat.size(); i += 2) {
             gg.drawString((String) flat.elementAt(i), 6, yy,
@@ -496,6 +574,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                     Graphics.TOP | Graphics.LEFT);
             yy += 13;
         }
+    }
+
+    /** 时钟格式化：1.79 MHz / 1789 Hz / 0（CLDC 无格式化，手工拼）。 */
+    private static String fmtHz(long hz) {
+        if (hz <= 0) {
+            return "0";
+        }
+        if (hz >= 1000000) {
+            return (hz / 1000000) + "." + ((hz / 10000) % 100) + " MHz";
+        }
+        if (hz >= 1000) {
+            return (hz / 1000) + "." + ((hz / 10) % 100) + " kHz";
+        }
+        return hz + " Hz";
     }
 
     private void paintHud(Graphics g, int w, int h) {
@@ -610,8 +702,36 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             drawKeyStripDyn(g, py + ch * kbPitch, ch);
         }
 
-        // ---- GD3 表格（整块贴图）----
-        g.drawImage(gd3Img, 0, py + 3 * kbPitch + 4, Graphics.TOP | Graphics.LEFT);
+        // ---- GD3 表格（整块贴图，超出屏幕可滚动：2/8 键，右侧滚动条） ----
+        int gy = py + 3 * kbPitch + 4;
+        int gh = h - gy;
+        if (gh < 0) {
+            gh = 0;
+        }
+        int gd3Max = gd3Img.getHeight() - gh;
+        if (gd3Max < 0) {
+            gd3Max = 0;
+        }
+        if (gd3Scroll > gd3Max) {
+            gd3Scroll = gd3Max;
+        }
+        if (gd3Scroll < 0) {
+            gd3Scroll = 0;
+        }
+        int cw2 = g.getClipWidth();
+        int ch2 = g.getClipHeight();
+        g.clipRect(0, gy, w, gh);
+        g.drawImage(gd3Img, 0, gy - gd3Scroll, Graphics.TOP | Graphics.LEFT);
+        g.setClip(0, 0, cw2, ch2);
+        if (gd3Max > 0) {
+            // 滚动条（真机屏幕矮，标签经常放不下）
+            int thumbH = Math.max(14, gh * gh / gd3Img.getHeight());
+            int thumbY = gy + (gh - thumbH) * gd3Scroll / gd3Max;
+            g.setColor(0x2A3242);
+            g.fillRect(w - 5, gy, 3, gh);
+            g.setColor(0x8FA3C8);
+            g.fillRect(w - 5, thumbY, 3, thumbH);
+        }
     }
 
     /** 键盘底图（静态，烘焙一次）：白键、黑键凹槽、通道色标、灭灯 TNE 字符。 */
@@ -1067,6 +1187,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_BEND_SENS: return "Bend sens";
             case ROW_LOOP: return "Loop count";
             case ROW_ORDER: return "Play order";
+            case ROW_MASTER: return "Master vol";
+            case ROW_BEND_RANGE: return "Bend range";
             default: return CH_NAMES[r - ROW_CH0];
         }
     }
@@ -1083,9 +1205,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
             case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
             case ROW_BUZZ_VOL: return String.valueOf(ay.getBuzzVol());
-            case ROW_BEND_SENS: return Ay2Midi.BEND_SENS_NAMES[ay.getBendSensIdx()];
+            case ROW_BEND_SENS: return ay.getBendSensText();
             case ROW_LOOP: return LOOP_NAMES[loopIdx];
             case ROW_ORDER: return ORDER_NAMES[shuffle ? 1 : 0];
+            case ROW_MASTER: return String.valueOf(masterVol);
+            case ROW_BEND_RANGE: return ay.getBendRangePct() + "%";
             default: return String.valueOf(ay.getProg(r - ROW_CH0));
         }
     }
@@ -1138,18 +1262,23 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 if (ay2 != null) ay2.setBuzzVol(v);
                 break;
             }
-            case ROW_BEND_SENS: {
-                int idx = ay.getBendSensIdx() + dir;
-                ay.setBendSensIdx(idx);
-                if (ay2 != null) ay2.setBendSensIdx(idx);
+            case ROW_BEND_SENS:
+                ay.addBendSens(dir);
+                if (ay2 != null) ay2.addBendSens(dir);
                 break;
-            }
+            case ROW_BEND_RANGE:
+                ay.addBendRange(dir * 5);
+                if (ay2 != null) ay2.addBendRange(dir * 5);
+                break;
             case ROW_LOOP:
                 loopIdx = (loopIdx + dir + LOOP_CHOICES.length) % LOOP_CHOICES.length;
                 loopPlays = 0;
                 break;
             case ROW_ORDER:
                 shuffle = !shuffle;
+                break;
+            case ROW_MASTER:
+                setMaster(masterVol + dir * 10);
                 break;
             default: {
                 int ch = cursor - ROW_CH0;
@@ -1167,6 +1296,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 break;
             }
         }
+        persist();
     }
 
     private static int findProg(int prog) {
@@ -1227,9 +1357,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 switchTrackFade(n);
             }
         } else if (action == UP) {
-            setMaster(masterVol + 5);
+            gd3Scroll -= 24;
+            if (gd3Scroll < 0) {
+                gd3Scroll = 0;
+            }
         } else if (action == DOWN) {
-            setMaster(masterVol - 5);
+            gd3Scroll += 24;
         } else if (action == FIRE || keyCode == KEY_NUM5) {
             if (playing) {
                 playing = false;
@@ -1240,6 +1373,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             } else {
                 startPlay(false);
             }
+        } else if (keyCode == KEY_NUM2) {
+            gd3Scroll -= 24;
+            if (gd3Scroll < 0) {
+                gd3Scroll = 0;
+            }
+        } else if (keyCode == KEY_NUM8) {
+            gd3Scroll += 24;
         } else if (keyCode == KEY_POUND) {
             setMode(MODE_SETTINGS);
         }
@@ -1276,6 +1416,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (ay2 != null) {
             ay2.setMasterVol(v);
         }
+        persist();
     }
 
     public void commandAction(Command c, Displayable d) {

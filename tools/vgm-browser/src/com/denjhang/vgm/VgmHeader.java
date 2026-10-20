@@ -66,10 +66,10 @@ public class VgmHeader {
 
     public static VgmHeader parse(byte[] d) {
         if (d == null || d.length < 0x20) {
-            throw new IllegalArgumentException("文件太小，不是 VGM");
+            throw new IllegalArgumentException("file too small, not a VGM");
         }
         if (d[0] != 'V' || d[1] != 'g' || d[2] != 'm' || d[3] != ' ') {
-            throw new IllegalArgumentException("缺少 Vgm 魔数");
+            throw new IllegalArgumentException("missing Vgm magic");
         }
 
         VgmHeader h = new VgmHeader();

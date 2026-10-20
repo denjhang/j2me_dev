@@ -24,7 +24,7 @@ public class Ay2Midi {
     public static final int SLOT_ENV_TRI = 8;      // R13 10,14 三角
     public static final int SLOT_ENV_ALT = 9;      // R13 11,13 交替锯齿
     public static final String[] SLOT_NAMES = {
-        "包络-锯齿", "包络-衰减", "包络-三角", "包络-交替"
+        "Env-Saw", "Env-Decay", "Env-Tri", "Env-Alt"
     };
     public static final int[] ENV_SHAPE_DEFAULT = {81, 87, 82, 80};
 
@@ -47,21 +47,16 @@ public class Ay2Midi {
     private static final int PROG = 0xC0;
     private static final int PITCH = 0xE0;
 
-    /**
-     * 弯音范围（半音）：±2 = MIDI 默认值（vgm2mid 同款）。
-     * 之前用 ±12 且 RPN 在部分合成器上不生效，弯音值被按 ±2 解释
-     * 导致颤音范围异常放大/缩小。现在直接按 ±2 校准，不依赖 RPN。
-     */
-    private static final int BEND_RANGE_SEMITONES = 2;
-    /** ±2 半音下每半音的弯音步数 = 8192/2 = 4096（vgm2mid PITCHBEND_STEPS_DEFAULT）。 */
+    /** RPN 固定 ±2 半音；灵敏度只改微分刻度。 */
     private static final int BEND_STEPS_PER_SEMI = 4096;
 
-    /** 弯音灵敏度（百分比，100=默认），可调 25-400。 */
-    public static final int[] BEND_SENS_CHOICES = {25, 50, 75, 100, 125, 150, 200, 300, 400};
-    public static final String[] BEND_SENS_NAMES = {
-        "x0.25", "x0.50", "x0.75", "x1.0", "x1.25", "x1.5", "x2.0", "x3.0", "x4.0"
-    };
-    private int bendSensIdx = 5;   // 默认 x1.5
+    /** 弯音灵敏度（百分比，100=默认），左右键 0.01 步进连续可调。 */
+    private int bendSensPct = 100;   // 默认 x1.0
+    private static final int BEND_SENS_MIN = 25;
+    private static final int BEND_SENS_MAX = 400;
+    /** 弯音范围比例（百分比，100=不缩放）。只按比例缩放弯音偏移，
+     *  不做最大最小钳制 —— 减小即压缩弯音行程（颤音/滑音幅度）。 */
+    private int bendRangePct = 100;
 
     public static final int PROG_SQUARE = 80;
     public static final int PROG_BUZZER = 83;
@@ -194,7 +189,7 @@ public class Ay2Midi {
         try {
             player = Manager.createPlayer("device://midi");
             if (player == null) {
-                initError = "device://midi 不可用";
+                initError = "device://midi unavailable";
                 return false;
             }
             // nescube 顺序：prefetch 后取控制；控制名先用全类名（真机），再退短名（模拟器）
@@ -207,7 +202,7 @@ public class Ay2Midi {
             if (midi == null) {
                 player.close();
                 player = null;
-                initError = "无 MIDIControl";
+                initError = "no MIDIControl";
                 return false;
             }
             player.start();
@@ -272,11 +267,12 @@ public class Ay2Midi {
     }
 
     /** 发 RPN 0x00/0x00 设置弯音范围（半音）。 */
-    private void setPitchBendRange(int ch, int semitones) {
+    /** RPN 固定 ±2 半音（MIDI 默认，vgm2mid 同款校准）。 */
+    private void setPitchBendRange(int ch) {
         send(CC | ch, 101, 0);         // RPN MSB = 0
         send(CC | ch, 100, 0);         // RPN LSB = 0 (Pitch Bend Sensitivity)
-        send(CC | ch, 6, semitones);   // Data Entry MSB = 半音数
-        send(CC | ch, 38, 0);          // Data Entry LSB = 0（音分，忽略）
+        send(CC | ch, 6, 2);           // Data Entry MSB = 2 半音
+        send(CC | ch, 38, 0);          // Data Entry LSB = 0
         send(CC | ch, 101, 127);       // RPN reset
         send(CC | ch, 100, 127);
     }
@@ -358,7 +354,8 @@ public class Ay2Midi {
         envUniTri = src.envUniTri;
         buzzVol = src.buzzVol;
         masterVol = src.masterVol;
-        bendSensIdx = src.bendSensIdx;
+        bendSensPct = src.bendSensPct;
+        bendRangePct = src.bendRangePct;
         forceRefreshAll();
     }
 
@@ -368,9 +365,8 @@ public class Ay2Midi {
         }
         buzzProgSent = -1;
         sendPans();
-        // 设置所有通道弯音范围为 ±12 半音（VGM 大范围滑音常见）
         for (int i = 0; i < CHANNELS; i++) {
-            setPitchBendRange(channelOf(i), BEND_RANGE_SEMITONES);
+            setPitchBendRange(channelOf(i));
         }
         // CC7 (Main Volume) 固定 127，CC11 (Expression) 做动态音量
         for (int i = 0; i < CHANNELS; i++) {
@@ -802,18 +798,49 @@ public class Ay2Midi {
         return masterVol;
     }
 
-    public int getBendSensIdx() {
-        return bendSensIdx;
-    }
+
 
     public int getBendSensPct() {
-        return BEND_SENS_CHOICES[bendSensIdx];
+        return bendSensPct;
     }
 
-    public void setBendSensIdx(int idx) {
-        if (idx < 0) idx = 0;
-        if (idx >= BEND_SENS_CHOICES.length) idx = BEND_SENS_CHOICES.length - 1;
-        bendSensIdx = idx;
+    /** 左右键 ±1%（=0.01 倍率）连续调节，RPN 范围固定不动。 */
+    public void addBendSens(int dir) {
+        int v = bendSensPct + dir;
+        if (v < BEND_SENS_MIN) v = BEND_SENS_MIN;
+        if (v > BEND_SENS_MAX) v = BEND_SENS_MAX;
+        bendSensPct = v;
+    }
+
+    /** 范围比例 ±1% 连续调节。 */
+    public void addBendRange(int dir) {
+        int v = bendRangePct + dir;
+        if (v < 1) v = 1;
+        if (v > 400) v = 400;
+        bendRangePct = v;
+    }
+
+    public int getBendRangePct() {
+        return bendRangePct;
+    }
+
+    public void setBendSensPct(int v) {
+        if (v < BEND_SENS_MIN) v = BEND_SENS_MIN;
+        if (v > BEND_SENS_MAX) v = BEND_SENS_MAX;
+        bendSensPct = v;
+    }
+
+    public void setBendRangePct(int v) {
+        if (v < 1) v = 1;
+        if (v > 400) v = 400;
+        bendRangePct = v;
+    }
+
+    /** x1.50 样式的显示值。 */
+    public String getBendSensText() {
+        int whole = bendSensPct / 100;
+        int frac = bendSensPct % 100;
+        return "x" + whole + "." + (frac < 10 ? "0" : "") + frac;
     }
 
     /** 主音量 0-127，立即推到全部通道（用于整体音量调节和淡出）。 */
@@ -1072,13 +1099,15 @@ public class Ay2Midi {
 
     /**
      * 音分偏差 → 弯音轮值（14 位，8192 居中）。
-     * vgm2mid 同款：±2 半音范围内每半音 4096 步。
-     * 弯音值 = 8192 + cents × 4096/100（cents 范围 ±50，bend 偏移 ±2048）。
+     * 全程 64 位定点直算，不做整数音分的中间截断：
+     * 1/65536 半音粒度直达 14 位弯音轮，分辨率约 0.0002 半音（0.02 音分），
+     * 远超 0.01 半音要求。灵敏度只改变固定 ±8192 步内的微分刻度，
+     * 不扩大弯音范围（14 位轮物理上限）。
      */
     private int centsToBend(int cents144) {
-        long cents = (long) cents144 * 100 / 65536;
-        // 灵敏度百分比乘在弯音偏移上（100=默认 vg2mid 刻度）
-        long bend = 8192 + cents * BEND_STEPS_PER_SEMI * getBendSensPct() / 10000;
+        long pct = getBendSensPct();
+        long bend = 8192 + (long) cents144 * BEND_STEPS_PER_SEMI * pct
+                / (100L * 65536L) * bendRangePct / 100;
         if (bend < 0) return 0;
         if (bend > 16383) return 16383;
         return (int) bend;

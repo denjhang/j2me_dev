@@ -28,8 +28,8 @@ public class ToneTestScreen extends Canvas implements CommandListener, Runnable 
     private boolean chunkMode = true;   // 默认分块：模拟器唯一能出声的模式
     private volatile boolean uiAlive = true;
 
-    private final Command cmdBack = new Command("返回", Command.BACK, 1);
-    private final Command cmdToggle = new Command("启停", Command.OK, 1);
+    private final Command cmdBack = new Command("Back", Command.BACK, 1);
+    private final Command cmdToggle = new Command("Start/Stop", Command.OK, 1);
 
     private final Font big;
     private final Font small;
@@ -87,46 +87,46 @@ public class ToneTestScreen extends Canvas implements CommandListener, Runnable 
 
         g.setColor(0xE0E0E0);
         g.setFont(big);
-        g.drawString("实时方波测试", w / 2, 4, Graphics.TOP | Graphics.HCENTER);
+        g.drawString("Live square wave test", w / 2, 4, Graphics.TOP | Graphics.HCENTER);
 
         g.setFont(small);
         int y = h / 4;
 
         g.setColor(0x64B4FF);
-        g.drawString(chunkMode ? ("模式: 分块链 (块=" + chunked.getChunkLabel() + ")")
-                               : "模式: 无限流(仅真机)", 8, y, Graphics.TOP | Graphics.LEFT);
+        g.drawString(chunkMode ? ("Mode: chunked chain (chunk=" + chunked.getChunkLabel() + ")")
+                               : "Mode: infinite stream (device only)", 8, y, Graphics.TOP | Graphics.LEFT);
         y += 20;
 
         g.setColor(isRunning() ? 0x7CFC7C : 0xA0A0A0);
-        g.drawString(isRunning() ? "状态: 播放中" : "状态: 已停止", 8, y,
+        g.drawString(isRunning() ? "Status: playing" : "Status: stopped", 8, y,
                 Graphics.TOP | Graphics.LEFT);
         y += 20;
 
         g.setColor(0xE0E0E0);
-        g.drawString("音高: " + freq() + " Hz", 8, y, Graphics.TOP | Graphics.LEFT);
+        g.drawString("Pitch: " + freq() + " Hz", 8, y, Graphics.TOP | Graphics.LEFT);
         y += 18;
-        g.drawString("音量: " + vol() + "%", 8, y, Graphics.TOP | Graphics.LEFT);
+        g.drawString("Volume: " + vol() + "%", 8, y, Graphics.TOP | Graphics.LEFT);
 
         y += 24;
         g.setColor(0xA0C0E0);
         if (chunkMode) {
-            g.drawString("已播块: " + chunked.getPlayedChunks(), 8, y,
+            g.drawString("Chunks played: " + chunked.getPlayedChunks(), 8, y,
                     Graphics.TOP | Graphics.LEFT);
             y += 18;
-            g.drawString("块间 gap 均值: " + chunked.getAvgGapMs() + " ms", 8, y,
+            g.drawString("Avg gap: " + chunked.getAvgGapMs() + " ms", 8, y,
                     Graphics.TOP | Graphics.LEFT);
             y += 18;
-            g.drawString("gap 最大: " + chunked.getMaxGapMs() + " ms", 8, y,
+            g.drawString("Max gap: " + chunked.getMaxGapMs() + " ms", 8, y,
                     Graphics.TOP | Graphics.LEFT);
             y += 18;
-            g.drawString("事件延迟: " + chunked.getEventDelayMs()
-                    + " ms  start耗时: " + chunked.getStartCostMs() + " ms", 8, y,
+            g.drawString("Event delay: " + chunked.getEventDelayMs()
+                    + " ms  start cost: " + chunked.getStartCostMs() + " ms", 8, y,
                     Graphics.TOP | Graphics.LEFT);
         } else {
-            g.drawString("缓冲: " + streaming.getBuffered() + " B ("
+            g.drawString("Buffer: " + streaming.getBuffered() + " B ("
                     + streaming.getLatencyMs() + " ms)", 8, y, Graphics.TOP | Graphics.LEFT);
             y += 18;
-            g.drawString("欠载: " + streaming.getUnderruns() + " 次", 8, y,
+            g.drawString("Underruns: " + streaming.getUnderruns(), 8, y,
                     Graphics.TOP | Graphics.LEFT);
         }
 
@@ -135,12 +135,12 @@ public class ToneTestScreen extends Canvas implements CommandListener, Runnable 
         if (chunkMode && chunked.getLastError() != null) {
             y += 24;
             g.setColor(0xFF7C7C);
-            g.drawString("错误: " + chunked.getLastError(), 8, y,
+            g.drawString("Error: " + chunked.getLastError(), 8, y,
                     Graphics.TOP | Graphics.LEFT);
         }
 
         g.setColor(0x808080);
-        g.drawString("↑↓音高 ←→音量 5启停 7模式 8块长", 8, h - 20,
+        g.drawString("Up/Dn pitch  L/R volume  5 start/stop  7 mode  8 chunk len", 8, h - 20,
                 Graphics.TOP | Graphics.LEFT);
     }
 

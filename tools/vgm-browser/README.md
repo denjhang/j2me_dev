@@ -2,7 +2,24 @@
 
 J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pixel-art 88-key visualization.
 
-**Current release: v1.1.0** — <https://github.com/denjhang/j2me_dev/releases>
+**Current release: v1.1.5** — <https://github.com/denjhang/j2me_dev/releases>
+
+## Changelog (v1.1.1 – v1.1.5)
+
+- **v1.1.1**: Nokia no-sound fix — MIDIControl obtained after `player.start()` (MeBoy order)
+- **v1.1.2**: file browser fixes — silent preset-path probe (no `open connection failed -5` at startup), valid parent URLs with trailing slash (no `URL is not valid`)
+- **v1.1.3**: `getControl` full class name with short-name fallback (nescube-style)
+- **v1.1.4**: nescube audio model — note-on velocity carries the PSG level, CC7/CC11 sent in parallel, velocity re-trigger on level changes
+- **v1.1.5**:
+  - GD3/info table scrollable (**up/down keys**, 24 px steps) with scrollbar — only affects the table, never the keyboard/progress bar
+  - Info table: TAG/INFO header row removed; top rows are chip/clock/VGM version
+  - Master volume moved into Settings (up/down keys freed for info scrolling)
+  - Bend split into two parameters: **Bend sens** (precision, x0.25–x4.00, 0.01 steps, default x1.0) and **Bend range** (range ratio, default 100%, ±5% steps)
+  - Pitch bend conversion: full 64-bit fixed-point path, no integer-cent truncation (~0.02 cent resolution)
+  - All settings persisted via RMS (`SettingsStore`), restored on track open
+  - File list left softkey menu restored: Open / Now playing, Refresh, Square wave test, About
+  - About screen: English text + CN/EN signature images; app icon (`/icon.png`) in jar
+  - All UI strings English
 
 ## Features
 
@@ -30,7 +47,8 @@ J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pix
 - **Envelope octave**: saw/tri independent octave shift (-2 to +2)
 - **Unison modes**: off / +1 oct (2v) / +2 oct (3v) for saw/tri envelopes
 - **Buzzer volume**: 0-127 (default 100)
-- **Bend sensitivity**: 0.5×–2.0× (default 1.5×), scales pitch-bend steps per semitone
+- **Bend sens**: x0.25–x4.00 in 0.01 steps (default x1.0), pitch-bend micro-resolution
+- **Bend range**: range ratio 1–400% (default 100%), scales bend travel proportionally
 - **Loop count**: 1 / 2 / 3 / 5 / infinite (default 2)
 - **Play order**: sequential / shuffle
 - **10 instrument slots**: per-channel GM program selection
@@ -119,7 +137,8 @@ Output: `VgmBrowser.jar` / `VgmBrowser.jad`
 | Tri unison | +1 oct (2 voices) |
 | Buzzer volume | 100 |
 | Square timbre | 80 Square Lead |
-| Bend sensitivity | 1.5× (menu: 0.5×–2×) |
+| Bend sens | x1.0 (0.01 steps, x0.25–x4.00) |
+| Bend range | 100% (ratio, ±5% steps) |
 | Loop count | 2 |
 | Play order | sequential |
 | Volume model | CC7=127 fixed + CC11 expression (PSG dynamics) |
@@ -134,7 +153,7 @@ Output: `VgmBrowser.jar` / `VgmBrowser.jad`
 
 ### Player HUD
 - **Arrow keys left/right**: previous/next track
-- **Arrow keys up/down**: master volume ±10
+- **Arrow keys up/down**: scroll GD3/info table (master volume is in Settings)
 - **5**: play/pause
 - **#**: settings overlay
 - **Left softkey**: Settings

@@ -44,28 +44,28 @@ public class DetailScreen extends Form implements CommandListener {
             append(title + "\n");
         }
         append("File: " + file.name + "\n");
-        append("Size: " + file.byteSize + " 字节\n");
+        append("Size: " + file.byteSize + " bytes\n");
         append("Version: VGM " + h.versionString() + "\n\n");
 
         append("Duration: " + fmt(h.durationSeconds()) + "\n");
         if (h.hasLoop()) {
             double loopStart = (h.totalSamples - h.loopSamples) / 44100.0;
-            append("Loop: " + fmt(loopStart) + "s 起, 长 "
+            append("Loop: " + fmt(loopStart) + "s, len "
                     + fmt(h.loopSeconds()) + "s (0x" + hex(h.loopOffset) + ")\n");
         } else {
-            append("循环: 无\n");
+            append("Loop: none\n");
         }
         append("Samples: " + h.totalSamples + "\n\n");
 
-        append("数据区: 0x" + hex(h.dataOffset)
+        append("Data: 0x" + hex(h.dataOffset)
                 + " - 0x" + hex(h.dataEnd) + "\n");
-        append("头部长度: 0x" + hex(h.headerSize) + "\n\n");
+        append("Header size: 0x" + hex(h.headerSize) + "\n\n");
 
         // 芯片
-        append("芯片:\n");
+        append("Chips:\n");
         int[] used = usedChips(h);
         if (used.length == 0) {
-            append("  (头部未声明)\n");
+            append("  (not declared in header)\n");
         } else {
             for (int i = 0; i < used.length; i++) {
                 int id = used[i];

@@ -46,13 +46,17 @@ public class FileListScreen extends List implements CommandListener {
     }
 
     public FileListScreen(BrowserMIDlet midlet) {
-        super("VGM 浏览器", List.IMPLICIT);
+        super("VGM Browser", List.IMPLICIT);
         this.midlet = midlet;
         setCommandListener(this);
         // 常驻命令只有右软键 Up；左软键随播放状态切换（命令数恰好 1 时
         // KEmulator 才把命令直接放到左软键，所以平时不挂 Refresh/About 等杂项）
         addCommand(cmdUp);
         addCommand(midlet.playerAlive() ? cmdNow : cmdOpen);
+        // 高级命令常驻：多条命令时左软键自动变成菜单（KEmulator/S60 行为）
+        addCommand(cmdRefresh);
+        addCommand(cmdTone);
+        addCommand(cmdInfo);
         refreshNowPlaying();
         // 模拟器直达 file:///root/vgm/；真机没有 root，静默失败回根列表
         if (!tryLoadDir("file:///root/vgm/")) {
@@ -110,7 +114,7 @@ public class FileListScreen extends List implements CommandListener {
             addRoot("D:/");
             addRoot("E:/");
         }
-        setTitle("VGM 浏览器");
+        setTitle("VGM Browser");
     }
 
     private void addRoot(String r) {
@@ -152,7 +156,7 @@ public class FileListScreen extends List implements CommandListener {
         try {
             fc = (FileConnection) Connector.open(url, Connector.READ);
             if (!fc.exists()) {
-                showAlert("目录不存在: " + url);
+                showAlert("Dir not found: " + url);
                 return;
             }
             // 收集后排序：文件夹 → VGZ → VGM，组内字母序（忽略大小写）
@@ -224,13 +228,13 @@ public class FileListScreen extends List implements CommandListener {
                 files++;
             }
         } catch (Throwable t) {
-            showAlert("读取失败: " + t);
+            showAlert("Read failed: " + t);
         } finally {
             close(fc);
         }
 
-        setTitle(currentDir == null ? "VGM 浏览器"
-                : "VGM  " + dirs + " 目录 / " + files + " 文件");
+        setTitle(currentDir == null ? "VGM Browser"
+                : "VGM  " + dirs + " dirs / " + files + " files");
     }
 
     private static long fcSize(String url) {
@@ -345,7 +349,7 @@ public class FileListScreen extends List implements CommandListener {
                 midlet.openPlayRaw(en.name, data, currentIdx);
             }
         } catch (Throwable t) {
-            showAlert("解析失败: " + t);
+            showAlert("Parse failed: " + t);
         } finally {
             if (in != null) {
                 try {
@@ -381,8 +385,29 @@ public class FileListScreen extends List implements CommandListener {
         }
     }
 
+    /** About: English info + CN/EN signature images (bundled in res). */
+    private static final String NL = System.getProperty("line.separator");
+
+    private void showAbout() {
+        javax.microedition.lcdui.Form f = new javax.microedition.lcdui.Form("About");
+        f.append("VgmBrowser v1.1.5" + NL);
+        f.append("Real-time AY8910 VGM to MIDI converter with 88-key visualization." + NL);
+        f.append("Dual-chip, VGZ support, full 256-entry VGM command table." + NL);
+        f.append("References: libvgm, vgm2mid (Valley Bell), yasp11, v16, MeBoy, nescube." + NL + NL);
+        try {
+            f.append(javax.microedition.lcdui.Image.createImage("/sig_en.png"));
+            f.append(NL);
+            f.append(javax.microedition.lcdui.Image.createImage("/sig_cn.png"));
+        } catch (Throwable t) {
+            f.append("Denjhang / Dianjiang Open-Source Digital");
+        }
+        f.addCommand(new Command("Back", Command.BACK, 1));
+        f.setCommandListener(this);
+        javax.microedition.lcdui.Display.getDisplay(midlet).setCurrent(f);
+    }
+
     private void showAlert(String msg) {
-        Alert a = new Alert("提示", msg, null, AlertType.INFO);
+        Alert a = new Alert("Info", msg, null, AlertType.INFO);
         a.setTimeout(3000);
         javax.microedition.lcdui.Display.getDisplay(midlet).setCurrent(a, this);
     }
@@ -403,13 +428,7 @@ public class FileListScreen extends List implements CommandListener {
         } else if (c == cmdTone) {
             midlet.openToneTest();
         } else if (c == cmdInfo) {
-            Alert a = new Alert("关于",
-                    "VGM 浏览器 v0.1 (解析/显示)\n"
-                            + "支持 VGM 1.5x，完整 256 项命令表。\n"
-                            + "第一阶段不做音频转换。",
-                    null, AlertType.INFO);
-            a.setTimeout(4000);
-            javax.microedition.lcdui.Display.getDisplay(midlet).setCurrent(a, this);
+            showAbout();
         }
     }
 }

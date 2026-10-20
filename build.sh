@@ -81,7 +81,7 @@ echo "== 生成 $CLASS_COUNT 个 class"
 
 # --- 2. 打包（manifest.mf 独立文件，含诺基亚兼容字段） ---
 if [ -f manifest.mf ]; then
-  "$JAR" cfm "$JAR_NAME" manifest.mf -C classes .
+  "$JAR" cfm "$JAR_NAME" manifest.mf -C classes . -C res .
 else
   echo "警告: 缺少 manifest.mf，使用内联 manifest" >&2
   printf 'Manifest-Version: 1.0\nMIDlet-Name: %s\nMIDlet-Version: 1.0.0\nMIDlet-Vendor: Denjhang\nMIDlet-1: %s,,com.denjhang.vgmbrowser.BrowserMIDlet\nMicroEdition-Profile: MIDP-2.0\nMicroEdition-Configuration: CLDC-1.1\n\n' "$BASE" "$BASE" > MANIFEST.MF

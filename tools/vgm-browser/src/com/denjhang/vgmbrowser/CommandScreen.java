@@ -22,16 +22,16 @@ public class CommandScreen extends Form implements CommandListener {
     private final BrowserMIDlet midlet;
     private final VgmFile file;
 
-    private final Command cmdBack = new Command("返回", Command.BACK, 1);
-    private final Command cmdNext = new Command("下一页", Command.SCREEN, 2);
-    private final Command cmdPrev = new Command("上一页", Command.SCREEN, 3);
-    private final Command cmdScan = new Command("全曲统计", Command.SCREEN, 4);
+    private final Command cmdBack = new Command("Back", Command.BACK, 1);
+    private final Command cmdNext = new Command("Next page", Command.SCREEN, 2);
+    private final Command cmdPrev = new Command("Prev page", Command.SCREEN, 3);
+    private final Command cmdScan = new Command("Statistics", Command.SCREEN, 4);
 
     private int pageIndex = 0;
     private int totalCommands;
 
     public CommandScreen(BrowserMIDlet midlet, VgmFile file) {
-        super("命令流");
+        super("Command stream");
         this.midlet = midlet;
         this.file = file;
         addCommand(cmdBack);
@@ -44,7 +44,7 @@ public class CommandScreen extends Form implements CommandListener {
 
     private void refreshPage() {
         deleteAll();
-        append("命令流 (解析 v0.1)\n");
+        append("Command stream (parser)\n");
         append("----\n");
 
         VgmParser p = file.getParser();
@@ -68,8 +68,8 @@ public class CommandScreen extends Form implements CommandListener {
             n++;
         }
         totalCommands = countTotal();
-        pageText.append("\n--- 第 " + (pageIndex + 1) + " 页 (共 "
-                + ((totalCommands + PAGE - 1) / PAGE) + " 页) ---\n");
+        pageText.append("\n--- Page " + (pageIndex + 1) + " of "
+                + ((totalCommands + PAGE - 1) / PAGE) + " pages ---\n");
 
         // Form 一次 append 一个长 String 比 append 很多 StringItem 快
         append(pageText.toString());
@@ -118,7 +118,7 @@ public class CommandScreen extends Form implements CommandListener {
                 sb.append("  <<END>>");
                 break;
             case VgmParser.EV_UNKNOWN:
-                sb.append("  (无效/未知)");
+                sb.append("  (invalid/unknown)");
                 break;
             default:
                 break;
@@ -164,16 +164,16 @@ public class CommandScreen extends Form implements CommandListener {
     }
 
     private void showScan() {
-        Form f = new Form("全曲统计");
+        Form f = new Form("Statistics");
         VgmParser p = file.getParser();
         p.scanAll();
 
-        f.append("命令总数: " + p.getCommandCount() + "\n");
-        f.append("解析到时长: " + fmt(p.getSeconds()) + "s\n");
-        f.append("未知/无效命令: " + p.badCmdCount + "\n");
-        f.append("数据块: " + p.dataBlocks.size() + "\n\n");
+        f.append("Total commands: " + p.getCommandCount() + "\n");
+        f.append("Parsed length: " + fmt(p.getSeconds()) + "s\n");
+        f.append("Unknown/invalid commands: " + p.badCmdCount + "\n");
+        f.append("Data blocks: " + p.dataBlocks.size() + "\n\n");
 
-        f.append("各命令出现次数:\n");
+        f.append("Command counts:\n");
         for (int i = 0; i < 256; i++) {
             if (p.cmdCount[i] > 0) {
                 f.append("  " + hex2(i) + " " + VgmCommandTable.name(i)
@@ -181,7 +181,7 @@ public class CommandScreen extends Form implements CommandListener {
             }
         }
 
-        f.append("\nAY8910 寄存器写次数:\n");
+        f.append("\nAY8910 register writes:\n");
         boolean any = false;
         for (int i = 0; i < p.ayRegCount.length; i++) {
             if (p.ayRegCount[i] > 0) {
@@ -190,10 +190,10 @@ public class CommandScreen extends Form implements CommandListener {
             }
         }
         if (!any) {
-            f.append("  (无)\n");
+            f.append("  (none)\n");
         }
 
-        f.addCommand(new Command("返回", Command.BACK, 1));
+        f.addCommand(new Command("Back", Command.BACK, 1));
         f.setCommandListener(new CommandListener() {
             public void commandAction(Command c, Displayable d) {
                 javax.microedition.lcdui.Display.getDisplay(midlet)

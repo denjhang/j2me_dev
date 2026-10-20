@@ -1,5 +1,5 @@
 MIDlet-Name: VgmBrowser
-MIDlet-Version: 1.1.13
+MIDlet-Version: 1.1.14
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowser,/icon.png,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Description: AY8910 VGM Player with MIDI visualization

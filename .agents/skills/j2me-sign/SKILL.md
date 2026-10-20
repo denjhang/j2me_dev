@@ -42,6 +42,13 @@ python .agents/skills/j2me-sign/scripts/sign_jad.py <input.jar> <输出目录> -
 
 本仓库已有现成证书：`tools/vgm-browser/vgm.keystore`（alias `vgm`，口令 `vgmbrowser`，RSA 2048，10 年），导出件 `tools/vgm-browser/vgm-cert.cer`。
 
+## 版本号与行宽硬规约（血案规约，违者必返工）
+
+- `MIDlet-Version` **只能纯数字点分**（`1.1.14.1` 合法，`1.1.14n` 非法 → "无效应用"）
+- jar 内 manifest **单行 ≤ 72 字节**：`MIDlet-1` 不要内嵌图标（用独立 `MIDlet-Icon:` 属性），
+  打包后必须检查 manifest 无续行（行首空格）
+- 打包后程序化复查：版本正则、续行数=0、jar/jad 属性逐项一致、大小一致
+
 ## 真机测试清单
 
 - jar + jad 一起拷，**从 jad 启动安装**

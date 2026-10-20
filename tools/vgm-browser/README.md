@@ -107,6 +107,26 @@ Reference projects that informed this: fplay (Nokia JAD attributes), pluotsorbet
 2. **vgm2mid AY8910.bas**: `(ClockAY/16)/FNum` (Valley Bell 2013)
 3. **yasp11 ay_to_opm.c**: `clock/(16×period)` (user latest)
 
+## PITFALLS — 打包硬规约（违者真机装不上，逐条有血案，禁止再犯）
+
+任何新分支/改名/升版本打包，出包前**必须逐条自检**，违反任何一条 = 真机/模拟器安装失败：
+
+1. **MIDlet-Version 只能是纯数字点分**（`1.1.14`、`1.1.14.1` 合法；`1.1.14n` 这类带字母后缀
+   = S40 安装器直接判"无效应用"）。血案：VgmBrowserNokia 1.1.14n。
+2. **jar 内 manifest 单行 ≤ 72 字节**：超出会被折行成续行（行首空格），
+   很多诺基亚安装器不解析续行 → "无效应用"。`MIDlet-1` 带图标路径时极易超
+   （名字一长就爆）。规约：MIDlet-1 不内嵌图标（`Name,,MainClass`），
+   图标用独立的 `MIDlet-Icon: /icon.png` 属性。血案：VgmBrowserNokia MIDlet-1 换行。
+3. **jar 与 jad 的同名属性必须逐字节一致**（Name/Version/Vendor/MIDlet-1/…），
+   不一致 = "jar 和 jad 属性不匹配"。禁止手写 jad 模板，必须从 jar 内 manifest 提取；
+   build.sh 已内置自动同步 + 出包自检（版本/名字/大小），自检失败禁止交付。
+4. **MIDlet-Jar-Size 必须与最终 jar 字节数一致**；JAD 统一 CRLF、纯 ASCII、无 BOM。
+5. **多版本共存靠不同 MIDlet-Name**（VgmBrowser / VgmBrowserNokia），别只改文件名。
+6. 出包后程序化复查（不是人眼）：
+   `unzip -p x.jar META-INF/MANIFEST.MF` 查续行（行首空格行数 = 0）、
+   版本号正则 `^[0-9]+(\.[0-9]+)*$`、与 jad 逐属性比对、大小比对。
+   任何一步不过 = 回炉，不交付。
+
 ## Build
 
 ```bash

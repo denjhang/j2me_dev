@@ -54,9 +54,8 @@ public class FileListScreen extends List implements CommandListener {
         addCommand(cmdUp);
         addCommand(midlet.playerAlive() ? cmdNow : cmdOpen);
         refreshNowPlaying();
-        // 直达模拟器文件系统里的 vgm 目录，省两次点击；失败再回根列表
-        loadDir("file:///root/vgm/");
-        if (entries.size() == 0) {
+        // 模拟器直达 file:///root/vgm/；真机没有 root，静默失败回根列表
+        if (!tryLoadDir("file:///root/vgm/")) {
             loadRoots();
         }
     }
@@ -121,6 +120,23 @@ public class FileListScreen extends List implements CommandListener {
         en.dir = true;
         entries.addElement(en);
         append(r, null);
+    }
+
+    /** 静默尝试打开目录：成功返回 true。仅供预设路径探测，不给用户弹错。 */
+    private boolean tryLoadDir(String url) {
+        FileConnection fc = null;
+        try {
+            fc = (FileConnection) Connector.open(url, Connector.READ);
+            if (!fc.exists() || !fc.isOpen()) {
+                return false;
+            }
+        } catch (Throwable t) {
+            return false;
+        } finally {
+            close(fc);
+        }
+        loadDir(url);
+        return entries.size() >= 0 && currentDir != null;
     }
 
     private void loadDir(String url) {
@@ -349,11 +365,19 @@ public class FileListScreen extends List implements CommandListener {
         if (u.endsWith("/")) {
             u = u.substring(0, u.length() - 1);
         }
-        int slash = u.lastIndexOf('/');
-        if (slash <= 6) {          // "file://" 之后没有更上级
+        // 去掉 "file:///" 后看剩余部分：根（C:、MemoryCard 等）直接回根列表；
+        // 更深则截到上一级并保留尾斜杠（目录 URL 无尾斜杠在诺基亚上 invalid）
+        String path = u.startsWith("file:///") ? u.substring(8) : u;
+        int slash = path.indexOf('/');
+        if (slash < 0 || slash == path.length() - 1) {
+            loadRoots();
+            return;
+        }
+        int cut = path.lastIndexOf('/');
+        if (cut <= 0) {
             loadRoots();
         } else {
-            loadDir(u.substring(0, slash + 1));
+            loadDir("file:///" + path.substring(0, cut + 1));
         }
     }
 

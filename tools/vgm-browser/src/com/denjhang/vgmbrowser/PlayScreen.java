@@ -1334,12 +1334,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 break;
             case ROW_ENGINE: {
                 int e = (engineIdx + dir + 2) % 2;
-                ay.setEngineTone(e == 1);
-                if (ay2 != null) {
-                    ay2.setEngineTone(e == 1);
+                try {
+                    ay.setEngineTone(e == 1);
+                    if (ay2 != null) {
+                        ay2.setEngineTone(e == 1);
+                    }
+                } catch (Throwable ignored) {
                 }
-                Ay2Midi.preferTone = (e == 1);
-                engineIdx = e;
+                // 以实际引擎状态为准：切换失败显示回弹 + Engine 行露出错误
+                engineIdx = ay.toneEngine ? 1 : 0;
+                Ay2Midi.preferTone = (engineIdx == 1);
                 break;
             }
             default: {

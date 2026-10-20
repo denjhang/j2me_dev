@@ -465,28 +465,33 @@ public class Ay2Midi {
         if (midi != null) {
             safeClose();          // 关 MIDI player，midi 置空
         }
-        // 2) 建新引擎
+        // 2) 建新引擎（失败保留 initError 供 HUD 显示）
         if (tone) {
-            if (!openToneEngine()) {
-                // tone 打不开：退回 MIDI
-                if (openMidiNescube() || openMidiMeboy()) {
-                    sendInitProgs();
-                    toneEngine = false;
-                    midiPath = "S3";
-                }
+            if (openToneEngine()) {
+                toneEngine = true;
+                midiPath = "TONE";
                 return;
             }
-            toneEngine = true;
-            midiPath = "TONE";
+            // tone 打不开：尽力恢复 MIDI
+            if (openMidiNescube() || openMidiMeboy()) {
+                toneEngine = false;
+                midiPath = "S3";
+                sendInitProgs();
+            } else {
+                ready = false;
+            }
         } else {
             if (openMidiNescube() || openMidiMeboy()) {
                 toneEngine = false;
                 midiPath = "S3";
                 sendInitProgs();
-            } else if (openToneEngine()) {
-                // MIDI 打不开：保持 tone
+                return;
+            }
+            if (openToneEngine()) {
                 toneEngine = true;
                 midiPath = "TONE";
+            } else {
+                ready = false;
             }
         }
     }

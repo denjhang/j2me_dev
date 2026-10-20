@@ -497,39 +497,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     private void paintHud(Graphics g, int w, int h) {
-        // ---- 解压阶段：进度条兼做解压进度 ----
-        if (decompPct >= 0 || decompPct == -2) {
-            g.setFont(titleFont);
-            g.setColor(0xF0EDE4);
-            g.drawString(clip(pendingName != null ? pendingName : "", 22),
-                    6, 4, Graphics.TOP | Graphics.LEFT);
-            g.setFont(tiny);
-
-            int barY = 60;
-            int barW = w - 40;
-            int barH = 10;
-            g.setColor(0x1B2430);
-            g.fillRoundRect(6, barY, barW, barH, barH, barH);
-            int filled = barW * Math.max(0, decompPct) / 100;
-            if (filled > 2) {
-                g.setColor(0x3E7BA8);
-                g.fillRoundRect(6, barY, filled, barH, barH, barH);
-                g.setColor(0x6FB1DE);
-                g.fillRoundRect(6, barY, filled, barH / 2, barH, barH);
-            }
-            g.setFont(small);
-            if (decompPct == -2) {
-                g.setColor(0xFF7C7C);
-                g.drawString("Error: " + clip(decompStatus, 20), 6, barY + 18,
-                        Graphics.TOP | Graphics.LEFT);
-            } else {
-                g.setColor(0x6FB1DE);
-                g.drawString(decompStatus + " " + decompPct + "%", 6, barY + 18,
-                        Graphics.TOP | Graphics.LEFT);
-            }
-            return;   // 解压期间不画其他 HUD
-        }
-
         // ---- 标题跑马灯（GD3 标题/文件名，超宽往返滚动）----
         String title = pick(file.header.gd3Title, file.header.gd3TitleEn);
         if (title.length() == 0) {

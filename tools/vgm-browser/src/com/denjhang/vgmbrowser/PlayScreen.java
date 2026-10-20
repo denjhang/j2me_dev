@@ -66,9 +66,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_LOOP = 9;
     private static final int ROW_ORDER = 10;
     private static final int ROW_MASTER = 11;
-    private static final int ROW_BEND_RANGE = 12;
-    private static final int ROW_CH0 = 13;
-    private static final int TOTAL_ROWS = 13 + Ay2Midi.SLOTS;
+    private static final int ROW_ENGINE = 12;
+    private static final int ROW_BEND_RANGE = 13;
+    private static final int ROW_CH0 = 14;
+    private static final int TOTAL_ROWS = 14 + Ay2Midi.SLOTS;
+    private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
     private static final int ROW_H = 16;
     private int cursor;
     private int scroll;
@@ -95,6 +97,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int loopPlays;
     private boolean shuffle;
     private int masterVol = 100;
+    private int engineIdx = 1;          // 默认 Tone（诺基亚兼容）
 
     private final java.util.Random rng = new java.util.Random();
     private long marqueeBaseMs;   // 跑马灯时间基准（与重绘频率解耦）
@@ -242,6 +245,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (v == null) {
             return;
         }
+        Ay2Midi.preferTone = (v[14] == 1);
+        engineIdx = v[14] == 1 ? 1 : 0;
+        // 构造已完成（可能已按默认 tone 打开），按持久化选择校正
+        ay.setEngineTone(engineIdx == 1);
         try {
             ay.setStereoMode(v[1]);
             ay.setOct(v[2]);
@@ -256,8 +263,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             masterVol = v[11];
             loopIdx = v[12];
             shuffle = v[13] != 0;
-            for (int i = 0; i < Ay2Midi.SLOTS && 14 + i < v.length; i++) {
-                ay.setProg(i, v[14 + i]);
+            for (int i = 0; i < Ay2Midi.SLOTS && 15 + i < v.length; i++) {
+                ay.setProg(i, v[15 + i]);
             }
         } catch (Throwable t) {
             // 单项越界忽略，保其余
@@ -281,8 +288,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         v[11] = masterVol;
         v[12] = loopIdx;
         v[13] = shuffle ? 1 : 0;
+        v[14] = engineIdx;
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
-            v[14 + i] = ay.getProg(i);
+            v[15 + i] = ay.getProg(i);
         }
         SettingsStore.save(v);
     }
@@ -765,7 +773,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         long clk = hd.chipClock[0x12] & 0x3FFFFFFF;
         boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
         return new String[][]{
-            {"Engine", ay.midiStatus()},
+            {"Engine", ay.midiStatus() + " (" + ENGINE_NAMES[engineIdx] + ")"},
             {"Clock", clk + " Hz" + (dual ? " x2" : "")},
             {"Events", ay.eventStats()},
             {"Bend", ay.getBendSensText() + " / " + ay.getBendRangePct() + "%"},
@@ -1229,6 +1237,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_LOOP: return "Loop count";
             case ROW_ORDER: return "Play order";
             case ROW_MASTER: return "Master vol";
+            case ROW_ENGINE: return "Engine";
             case ROW_BEND_RANGE: return "Bend range";
             default: return CH_NAMES[r - ROW_CH0];
         }
@@ -1250,6 +1259,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_LOOP: return LOOP_NAMES[loopIdx];
             case ROW_ORDER: return ORDER_NAMES[shuffle ? 1 : 0];
             case ROW_MASTER: return String.valueOf(masterVol);
+            case ROW_ENGINE: return ENGINE_NAMES[engineIdx];
             case ROW_BEND_RANGE: return ay.getBendRangePct() + "%";
             default: return String.valueOf(ay.getProg(r - ROW_CH0));
         }
@@ -1321,6 +1331,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_MASTER:
                 setMaster(masterVol + dir * 10);
                 break;
+            case ROW_ENGINE: {
+                int e = (engineIdx + dir + 2) % 2;
+                ay.setEngineTone(e == 1);
+                if (ay2 != null) {
+                    ay2.setEngineTone(e == 1);
+                }
+                Ay2Midi.preferTone = (e == 1);
+                engineIdx = e;
+                break;
+            }
             default: {
                 int ch = cursor - ROW_CH0;
                 int cur = ay.getProg(ch);

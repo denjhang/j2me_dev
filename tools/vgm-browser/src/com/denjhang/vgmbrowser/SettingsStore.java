@@ -11,7 +11,7 @@ public final class SettingsStore {
     private static final String RS_NAME = "vgmbrowser_cfg";
     private static final int VERSION = 1;
     /** 版本 + 13 项 + SLOTS 个音色。 */
-    public static final int FIELDS = 14 + 10;
+    public static final int FIELDS = 15 + 10;
 
     private SettingsStore() {
     }

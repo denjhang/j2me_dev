@@ -194,7 +194,15 @@ public class Ay2Midi {
     private final Player[] tonePlayer = new Player[3];
     private final ToneControl[] toneCtrl = new ToneControl[3];
 
+    /** 声音引擎选择：0=MIDI(S3/MB 自动降级 tone)，1=Tone(诺基亚兼容，默认)。 */
+    public static boolean preferTone = false;
+
     private boolean init() {
+        if (preferTone && openToneEngine()) {
+            midiPath = "TONE";
+            toneEngine = true;
+            return true;
+        }
         // nescube 精确复刻：createPlayer → prefetch() → getControl(全类名)。
         // 没有 realize、没有 start、初始化零 CC（音色照 nescube 打开后按需发）。
         // 任一步失败再走 MeBoy 兜底链（realize → start → getControl）。
@@ -402,6 +410,40 @@ public class Ay2Midi {
             send(CC | ch, CC_VOLUME, masterVol);
         }
         send(NOTE_ON | ch, note, velocity);
+    }
+
+    /** 设置菜单切换引擎（立即生效，不用重开曲目）。 */
+    public void setEngineTone(boolean tone) {
+        if (tone == toneEngine) {
+            return;
+        }
+        if (tone) {
+            if (toneCtrl[0] == null && !openToneEngine()) {
+                return;              // tone 打不开就保持原引擎
+            }
+            allMidiSoundOff();
+            toneEngine = true;
+            midiPath = "TONE";
+        } else {
+            if (midi == null) {
+                // 之前 MIDI 全失败，现场补开
+                if (!(openMidiNescube() || openMidiMeboy())) {
+                    return;
+                }
+                sendInitProgs();
+            }
+            for (int i = 0; i < 3; i++) {
+                toneSilence(i);
+            }
+            toneEngine = false;
+            midiPath = "S3";
+        }
+    }
+
+    private void allMidiSoundOff() {
+        for (int ch = 0; ch < CHANNELS; ch++) {
+            send(NOTE_OFF | ch, 60, 0);
+        }
     }
 
     /** nescube 音量模型：电平直接做 note-on 力度（最小 1，0 等于 note-off）。 */

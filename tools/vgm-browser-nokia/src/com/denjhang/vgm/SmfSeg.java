@@ -99,4 +99,47 @@ public final class SmfSeg {
     private static void w16(ByteArrayOutputStream o, int v) {
         o.write(v >> 8); o.write(v);
     }
+
+    /** 流式段构建器：init(...) 头部 + event(...) 序列 + build(段时长)。 */
+    public static class Builder {
+        private final ByteArrayOutputStream tr = new ByteArrayOutputStream(1024);
+        private long lastTick = 0;
+
+        public Builder() {
+            tr.write(0x00); tr.write(0xFF); tr.write(0x51); tr.write(0x03);
+            tr.write(0x07); tr.write(0xA1); tr.write(0x20);   // 120bpm
+        }
+
+        public void init(long[][] ev) {
+            for (int k = 0; k < ev.length; k++) {
+                vlq(tr, 0);
+                writeMsg(tr, ev[k]);
+            }
+        }
+
+        /** relTick 相对段起点（非减）。 */
+        public void event(long relTick, int status, int d1, int d2) {
+            vlq(tr, (int) Math.max(0, relTick * PPQ / MS_PER_Q - lastTick));
+            lastTick = relTick * PPQ / MS_PER_Q;
+            tr.write(status);
+            tr.write(d1);
+            if (status < 0xC0 || status > 0xDF) {
+                tr.write(d2);
+            }
+        }
+
+        public byte[] build(long segMs) {
+            long endTick = segMs * PPQ / MS_PER_Q;
+            vlq(tr, (int) Math.max(0, endTick - lastTick - 1));
+            tr.write(0xFF); tr.write(0x2F); tr.write(0x00);
+            byte[] track = tr.toByteArray();
+            ByteArrayOutputStream o = new ByteArrayOutputStream(track.length + 32);
+            o.write('M'); o.write('T'); o.write('h'); o.write('d');
+            w32(o, 6); w16(o, 0); w16(o, 1); w16(o, PPQ);
+            o.write('M'); o.write('T'); o.write('r'); o.write('k');
+            w32(o, track.length);
+            o.write(track, 0, track.length);
+            return o.toByteArray();
+        }
+    }
 }

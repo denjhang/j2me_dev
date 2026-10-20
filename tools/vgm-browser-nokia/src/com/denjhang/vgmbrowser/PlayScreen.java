@@ -367,19 +367,25 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         play.start();
     }
 
-    // ---- 双缓冲播放模型 ----
-    // FILL：正常喂 VGM（录制开），可视化跟随寄存器实时走，进度冻结；
-    //       填到目标字节数为止。
-    // PLAY：SMF 段播放，寄存器录制按时间重放（可视化与音频同步走），进度跟音频。
+    // ---- 真双缓冲：喂入线程持续录制，播放线程无缝消费 ----
+    // BufA 播放的同时 BufB 在填充（同一段时长内完成），播完立即切换。
+    // 可视化由"正在播放的段"的寄存器重放驱动，与音频同步；进度条跟音频。
     public static final int PHASE_FILL = 0;
     public static final int PHASE_PLAY = 1;
-    public int playPhase = PHASE_FILL;
-    public int bufNo;                       // 0=A 1=B
-    public int fillPct;                     // 填充进度（0-100，按字节）
-    public int playPct;                     // 播放进度（0-100）
-    public long progressBase;               // 进度基点（样本数，已播完部分）
-    public String playErr = "";             // 最近一次播放段失败原因（调试块可见）
+    public volatile int playPhase = PHASE_FILL;
+    public volatile int bufNo;               // 正在播放的缓冲
+    public volatile int fillPct;
+    public volatile int playPct;
+    public volatile long progressBase;       // 样本
+    public String playErr = "";
+    private volatile boolean feedEnded;
     private long playStartWall;
+    private long segStartMs;                 // 当前段在录制时间线的起点
+    private int consumedIdx;
+    private int consumed2Idx;
+    private int regIdx;
+    private int reg2Idx;
+    private Thread bufThread;
     private static final int[] BUF_BYTES = {4096, 8192, 16384, 32768, 65536, 131072, 262144};
 
     private int targetBytes() {
@@ -387,120 +393,93 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     private void playLoop() {
-        long startAt = System.currentTimeMillis();
-        long lastSamples = 0;
-        progressBase = 0;
+        // ---- 喂入线程：持续实时喂 VGM + 录制（永不停，除非曲目结束/用户暂停） ----
+        ay.recording = true;
+        ay.recordingReg = true;
+        ay.rec.removeAllElements();
+        ay.regRec.removeAllElements();
+        ay.recBytes = 0;
+        ay.recBaseMs = System.currentTimeMillis();
+        if (ay2 != null) {
+            ay2.recording = true;
+            ay2.recordingReg = true;
+            ay2.rec.removeAllElements();
+            ay2.regRec.removeAllElements();
+            ay2.recBytes = 0;
+            ay2.recBaseMs = ay.recBaseMs;
+        }
+        feedEnded = false;
+        segStartMs = 0;
+        consumedIdx = 0;
+        consumed2Idx = 0;
+        regIdx = 0;
+        reg2Idx = 0;
         bufNo = 1;
+        playPhase = PHASE_FILL;
 
+        bufThread = new Thread(new Runnable() {
+            public void run() {
+                bufferPlayer();
+            }
+        });
+        bufThread.start();
+
+        long feedStartAt = System.currentTimeMillis();
+        long feedLastSamples = 0;
         while (playing) {
-            // ================= FILL =================
-            bufNo ^= 1;
-            playPhase = PHASE_FILL;
-            fillPct = 0;
-            playPct = 0;
-            ay.recording = true;
-            ay.recordingReg = true;
-            ay.rec.removeAllElements();
-            ay.regRec.removeAllElements();
-            ay.recBytes = 0;
-            ay.recBaseMs = System.currentTimeMillis();
+            ay.tick();
             if (ay2 != null) {
-                ay2.recording = true;
-                ay2.recordingReg = true;
-                ay2.rec.removeAllElements();
-                ay2.regRec.removeAllElements();
-                ay2.recBytes = 0;
-                ay2.recBaseMs = ay.recBaseMs;
+                ay2.tick();
             }
-            long fillStart = System.currentTimeMillis();
-            boolean trackEnd = false;
-            long feedStartAt = System.currentTimeMillis();
-            long feedLastSamples = 0;
-
-            while (playing) {
-                ay.tick();
-                if (ay2 != null) {
-                    ay2.tick();
+            int t = parser.next();
+            if (t == VgmParser.EV_END) {
+                if (file.header.hasLoop() && loopPlays < LOOP_CHOICES[loopIdx]) {
+                    parser.seek(file.header.loopOffset);
+                    loopPlays++;
+                    continue;
                 }
-                int t = parser.next();
-
-                if (t == VgmParser.EV_END) {
-                    if (file.header.hasLoop() && loopPlays < LOOP_CHOICES[loopIdx]) {
-                        parser.seek(file.header.loopOffset);
-                        loopPlays++;
-                        continue;
+                break;
+            }
+            if (t == VgmParser.EV_REG_WRITE && parser.evCmd == 0xA0) {
+                if ((parser.evReg & 0x80) != 0) {
+                    attachChip2();
+                    if (ay2 != null) {
+                        ay2.write(parser.evReg & 0x7F, parser.evData);
                     }
-                    trackEnd = true;
-                    break;
-                }
-
-                if (t == VgmParser.EV_REG_WRITE && parser.evCmd == 0xA0) {
-                    if ((parser.evReg & 0x80) != 0) {
-                        attachChip2();
-                        if (ay2 != null) {
-                            ay2.write(parser.evReg & 0x7F, parser.evData);
-                        }
-                    } else {
-                        ay.write(parser.evReg, parser.evData);
-                    }
-                }
-
-                // 实时对时（照原版）
-                long nowSamples = parser.getSamples();
-                if (nowSamples != feedLastSamples) {
-                    long songMs = nowSamples / 44;
-                    long wallMs = System.currentTimeMillis() - feedStartAt;
-                    long ahead = songMs - wallMs;
-                    if (ahead > 2) {
-                        try {
-                            Thread.sleep(ahead);
-                        } catch (InterruptedException e) {
-                            trackEnd = !playing ? trackEnd : trackEnd;
-                            playing = false;
-                        }
-                    } else if (ahead < -200) {
-                        feedStartAt = System.currentTimeMillis() - songMs;
-                    }
-                    feedLastSamples = nowSamples;
-                }
-                if (!playing) {
-                    break;
-                }
-                int tb = targetBytes();
-                int total = ay.recBytes + (ay2 != null ? ay2.recBytes : 0);
-                fillPct = total * 100 / tb;
-                if (total >= tb) {
-                    break;                 // 段满
+                } else {
+                    ay.write(parser.evReg, parser.evData);
                 }
             }
-            long segMs = System.currentTimeMillis() - fillStart;
+            long nowSamples = parser.getSamples();
+            if (nowSamples != feedLastSamples) {
+                long songMs = nowSamples / 44;
+                long wallMs = System.currentTimeMillis() - feedStartAt;
+                long ahead = songMs - wallMs;
+                if (ahead > 2) {
+                    try {
+                        Thread.sleep(ahead);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                } else if (ahead < -200) {
+                    feedStartAt = System.currentTimeMillis() - songMs;
+                }
+                feedLastSamples = nowSamples;
+            }
+        }
+        feedEnded = true;
+        if (bufThread != null) {
+            try { bufThread.join(); } catch (InterruptedException ignored) {}
+            bufThread = null;
+        }
+        if (playing) {
+            playing = false;
             ay.recording = false;
             ay.recordingReg = false;
             if (ay2 != null) {
                 ay2.recording = false;
                 ay2.recordingReg = false;
             }
-            if (segMs < 200) {
-                segMs = 200;               // 极短段也至少给一拍
-            }
-            if (!playing || segMs <= 0) {
-                break;
-            }
-
-            // ================= BUILD + PLAY =================
-            byte[] smf = com.denjhang.vgm.SmfSeg.build(
-                    ay.rec, ay2 != null ? ay2.rec : null, segMs,
-                    ay.initEvents(), ay2 != null ? ay2.initEvents() : null);
-            playPhase = PHASE_PLAY;
-            playStartWall = System.currentTimeMillis();
-            playSeg(smf, segMs);
-            progressBase = parser.getSamples();
-            if (trackEnd) {
-                break;
-            }
-        }
-        if (playing) {
-            playing = false;
             ay.allSoundOff();
             if (ay2 != null) {
                 ay2.allSoundOff();
@@ -509,7 +488,73 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
     }
 
-    /** 播放一段：音频走，寄存器录制按墙钟重放驱动可视化。 */
+    /** 播放线程：等段填够 → 构建并播放（同时重放寄存器驱动可视化）→ 无缝下一段。 */
+    private void bufferPlayer() {
+        while (playing || !feedEnded) {
+            // 等本段填够（或曲目喂完）
+            int tb = targetBytes();
+            while (playing && !feedEnded) {
+                int have = (ay.rec.size() - consumedIdx) * 5
+                        + (ay2 != null ? (ay2.rec.size() - consumed2Idx) * 5 : 0);
+                fillPct = have * 100 / tb;
+                if (have >= tb) {
+                    break;
+                }
+                try { Thread.sleep(30); } catch (InterruptedException e) { return; }
+            }
+            if (!playing && feedEnded && ay.rec.size() <= consumedIdx) {
+                break;                       // 没内容也没在喂了
+            }
+            long nowMs = System.currentTimeMillis() - ay.recBaseMs;
+            long segEnd = nowMs;
+            if (segEnd - segStartMs < 300 && !feedEnded) {
+                continue;                    // 防零碎段
+            }
+            // ---- 构建段 ----
+            byte[] smf = buildSegment(segStartMs, segEnd);
+            if (smf == null) {
+                segStartMs = segEnd;
+                continue;
+            }
+            // ---- 播放段 + 寄存器重放（可视化） ----
+            bufNo ^= 1;
+            playPhase = PHASE_PLAY;
+            playStartWall = System.currentTimeMillis();
+            long segMs = segEnd - segStartMs;
+            playSeg(smf, segMs);
+            drainConsumed(segEnd);
+            segStartMs = segEnd;
+            if (feedEnded && !playing) {
+                break;
+            }
+            playPhase = PHASE_FILL;
+        }
+    }
+
+    /** 从录制流构建 [from, to) 的自包含 SMF。 */
+    private byte[] buildSegment(long from, long to) {
+        com.denjhang.vgm.SmfSeg.Builder b = new com.denjhang.vgm.SmfSeg.Builder();
+        // 头部初始化（新 Player 合成器复位）
+        b.init(ay.initEvents());
+        if (ay2 != null) {
+            b.init(ay2.initEvents());
+        }
+        int i = consumedIdx, j = consumed2Idx;
+        while (true) {
+            long[] e1 = i < ay.rec.size() ? (long[]) ay.rec.elementAt(i) : null;
+            long[] e2 = ay2 != null && j < ay2.rec.size() ? (long[]) ay2.rec.elementAt(j) : null;
+            if (e1 == null && e2 == null) break;
+            long[] e;
+            if (e1 == null) { e = e2; j++; }
+            else if (e2 == null || e1[0] <= e2[0]) { e = e1; i++; }
+            else { e = e2; j++; }
+            if (e[0] >= to) break;
+            b.event(e[0] - from, (int) e[1], (int) e[2], (int) e[3]);
+        }
+        return b.build(to - from);
+    }
+
+    /** 播放一段；寄存器重放按段内时间驱动可视化（音频-动画同步）。 */
     private void playSeg(byte[] smf, long segMs) {
         javax.microedition.media.Player p = null;
         try {
@@ -531,8 +576,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
             return;
         }
-        // 寄存器重放：按段内时间戳应用到 ay/ay2（可视化与音频同步）
-        int ri = 0, r2i = 0;
         long t0 = System.currentTimeMillis();
         while (playing) {
             long el = System.currentTimeMillis() - t0;
@@ -540,20 +583,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (el >= segMs) {
                 break;
             }
-            while (ri < ay.regRec.size()) {
-                long[] e = (long[]) ay.regRec.elementAt(ri);
-                if (e[0] > el) break;
-                ay.write((int) e[1], (int) e[2]);
-                ri++;
-            }
-            if (ay2 != null) {
-                while (r2i < ay2.regRec.size()) {
-                    long[] e = (long[]) ay2.regRec.elementAt(r2i);
-                    if (e[0] > el) break;
-                    ay2.write((int) e[1], (int) e[2]);
-                    r2i++;
-                }
-            }
+            // 重放本段寄存器（可视化与音频同步走）
+            replayRegs(el);
             ay.tick();
             if (ay2 != null) {
                 ay2.tick();
@@ -561,6 +592,66 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             try { Thread.sleep(10); } catch (InterruptedException e) { break; }
         }
         try { p.stop(); p.close(); } catch (Throwable ignored) {}
+    }
+
+    private void replayRegs(long el) {
+        long segAbsStart = segStartMs;
+        while (regIdx < ay.regRec.size()) {
+            long[] e = (long[]) ay.regRec.elementAt(regIdx);
+            if (e[0] - segAbsStart > el) break;
+            if (e[0] >= segAbsStart) {
+                ay.write((int) e[1], (int) e[2]);
+            }
+            regIdx++;
+        }
+        if (ay2 != null) {
+            while (reg2Idx < ay2.regRec.size()) {
+                long[] e = (long[]) ay2.regRec.elementAt(reg2Idx);
+                if (e[0] - segAbsStart > el) break;
+                if (e[0] >= segAbsStart) {
+                    ay2.write((int) e[1], (int) e[2]);
+                }
+                reg2Idx++;
+            }
+        }
+    }
+
+    /** 段播完后裁剪已消费的录制与寄存器事件（内存有界）。 */
+    private void drainConsumed(long toMs) {
+        while (consumedIdx < ay.rec.size()
+                && ((long[]) ay.rec.elementAt(consumedIdx))[0] < toMs) {
+            consumedIdx++;
+        }
+        while (consumedIdx > 0) {
+            ay.rec.removeElementAt(0);
+            consumedIdx--;
+        }
+        while (regIdx < ay.regRec.size()
+                && ((long[]) ay.regRec.elementAt(regIdx))[0] < toMs) {
+            regIdx++;
+        }
+        while (regIdx > 0) {
+            ay.regRec.removeElementAt(0);
+            regIdx--;
+        }
+        if (ay2 != null) {
+            while (consumed2Idx < ay2.rec.size()
+                    && ((long[]) ay2.rec.elementAt(consumed2Idx))[0] < toMs) {
+                consumed2Idx++;
+            }
+            while (consumed2Idx > 0) {
+                ay2.rec.removeElementAt(0);
+                consumed2Idx--;
+            }
+            while (reg2Idx < ay2.regRec.size()
+                    && ((long[]) ay2.regRec.elementAt(reg2Idx))[0] < toMs) {
+                reg2Idx++;
+            }
+            while (reg2Idx > 0) {
+                ay2.regRec.removeElementAt(0);
+                reg2Idx--;
+            }
+        }
     }
 
     /** 切曲：先淡出再切。 */

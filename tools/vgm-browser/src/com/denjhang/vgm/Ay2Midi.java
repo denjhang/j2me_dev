@@ -412,31 +412,46 @@ public class Ay2Midi {
         send(NOTE_ON | ch, note, velocity);
     }
 
-    /** 设置菜单切换引擎（立即生效，不用重开曲目）。 */
+    /** 设置菜单切换引擎：完全拆掉旧引擎再建新的，避免两个引擎状态互相污染。 */
     public void setEngineTone(boolean tone) {
         if (tone == toneEngine) {
             return;
         }
-        if (tone) {
-            if (toneCtrl[0] == null && !openToneEngine()) {
-                return;              // tone 打不开就保持原引擎
+        // 1) 全停 + 全拆
+        allSoundOff();
+        if (midi != null) {
+            safeClose();          // 关 MIDI player，midi 置空
+        }
+        for (int i = 0; i < 3; i++) {
+            if (tonePlayer[i] != null) {
+                try { tonePlayer[i].close(); } catch (Throwable ignored) {}
+                tonePlayer[i] = null;
+                toneCtrl[i] = null;
             }
-            allMidiSoundOff();
+        }
+        // 2) 建新引擎
+        if (tone) {
+            if (!openToneEngine()) {
+                // tone 打不开：退回 MIDI
+                if (openMidiNescube() || openMidiMeboy()) {
+                    sendInitProgs();
+                    toneEngine = false;
+                    midiPath = "S3";
+                }
+                return;
+            }
             toneEngine = true;
             midiPath = "TONE";
         } else {
-            if (midi == null) {
-                // 之前 MIDI 全失败，现场补开
-                if (!(openMidiNescube() || openMidiMeboy())) {
-                    return;
-                }
+            if (openMidiNescube() || openMidiMeboy()) {
+                toneEngine = false;
+                midiPath = "S3";
                 sendInitProgs();
+            } else if (openToneEngine()) {
+                // MIDI 打不开：保持 tone
+                toneEngine = true;
+                midiPath = "TONE";
             }
-            for (int i = 0; i < 3; i++) {
-                toneSilence(i);
-            }
-            toneEngine = false;
-            midiPath = "S3";
         }
     }
 

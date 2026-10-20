@@ -1,0 +1,7 @@
+-microedition
+-keep public class com.denjhang.soundprobe.SoundProbeMIDlet
+-keepclasseswithmembers public class ** extends javax.microedition.midlet.MIDlet
+-keepclasseswithmembers public class ** implements javax.microedition.lcdui.CommandListener
+-dontwarn
+-dontnote
+-optimizationpasses 1

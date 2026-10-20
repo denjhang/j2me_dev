@@ -1,0 +1,176 @@
+package com.denjhang.vgmbrowser;
+
+import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.CommandListener;
+import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Form;
+
+import com.denjhang.vgm.VgmCommandTable;
+import com.denjhang.vgm.VgmFile;
+import com.denjhang.vgm.VgmHeader;
+
+/**
+ * 文件详情：头部字段 + 芯片 + 统计。
+ */
+public class DetailScreen extends Form implements CommandListener {
+
+    private final BrowserMIDlet midlet;
+    private final VgmFile file;
+
+    private final Command cmdBack = new Command("Back", Command.BACK, 1);
+    private final Command cmdCmd = new Command("Commands", Command.SCREEN, 2);
+    private final Command cmdHex = new Command("Header hex", Command.SCREEN, 3);
+    private final Command cmdPlay = new Command("Play (MIDI)", Command.OK, 2);
+
+    public DetailScreen(BrowserMIDlet midlet, VgmFile file) {
+        super("Details");
+        this.midlet = midlet;
+        this.file = file;
+
+        addCommand(cmdBack);
+        addCommand(cmdPlay);
+        addCommand(cmdCmd);
+        addCommand(cmdHex);
+        setCommandListener(this);
+
+        build();
+    }
+
+    private void build() {
+        VgmHeader h = file.header;
+
+        String title = h.gd3Title.length() > 0 ? h.gd3Title : h.gd3TitleEn;
+        if (title.length() > 0) {
+            append(title + "\n");
+        }
+        append("File: " + file.name + "\n");
+        append("Size: " + file.byteSize + " bytes\n");
+        append("Version: VGM " + h.versionString() + "\n\n");
+
+        append("Duration: " + fmt(h.durationSeconds()) + "\n");
+        if (h.hasLoop()) {
+            double loopStart = (h.totalSamples - h.loopSamples) / 44100.0;
+            append("Loop: " + fmt(loopStart) + "s, len "
+                    + fmt(h.loopSeconds()) + "s (0x" + hex(h.loopOffset) + ")\n");
+        } else {
+            append("Loop: none\n");
+        }
+        append("Samples: " + h.totalSamples + "\n\n");
+
+        append("Data: 0x" + hex(h.dataOffset)
+                + " - 0x" + hex(h.dataEnd) + "\n");
+        append("Header size: 0x" + hex(h.headerSize) + "\n\n");
+
+        // 芯片
+        append("Chips:\n");
+        int[] used = usedChips(h);
+        if (used.length == 0) {
+            append("  (not declared in header)\n");
+        } else {
+            for (int i = 0; i < used.length; i++) {
+                int id = used[i];
+                int clk = h.chipClock[id];
+                double mhz = clk / 1000000.0;
+                append("  " + VgmCommandTable.chipName(id)
+                        + "  " + clk + " Hz");
+                if (mhz >= 1.0) {
+                    append(" (" + fmt(mhz) + " MHz)");
+                }
+                append("\n");
+            }
+        }
+        if (h.chipClock[0x12] != 0) {
+            append("  AY type: " + h.ayChipType
+                    + ", flags: " + h.ayFlags + "\n");
+        }
+        append("\n");
+
+        // GD3 其他字段
+        if (h.gd3Game.length() > 0 || h.gd3GameEn.length() > 0) {
+            append("Game: " + pick(h.gd3Game, h.gd3GameEn) + "\n");
+        }
+        if (h.gd3Artist.length() > 0 || h.gd3ArtistEn.length() > 0) {
+            append("Artist: " + pick(h.gd3Artist, h.gd3ArtistEn) + "\n");
+        }
+        if (h.gd3Date.length() > 0) {
+            append("Date: " + h.gd3Date + "\n");
+        }
+        if (h.gd3Ripper.length() > 0) {
+            append("Ripper: " + h.gd3Ripper + "\n");
+        }
+
+        append("\n(点\"命令流\"查看解析结果)");
+    }
+
+    private static String pick(String a, String b) {
+        return a != null && a.length() > 0 ? a : b;
+    }
+
+    private static int[] usedChips(VgmHeader h) {
+        int n = 0;
+        for (int i = 0; i < h.chipClock.length; i++) {
+            if (h.chipClock[i] != 0) {
+                n++;
+            }
+        }
+        int[] r = new int[n];
+        int k = 0;
+        for (int i = 0; i < h.chipClock.length; i++) {
+            if (h.chipClock[i] != 0) {
+                r[k++] = i;
+            }
+        }
+        return r;
+    }
+
+    private static String fmt(double v) {
+        int scaled = (int) (v * 10 + 0.5);
+        return (scaled / 10) + "." + (scaled % 10);
+    }
+
+    private static String hex(int v) {
+        String s = Integer.toHexString(v).toUpperCase();
+        return s;
+    }
+
+    public void commandAction(Command c, Displayable d) {
+        if (c == cmdBack) {
+            midlet.backToList();
+        } else if (c == cmdPlay) {
+            midlet.openPlay(file, -1);
+        } else if (c == cmdCmd) {
+            midlet.openCommands(file);
+        } else if (c == cmdHex) {
+            showHex();
+        }
+    }
+
+    private void showHex() {
+        Form f = new Form("Header hex");
+        int n = file.header.headerSize;
+        if (n > 0x100) {
+            n = 0x100;
+        }
+        for (int off = 0; off < n; off += 32) {
+            int len = Math.min(32, n - off);
+            String line = pad(hex(off), 4) + "  " + file.hexAt(off, len, len);
+            f.append(line + "\n");
+        }
+        f.append("");
+        f.addCommand(new Command("Back", Command.BACK, 1));
+        f.setCommandListener(new CommandListener() {
+            public void commandAction(Command c, Displayable d) {
+                midlet.openDetail(file);
+            }
+        });
+        javax.microedition.lcdui.Display.getDisplay(midlet).setCurrent(f);
+    }
+
+    private static String pad(String s, int n) {
+        StringBuffer sb = new StringBuffer(s);
+        while (sb.length() < n) {
+            sb.insert(0, '0');
+        }
+        return sb.toString();
+    }
+}

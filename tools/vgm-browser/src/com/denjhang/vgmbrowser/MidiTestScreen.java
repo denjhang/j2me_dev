@@ -30,7 +30,7 @@ public class MidiTestScreen extends Canvas implements CommandListener {
         "3 pure velocity note (no CC)",      // 最朴素：只有 PROG + NOTE_ON vel127
         "4 per-note CC7 (v1.1.7 style)",
         "5 program 0 piano note",
-        "6 channel sweep 0-6",
+        "6 channel sweep 0-15",
         "7 setChannelVolume API + note",
         "8 longMidiEvent note",
         "9 VolumeControl 100 + note",
@@ -184,14 +184,16 @@ public class MidiTestScreen extends Canvas implements CommandListener {
     private void test6() throws Exception {
         String[] r = openMidi(true);
         if (midi == null) { results[5] = "FAIL " + r[1]; return; }
-        for (int ch = 0; ch <= 6; ch++) {
+        nescubeReset();
+        for (int ch = 0; ch <= 15; ch++) {
             if (ch == 9) continue;
-            ev(0xC0 | ch, 80, 0);
+            try { midi.setProgram(ch, -1, 80); } catch (Throwable ignored) {}
+            try { midi.setChannelVolume(ch, 100); } catch (Throwable ignored) {}
             ev(0x90 | ch, 60, 127);
             delay(350);
             ev(0x80 | ch, 60, 0);
         }
-        results[5] = "OK sweep ch0-6 (which sounded?)";
+        results[5] = "OK sweep ch0-15 (which sounded?)";
     }
 
     private void test7() throws Exception {
@@ -246,6 +248,12 @@ public class MidiTestScreen extends Canvas implements CommandListener {
         delay(700);
         ev(0x80, 60, 0);
         results[8] = "OK vol " + vol + " (heard?)";
+    }
+
+    private void nescubeReset() {
+        for (int ch = 0; ch < 16; ch++) {
+            ev(0xB0 | ch, 120, 0);
+        }
     }
 
     private void testTone() {

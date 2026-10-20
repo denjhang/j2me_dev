@@ -224,7 +224,7 @@ public class Ay2Midi {
         return false;
     }
 
-    /** device://tone：MIDP 标配，任何设备都能出声。3 个方波声部，无噪声/包络。 */
+    /** device://tone + 专职线程（ToneControl 兜底）。 */
     private boolean openToneEngine() {
         try {
             for (int i = 0; i < 3; i++) {
@@ -267,7 +267,7 @@ public class Ay2Midi {
         }
         if (note < 0) note = 60;
         if (note > 126) note = 126;
-        wantNote[ch] = note;      // 只记愿望，tone 线程消化
+        wantNote[ch] = note;      // wave 引擎线程自己消化
     }
 
     private void toneSilence(int ch) {
@@ -407,7 +407,15 @@ public class Ay2Midi {
     }
 
     /** 打开后只发音色 + 声像，其余 CC 一律不发（nescube 同款）。 */
+    /** nescube 3.2 b()：初始化给全部 16 通道发 CC120（All Sound Off）。 */
+    private void nescubeReset() {
+        for (int ch = 0; ch < 16; ch++) {
+            send(0xB0 | ch, 120, 0);
+        }
+    }
+
     private void sendInitProgs() {
+        nescubeReset();
         // nescube 3.2 发布版用专用 API（不是 CC）：setProgram(ch,-1,patch) + setChannelVolume(ch,vol)。
         // 诺基亚实现里 shortMidiEvent 的 PC/CC 可能被忽略，而 setChannelVolume 是通道路径。
         for (int i = 0; i < SLOTS; i++) {
@@ -437,12 +445,13 @@ public class Ay2Midi {
             }
             return;
         }
+        // nescube 3.2：NOTE_ON 力度恒 127，音量只走 setChannelVolume/CC7
         try {
             midi.setChannelVolume(ch, masterVol);
         } catch (Throwable t) {
             send(CC | ch, CC_VOLUME, masterVol);
         }
-        send(NOTE_ON | ch, note, velocity);
+        send(NOTE_ON | ch, note, 127);
     }
 
     /** 设置菜单切换引擎：完全拆掉旧引擎再建新的，避免两个引擎状态互相污染。 */
@@ -455,13 +464,6 @@ public class Ay2Midi {
         allSoundOff();
         if (midi != null) {
             safeClose();          // 关 MIDI player，midi 置空
-        }
-        for (int i = 0; i < 3; i++) {
-            if (tonePlayer[i] != null) {
-                try { tonePlayer[i].close(); } catch (Throwable ignored) {}
-                tonePlayer[i] = null;
-                toneCtrl[i] = null;
-            }
         }
         // 2) 建新引擎
         if (tone) {
@@ -611,6 +613,7 @@ public class Ay2Midi {
             }
             player = null;
         }
+        stopToneThread();
         for (int i = 0; i < 3; i++) {
             if (tonePlayer[i] != null) {
                 try { tonePlayer[i].close(); } catch (Throwable ignored) {}

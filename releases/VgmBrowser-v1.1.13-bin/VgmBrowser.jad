@@ -10,5 +10,5 @@ Nokia-MIDlet-No-Exit: true
 MIDlet-Splash-Screen-Image: suppress
 MIDlet-Permissions: javax.microedition.io.Connector.file.read
 MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write
-MIDlet-Jar-Size: 88413
+MIDlet-Jar-Size: 88497
 MIDlet-Jar-URL: VgmBrowser.jar

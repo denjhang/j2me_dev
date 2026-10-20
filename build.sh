@@ -80,8 +80,10 @@ CLASS_COUNT=$(find classes -name '*.class' | wc -l)
 echo "== 生成 $CLASS_COUNT 个 class"
 
 # --- 1b. 版本同步：JAD 模板为准，强制刷 manifest（真机对同名属性逐项比对） ---
-JAD_VER=$(grep -m1 '^MIDlet-Version:' "$JAD" | tr -d '' | cut -d' ' -f2)
-JAD_NAME=$(grep -m1 '^MIDlet-Name:' "$JAD" | tr -d '' | cut -d' ' -f2)
+JAD_VER=$(grep -m1 '^MIDlet-Version:' "$JAD" | tr -d '
+' | cut -d' ' -f2)
+JAD_NAME=$(grep -m1 '^MIDlet-Name:' "$JAD" | tr -d '
+' | cut -d' ' -f2)
 if [ -n "$JAD_VER" ] && [ -f manifest.mf ]; then
   sed -i "s/^MIDlet-Version:.*/MIDlet-Version: $JAD_VER/" manifest.mf
   sed -i "s/^MIDlet-Name:.*/MIDlet-Name: $JAD_NAME/" manifest.mf
@@ -125,13 +127,18 @@ SIZE=$(stat -c %s "$JAR_NAME")
 grep -v -E '^MIDlet-Jar-(Size|URL):' "$JAD" > "$JAD.tmp"
 echo "MIDlet-Jar-Size: $SIZE" >> "$JAD.tmp"
 echo "MIDlet-Jar-URL: $JAR_NAME" >> "$JAD.tmp"
+# JAD 统一 CRLF（部分诺基亚固件对 LF 解析异常）
+sed -i 's/$//' "$JAD.tmp" 2>/dev/null || unix2dos "$JAD.tmp" 2>/dev/null
 mv "$JAD.tmp" "$JAD"
 
 # --- 4. 一致性自检：jar/jad 属性逐项比对，不一致直接失败 ---
 SIZE=$(stat -c %s "$JAR_NAME")
-MF_VER=$(unzip -p "$JAR_NAME" META-INF/MANIFEST.MF | grep -m1 '^MIDlet-Version:' | tr -d '' | cut -d' ' -f2)
-MF_NAME=$(unzip -p "$JAR_NAME" META-INF/MANIFEST.MF | grep -m1 '^MIDlet-Name:' | tr -d '' | cut -d' ' -f2)
-JAD_SZ=$(grep -m1 '^MIDlet-Jar-Size:' "$JAD" | tr -d '' | cut -d' ' -f2)
+MF_VER=$(unzip -p "$JAR_NAME" META-INF/MANIFEST.MF | grep -m1 '^MIDlet-Version:' | tr -d '
+' | cut -d' ' -f2)
+MF_NAME=$(unzip -p "$JAR_NAME" META-INF/MANIFEST.MF | grep -m1 '^MIDlet-Name:' | tr -d '
+' | cut -d' ' -f2)
+JAD_SZ=$(grep -m1 '^MIDlet-Jar-Size:' "$JAD" | tr -d '
+' | cut -d' ' -f2)
 FAIL=0
 [ "$MF_VER" = "$JAD_VER" ] || { echo "错误: manifest 版本 $MF_VER != jad $JAD_VER" >&2; FAIL=1; }
 [ "$MF_NAME" = "$JAD_NAME" ] || { echo "错误: manifest 名字 $MF_NAME != jad $JAD_NAME" >&2; FAIL=1; }

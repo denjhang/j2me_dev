@@ -22,6 +22,8 @@ JDK8="$ROOT/tools/jdk8"
 LIB="$ROOT/references/midplay/MIDPlay-main/lib"
 # MMAPI(JSR-135) 的 MIDIControl 不在 midp_2.0.jar 里，用 KEmulator 自带的存根补齐
 MMAPI="$ROOT/emulators/kemnnx64/uei/jsr135.jar"
+# JSR-75 文件系统：仅文件浏览器用，真机支持度不一，不影响游戏
+FILEAPI="$ROOT/emulators/kemnnx64/uei/jsr75_file.jar"
 JAVAC="$JDK8/bin/javac.exe"
 JAR="$JDK8/bin/jar.exe"
 
@@ -34,7 +36,11 @@ JAR="$JDK8/bin/jar.exe"
 win() { cygpath -w "$1" 2>/dev/null || echo "$1"; }
 LIB_W="$(win "$LIB")"
 MMAPI_W="$(win "$MMAPI")"
+FILEAPI_W="$(win "$FILEAPI")"
 BOOTCP="$LIB_W\\cldc_1.1.jar;$LIB_W\\midp_2.0.jar;$MMAPI_W"
+if [ -f "$FILEAPI" ]; then
+  BOOTCP="$BOOTCP;$FILEAPI_W"
+fi
 
 # 工程里应只有一个 .jad 模板，产物名跟它走（Brick.jad -> Brick.jar）
 cd "$PROJ"
@@ -73,19 +79,38 @@ CLASS_COUNT=$(find classes -name '*.class' | wc -l)
 [ "$CLASS_COUNT" -gt 0 ] || { echo "编译失败：没有生成 class" >&2; exit 1; }
 echo "== 生成 $CLASS_COUNT 个 class"
 
-# --- 2. 打包（manifest 里也带 MIDlet 属性，部分真机认这个） ---
-cat > MANIFEST.MF <<EOF
-Manifest-Version: 1.0
-MIDlet-Name: $BASE
-MIDlet-Version: 1.0.0
-MIDlet-Vendor: Denjhang
-MIDlet-1: $BASE, , $(sed -n 's/^MIDlet-1: [^,]*, *, *//p' "$JAD")
-MicroEdition-Profile: MIDP-2.0
-MicroEdition-Configuration: CLDC-1.1
+# --- 2. 打包（manifest.mf 独立文件，含诺基亚兼容字段） ---
+if [ -f manifest.mf ]; then
+  "$JAR" cfm "$JAR_NAME" manifest.mf -C classes .
+else
+  echo "警告: 缺少 manifest.mf，使用内联 manifest" >&2
+  printf 'Manifest-Version: 1.0\nMIDlet-Name: %s\nMIDlet-Version: 1.0.0\nMIDlet-Vendor: Denjhang\nMIDlet-1: %s,,com.denjhang.vgmbrowser.BrowserMIDlet\nMicroEdition-Profile: MIDP-2.0\nMicroEdition-Configuration: CLDC-1.1\n\n' "$BASE" "$BASE" > MANIFEST.MF
+  "$JAR" cfm "$JAR_NAME" MANIFEST.MF -C classes .
+  rm -f MANIFEST.MF
+fi
+rm -f .sources
 
-EOF
-"$JAR" cfm "$JAR_NAME" MANIFEST.MF -C classes .
-rm -f MANIFEST.MF .sources
+# --- 2b. ProGuard 预校验 + 优化（诺基亚真机安装必需） ---
+PROGUARD="$ROOT/tools/proguard/proguard.jar"
+PG_CONFIG="$PROJ/proguard.pro"
+if [ -f "$PROGUARD" ] && [ -f "$PG_CONFIG" ]; then
+  echo "== ProGuard 预校验"
+  LIB_W2="$(win "$LIB")"
+  MMAPI_W2="$(win "$MMAPI")"
+  "$JDK8/bin/java.exe" -cp "$(win "$PROGUARD")" proguard.ProGuard \
+    -injars "$JAR_NAME" \
+    -outjars "$JAR_NAME-pg.jar" \
+    -libraryjars "$LIB_W2\\cldc_1.1.jar;$LIB_W2\\midp_2.0.jar;$MMAPI_W2;$FILEAPI_W" \
+    @"$PG_CONFIG" 2>&1 | tail -5
+  if [ -f "$JAR_NAME-pg.jar" ]; then
+    mv "$JAR_NAME-pg.jar" "$JAR_NAME"
+    echo "== ProGuard 完成: $(stat -c %s "$JAR_NAME") bytes"
+  else
+    echo "警告: ProGuard 失败，使用未校验的 JAR" >&2
+  fi
+else
+  echo "提示: 无 ProGuard，跳过预校验（诺基亚 S40 可能无法安装）" >&2
+fi
 
 # --- 3. 补 JAD 的 MIDlet-Jar-Size / URL ---
 SIZE=$(stat -c %s "$JAR_NAME")

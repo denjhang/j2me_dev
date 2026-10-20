@@ -150,14 +150,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                                     }
                                 }
                             });
-                    // 最小展示 300ms：即使瞬间解压也让用户看到动画
+                    file = vf;
+                    parser = vf.getParser();
+                    // 最小展示 300ms：保持 100% 显示，让用户看到完整动画
+                    decompPct = 100;
+                    repaint();
                     long elapsed = System.currentTimeMillis() - startMs;
                     if (elapsed < 300) {
                         try { Thread.sleep(300 - elapsed); } catch (Exception e) {}
                     }
-                    file = vf;
-                    parser = vf.getParser();
-                    decompPct = -1;
+                    decompPct = -1;  // 切换到播放状态
                     if (file.header.chipClock[0x12] != 0) {
                         ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
                     }

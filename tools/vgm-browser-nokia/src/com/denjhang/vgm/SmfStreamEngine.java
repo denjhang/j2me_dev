@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.Vector;
 import javax.microedition.media.Manager;
 import javax.microedition.media.Player;
-import javax.microedition.media.PlayerListener;
 import javax.microedition.media.control.VolumeControl;
 
 /**
@@ -15,8 +14,10 @@ import javax.microedition.media.control.VolumeControl;
  * 生成 SMF（尾部空事件补齐窗口长度），预建 Player（realize+prefetch），
  * 前一个 END_OF_MEDIA 时无缝 start 下一个。
  */
-public class SmfStreamEngine implements PlayerListener {
-    private static final int CHUNK_MS = 3000;
+public class SmfStreamEngine {
+    private static final int CHUNK_MS = 2000;
+    private static final int LEAD_MS = 300;      // 提前起块余量（容纳播放器创建耗时）
+    private static final int OVERLAP_MS = 250;   // 新块起后旧块延迟停（消除缝）
     private static final int PPQ = 480;
     private static final int MS_PER_Q = 500;
 
@@ -24,7 +25,6 @@ public class SmfStreamEngine implements PlayerListener {
     private final Ay2Midi ay2;      // 第二芯片（无则 null）
     private Thread feeder;
     private volatile boolean quit;
-    private Player current;      // 播放中
     private Player next;         // 预备
     private long windowStart;    // 已消费到的 ms（相对 recBase）
     private int consumedIdx;
@@ -65,27 +65,42 @@ public class SmfStreamEngine implements PlayerListener {
         while (!quit) {
             long wall = System.currentTimeMillis() - t0;
             long target = windowStart + CHUNK_MS;
-            // 先把下一块预备好（realize+prefetch 重，提前做）
-            if (next == null) {
-                byte[] smf = buildChunk(windowStart, target);
-                next = makePlayer(smf);
-                drainConsumed();          // 立即裁剪已消费事件，内存有界
-            }
-            // 窗口到期 且 下一块已就绪 才滚动；否则等（避免接力空档）
-            if (wall < target || next == null) {
-                try { Thread.sleep(40); } catch (InterruptedException e) { break; }
+            if (wall < target + LEAD_MS) {
+                try { Thread.sleep(20); } catch (InterruptedException e) { break; }
                 continue;
             }
-            Player startMe = next;
-            next = null;
+            // 窗口 [windowStart, target) 的内容此刻已完整产生（都在过去）
+            Player p = makePlayer(buildChunk(windowStart, target));
+            drainConsumed();
             windowStart = target;
-            if (current == null) {
-                playNow(startMe);
-            } else {
-                pending = startMe;   // END_OF_MEDIA 时接力
+            if (p == null) {
+                continue;                     // 本块创建失败，跳过（下块继续）
+            }
+            final Player old = current;
+            current = p;
+            try {
+                p.start();
+            } catch (Throwable t) {
+                closePlayer(p);
+                if (current == p) current = null;
+                continue;
+            }
+            if (old != null) {
+                new Thread(new Runnable() {
+                    public void run() {
+                        try { Thread.sleep(OVERLAP_MS); } catch (InterruptedException ignored) {}
+                        try { old.stop(); } catch (Throwable ignored) {}
+                        closePlayer(old);
+                    }
+                }).start();
             }
         }
+        closePlayer(current);
+        current = null;
     }
+
+    private Player current;      // 当前播放块
+
 
     /** 裁掉两路录制流中已消费的事件（OOM 根治：录制缓冲有界）。 */
     private void drainConsumed() {
@@ -98,34 +113,6 @@ public class SmfStreamEngine implements PlayerListener {
                 ay2.rec.removeElementAt(0);
             }
             consumed2Idx = 0;
-        }
-    }
-
-    private Player pending;
-
-    private void playNow(Player p) {
-        if (p == null) {
-            return;
-        }
-        current = p;
-        try {
-            p.addPlayerListener(this);
-            p.start();
-        } catch (Throwable t) {
-            closePlayer(p);
-            current = null;
-        }
-    }
-
-    public void playerUpdate(Player p, String event, Object data) {
-        if (event == PlayerListener.END_OF_MEDIA && p == current) {
-            closePlayer(current);
-            current = null;
-            if (pending != null) {
-                Player np = pending;
-                pending = null;
-                playNow(np);
-            }
         }
     }
 

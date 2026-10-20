@@ -195,13 +195,15 @@ public class Ay2Midi {
     private final Player[] tonePlayer = new Player[3];
     private final ToneControl[] toneCtrl = new ToneControl[3];
 
+    /** 主版：固定 MIDI 引擎，禁用 tone 降级与切换。 */
+    public static boolean FORCE_MIDI = true;
     /** 分支版：强制 tone（诺基亚）引擎，禁用一切 MIDI 尝试。 */
     public static boolean FORCE_TONE = false;
     /** 声音引擎选择：0=MIDI(S3/MB 自动降级 tone)，1=Tone(诺基亚兼容，默认)。 */
     public static boolean preferTone = false;
 
     private boolean init() {
-        if ((FORCE_TONE || preferTone) && openToneEngine()) {
+        if (!FORCE_MIDI && (FORCE_TONE || preferTone) && openToneEngine()) {
             midiPath = "TONE";
             toneEngine = true;
             return true;
@@ -460,8 +462,8 @@ public class Ay2Midi {
 
     /** 设置菜单切换引擎：完全拆掉旧引擎再建新的，避免两个引擎状态互相污染。 */
     public void setEngineTone(boolean tone) {
-        if (FORCE_TONE) {
-            return;                       // 固定版：不许切走
+        if (FORCE_TONE || FORCE_MIDI) {
+            return;                       // 固定版：不许切换
         }
         if (tone == toneEngine) {
             return;

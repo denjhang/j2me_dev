@@ -1,9 +1,11 @@
 Manifest-Version: 1.0
 MIDlet-Name: VgmBrowser
-MIDlet-Version: 1.0.0
+MIDlet-Version: 1.1.0
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowser,,com.denjhang.vgmbrowser.BrowserMIDlet
 Nokia-MIDlet-On-Screen-Keypad: no
+Nokia-MIDlet-No-Exit: true
+MIDlet-Splash-Screen-Image: suppress
 MicroEdition-Configuration: CLDC-1.1
 MicroEdition-Profile: MIDP-2.0
 MIDlet-Permissions: javax.microedition.io.Connector.file.read

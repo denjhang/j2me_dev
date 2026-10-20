@@ -1,0 +1,71 @@
+=== VgmBrowser v1.0.0 Release Upload Instructions ===
+
+1. Open GitHub repository: https://github.com/denjhang/j2me_dev
+
+2. Go to "Releases" tab (right side or /releases URL)
+
+3. Click "Draft a new release"
+
+4. Select tag: v1.0.0 (already pushed)
+
+5. Release title: VgmBrowser v1.0.0 - AY8910 Player with 88-Key Visualization
+
+6. Description (copy below):
+---
+## Features
+
+### Playback
+- Dual-chip AY8910 support (VGM/VGZ, up to 6 voices + 2 envelope channels)
+- Loop control (1/2/3/5/infinite), sequential or shuffle
+- Background play with "Now playing" quick return
+- VGZ decompression with real-time progress bar
+
+### Visualization
+- 88-key pixel-art piano strips (one per voice)
+- v16-style level shading (smooth integrator + color-to-white gradient)
+- T/N/E gate lamps (lit only when actually sounding)
+- Dual-chip coloring (chip1: green/blue/red, chip2: purple/yellow/cyan)
+
+### UI/UX
+- Title marquee (25px/s ping-pong scroll)
+- Full GD3 tag table with word-wrap below keyboard
+- Deterministic softkeys (Now playing / Settings / Back always reachable)
+- English UI throughout
+
+### Performance
+- Layered rendering: static layers baked once, ~20 fillRects per frame
+- 19 FPS on KEmulator (50ms frame budget target)
+
+### Adjustable Parameters
+- Stereo modes (ABC/ACB/BAC/BCA/CAB/CBA/MONO)
+- Octave shift (-3 to +3 per channel)
+- Noise mapping (3 modes: C4 center/top/88-key spread)
+- Envelope octave, unison modes, buzzer volume
+- Real-time master volume control
+
+## Requirements
+- CLDC 1.1 / MIDP 2.0
+- JSR 135 (MMAPI) - MIDI playback
+- JSR 75 (FileConnection) - file browsing
+
+## Installation
+1. Download **VgmBrowser-v1.0.0-bin.tar.gz**
+2. Extract to get `VgmBrowser.jar` and `VgmBrowser.jad`
+3. Copy both files to your phone
+4. Install from "Games & Apps" menu
+
+## Build from Source
+1. Download **VgmBrowser-v1.0.0-src.tar.gz**
+2. Extract and run `./build.sh tools/vgm-browser`
+3. Output: `VgmBrowser.jar` / `VgmBrowser.jad`
+
+See README.md for detailed controls and technical documentation.
+---
+
+7. Attach files (drag & drop):
+   - VgmBrowser-v1.0.0-bin.tar.gz (runtime binaries)
+   - VgmBrowser-v1.0.0-src.tar.gz (full source code)
+
+8. Click "Publish release"
+
+=== Files ready in releases/ folder ===

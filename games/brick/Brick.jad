@@ -5,5 +5,5 @@ MIDlet-1: Brick, , com.denjhang.brick.BrickMIDlet
 MIDlet-Description: Minimal breakout game for J2ME (MIDP 2.0 / CLDC 1.1)
 MicroEdition-Profile: MIDP-2.0
 MicroEdition-Configuration: CLDC-1.1
-MIDlet-Jar-Size: 8921
+MIDlet-Jar-Size: 8926
 MIDlet-Jar-URL: Brick.jar

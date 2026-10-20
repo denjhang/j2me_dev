@@ -72,7 +72,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_CH0 = 15;
     private static final int TOTAL_ROWS = 15 + Ay2Midi.SLOTS;
     private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k"};
-    private int chunkIdx = 2;                 // 默认 16k
+    private int chunkIdx = 0;                 // 默认 4k（首段填充最快出声）
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
     private static final int ROW_H = 16;
     private int cursor;
@@ -867,8 +867,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         int py = sy + 16;
         g.drawImage(kbImg, 0, py, Graphics.TOP | Graphics.LEFT);
-        for (int ch = 0; ch < 3; ch++) {
-            drawKeyStripDyn(g, py + ch * kbPitch, ch);
+        if (playPhase != PHASE_FILL) {          // 填充期可视化冻结（保持上一帧）
+            for (int ch = 0; ch < 3; ch++) {
+                drawKeyStripDyn(g, py + ch * kbPitch, ch);
+            }
         }
 
         // ---- GD3 表格（整块贴图，超出屏幕可滚动：2/8 键，右侧滚动条） ----
@@ -935,6 +937,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
         return new String[][]{
             {"Engine", ENGINE_NAMES[engineIdx] + " - " + ay.midiStatus()},
+            {"BufA", bufInfo(0)},
+            {"BufB", bufInfo(1)},
             {"Clock", clk + " Hz" + (dual ? " x2" : "")},
             {"Events", ay.eventStats()},
             {"Bend", ay.getBendSensText() + " / " + ay.getBendRangePct() + "%"},

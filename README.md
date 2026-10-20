@@ -7,17 +7,29 @@
 
 ## 当前状态
 
-编译链已打通，PC 端开发闭环可以完整跑通：**写 Java → 编译成 1.4 class → 打 jar → KEmulator 运行 → 截图验证**，全程不需要真机。
+编译链已打通，PC 端开发闭环可以完整跑通：**写 Java → 编译成 1.4 class → 打 jar → ProGuard 预校验 → KEmulator 运行 → 截图验证**，全程不需要真机。
+
+主打产品是 **VgmBrowser**（`tools/vgm-browser/`）—— 一个实时 AY8910 VGM→MIDI 播放器，详见 [tools/vgm-browser/README.md](./tools/vgm-browser/README.md)。
 
 | 能力 | 状态 |
 |---|---|
 | JDK 8 工具链（免安装绿色版） | ✅ `tools/jdk8/` |
 | CLDC 1.1 + MIDP 2.0 编译类库 | ✅ `references/midplay/MIDPlay-main/lib/` |
-| MMAPI (JSR-135) 编译存根 | ✅ `emulators/kemnnx64/uei/jsr135.jar` |
+| MMAPI (JSR-135) / JSR-75 编译存根 | ✅ `emulators/kemnnx64/uei/` |
 | KEmulator nnmod 2.22 x64 | ✅ `emulators/kemnnx64/` |
-| 一键构建脚本 | ✅ `build.sh` |
+| 一键构建脚本（含 ProGuard 预校验） | ✅ `build.sh` |
+| VGM 播放器 VgmBrowser（当前 v1.1.0） | ✅ `tools/vgm-browser/` |
 | 示例游戏（打砖块 + MIDI BGM/音效） | ✅ `games/brick/` |
 | 自动截图验证 | ✅ `shot.ps1` |
+
+### 发布
+
+Release 产物在 GitHub Releases：<https://github.com/denjhang/j2me_dev/releases>
+
+- `VgmBrowser-vX.Y.Z-bin.tar.gz` — jar/jad + `Start-VgmBrowser.bat`（双击即用仓库自带 JDK8+KEmulator 启动最新 jar）
+- `VgmBrowser-vX.Y.Z-src.tar.gz` — 完整源码
+
+诺基亚真机安装要点：jar 必须经过预校验（`build.sh` 已用 ProGuard `-microedition` 处理），JAD 声明 `Nokia-MIDlet-On-Screen-Keypad: no`、`Nokia-MIDlet-No-Exit: true`、`MIDlet-Splash-Screen-Image: suppress`，文件读取权限只放必选 `file.read`。
 
 ## 快速开始
 
@@ -48,7 +60,9 @@ powershell -NoProfile -File ./shot.ps1 -Out shot_game.png
 | `HANDOFF.md` / `README.md` / `RESEARCH.md` / `TOOLCHAIN.md` | 文档 | ✅ |
 | `build.sh` / `run-kemulator.sh` / `shot.ps1` | 构建与验证脚本 | ✅ |
 | `games/brick/` | 示例游戏源码（打砖块，MIDI 音频） | ✅ |
-| `tools/` | JDK 8 + WTK 2.5.2 | ❌ 本地 |
+| `tools/vgm-browser/` | VgmBrowser 播放器源码 + jar/jad | ✅ |
+| `releases/` | 发布包与上传说明 | ✅（不含 tar.gz 以外的大文件） |
+| `tools/` | JDK 8 + ProGuard 5.3.3 | ❌ 本地 |
 | `emulators/` | KEmulator-nnmod 源码+发布版 / FreeJ2ME / FreeJ2ME-Plus / SquirrelJME | ❌ 本地 |
 | `references/` | fplay / midplay / j2meloader / awesome-j2me / huayuechenfeng / psg-core | ❌ 本地 |
 | `assets/` | nnproject 两份抓取（595MB） | ❌ 本地 |

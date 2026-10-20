@@ -2,6 +2,8 @@
 
 J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pixel-art 88-key visualization.
 
+**Current release: v1.1.0** — <https://github.com/denjhang/j2me_dev/releases>
+
 ## Features
 
 ### Playback
@@ -9,15 +11,16 @@ J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pix
 - **Dual-chip support** (AY8910 × 2, up to 6 voices + 2 envelope channels)
 - **Loop control**: 1/2/3/5/infinite loop count, sequential or shuffle playback
 - **Background play**: switch to file list without stopping; "Now playing" command returns to player
-- **VGZ decompression progress**: instant loading screen with real-time DEFLATE progress bar (no silent freeze)
+- **VGZ decompression progress**: the player's own progress bar doubles as the DEFLATE progress bar (right label shows "Decompressing N%"), UI stays fully responsive, minimum 300 ms animation
 
 ### Real-time AY8910 → MIDI Conversion
 - **7-channel mapping** per chip:
   - Ch 0/1/2: Square waves A/B/C → MIDI ch 0/1/2 (program 80 Square Lead)
   - Ch 3/4/5: Noise A/B/C → MIDI ch 3/4/5 (program 127, independent stereo pan)
   - Ch 6: Envelope/buzzer → MIDI ch 6 (program 83 Sawtooth)
-- **Smart buzzer detection**: fast envelope (period < 16) auto-routes to buzzer channel with portamento
-- **Synchronized unison**: slow triangle envelope triggers 2-voice (+1 octave) polyphony on square channels
+- **Smart buzzer detection**: envelope waveform frequency `clock/(16 × env_period × shape_steps)` ≥ 20 Hz routes to the dedicated buzzer channel with portamento; one-shot shapes (R13 ≤ 7) only count when re-triggered rapidly (sync buzzer); slow envelopes fall back to CC11 expression volume simulation on the square voice
+- **Synchronized unison**: slow saw/triangle envelope triggers N-voice (+1 octave each) polyphony on square channels
+- **Pitch bend**: RPN 0,0 bend range with menu-adjustable sensitivity (0.5×–2×, default 1.5×), 14-bit pitch wheel, 4096 steps/semitone
 - **Accurate pitch**: fixed-point log2 lookup (256 entries, ~7 cent precision), no floating-point dependency
 
 ### Live Adjustable Parameters (Settings overlay)
@@ -26,7 +29,11 @@ J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pix
 - **Noise mapping**: C4 center (C3-C5) / C4 top (C2-C4) / 88 keys spread
 - **Envelope octave**: saw/tri independent octave shift (-2 to +2)
 - **Unison modes**: off / +1 oct (2v) / +2 oct (3v) for saw/tri envelopes
-- **Buzzer volume**: 0-127
+- **Buzzer volume**: 0-127 (default 100)
+- **Bend sensitivity**: 0.5×–2.0× (default 1.5×), scales pitch-bend steps per semitone
+- **Loop count**: 1 / 2 / 3 / 5 / infinite (default 2)
+- **Play order**: sequential / shuffle
+- **10 instrument slots**: per-channel GM program selection
 - **Master volume**: real-time control (arrow keys)
 
 ### Pixel-Art 88-Key Visualization (v16-style, layered rendering)
@@ -59,10 +66,23 @@ J2ME VGM player with real-time AY8910 register-stream to MIDI conversion and pix
 - Fixed-point log2 lookup table (256 entries, Python precomputed) for CLDC 1.1 compatibility (no `Math.log`)
 
 ### Buzzer Detection
-Fast envelope (period < 16 samples @ 44.1kHz, i.e. > 2.76kHz) routed to dedicated buzzer channel with:
-- Frequency derived from envelope period: `clock / (256 × env_period × env_shape_length)`
-- MIDI portamento for pitch slides
-- Independent volume control (menu adjustable 0-127)
+Envelope shape classes: saw/alternate (R13 ∈ {8,9,11,12,13,15}) = 32 steps, triangle ({10,14}) = 64 steps, one-shot (≤ 7) = no continuous waveform. Envelope waveform frequency = `clock / (16 × env_period × shape_steps)`:
+- **≥ 20 Hz** → buzzer branch: dedicated MIDI channel, frequency from the envelope itself (32/64-step difference is an intrinsic octave), portamento for slides, note-off before retrigger (fixes stuck notes on shared buzzer channels)
+- **One-shot retriggered rapidly** → sync buzzer, same routing
+- **Slow** → software envelope simulation: CC11 expression follows the emu2149 envelope state machine on the square voice
+
+## Nokia Device Compatibility
+
+Verified installable on Nokia S40/S60 (E5-class). Packaging requirements handled by `build.sh`:
+- **ProGuard `-microedition`** preverification (raw javac 1.4 classes are rejected by real CLDC devices)
+- JAD/manifest attributes:
+  - `Nokia-MIDlet-On-Screen-Keypad: no` — no on-screen keypad on touch devices
+  - `Nokia-MIDlet-No-Exit: true` — no exit confirmation dialog
+  - `MIDlet-Splash-Screen-Image: suppress` — suppress vendor splash for faster startup
+  - `MIDlet-Permissions: javax.microedition.io.Connector.file.read` only (write is Opt — fewer install warnings)
+- JAD is UTF-8 without BOM, `MIDlet-Jar-Size` refreshed on every build
+
+Reference projects that informed this: fplay (Nokia JAD attributes), pluotsorbet (Symbian MIDP behavior, e.g. `Nokia-MIDlet-bg-server` if background-play issues appear on real devices).
 
 ### Validation References
 1. **libvgm/emu2149.c**: `clk/(freq×16)` (authoritative chip emulation)
@@ -80,7 +100,8 @@ Output: `VgmBrowser.jar` / `VgmBrowser.jad`
 ## Run
 
 - **KEmulator**: `./run-kemulator.sh tools/vgm-browser/VgmBrowser.jar`
-- **Real device**: copy jar+jad to phone, install from "Games & Apps"
+- **One-click (Windows)**: `releases/VgmBrowser-vX.Y.Z-bin/Start-VgmBrowser.bat` — launches the latest jar with the bundled JDK8 + KEmulator
+- **Real device**: copy jar+jad to phone, install from "Games & Apps" (no signing needed)
 
 ## Requirements
 
@@ -98,6 +119,10 @@ Output: `VgmBrowser.jar` / `VgmBrowser.jad`
 | Tri unison | +1 oct (2 voices) |
 | Buzzer volume | 100 |
 | Square timbre | 80 Square Lead |
+| Bend sensitivity | 1.5× (menu: 0.5×–2×) |
+| Loop count | 2 |
+| Play order | sequential |
+| Volume model | CC7=127 fixed + CC11 expression (PSG dynamics) |
 
 ## Controls
 

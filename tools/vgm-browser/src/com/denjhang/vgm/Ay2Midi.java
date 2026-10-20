@@ -61,7 +61,7 @@ public class Ay2Midi {
     public static final String[] BEND_SENS_NAMES = {
         "x0.25", "x0.50", "x0.75", "x1.0", "x1.25", "x1.5", "x2.0", "x3.0", "x4.0"
     };
-    private int bendSensIdx = 3;   // 默认 x1.0
+    private int bendSensIdx = 5;   // 默认 x1.5
 
     public static final int PROG_SQUARE = 80;
     public static final int PROG_BUZZER = 83;

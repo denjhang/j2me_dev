@@ -198,6 +198,8 @@ public class Ay2Midi {
                 return false;
             }
             player.realize();
+            player.start();
+            // MeBoy 顺序：必须 start 之后才能拿到有效的 MIDIControl（诺基亚真机）
             midi = (MIDIControl) player.getControl("MIDIControl");
             if (midi == null) {
                 player.close();
@@ -205,15 +207,13 @@ public class Ay2Midi {
                 initError = "无 MIDIControl";
                 return false;
             }
-            player.prefetch();
-            player.start();
             for (int i = 0; i < 6; i++) {
                 send(PROG | channelOf(i), progMap[i], 0);
             }
             sendPans();
-            // 初始化所有音量为 0（防止残留），播放时再按寄存器推上去
+            // CC7 直接给主音量（真机上预置 0 可能不被后续 CC 覆盖）
             for (int i = 0; i < CHANNELS; i++) {
-                send(CC | i, 7, 0);
+                send(CC | i, 7, masterVol);
             }
             return true;
         } catch (Throwable t) {

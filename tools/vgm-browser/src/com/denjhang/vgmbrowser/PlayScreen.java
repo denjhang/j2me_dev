@@ -133,16 +133,28 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         new Thread(new Runnable() {
             public void run() {
                 try {
+                    final long startMs = System.currentTimeMillis();
                     final byte[] raw = pendingBytes;
                     VgmFile vf = VgmFile.fromBytes(pendingName, raw,
                             new com.denjhang.vgm.Gzip.Progress() {
+                                private long lastUpdate = 0;
                                 public void onProgress(int inPos, int inTotal, int outLen) {
                                     if (inTotal > 0) {
-                                        decompPct = inPos * 100 / inTotal;
-                                        repaint();
+                                        long now = System.currentTimeMillis();
+                                        // 节流：至少 30ms 更新一次（避免回调风暴）
+                                        if (now - lastUpdate >= 30) {
+                                            decompPct = inPos * 100 / inTotal;
+                                            repaint();
+                                            lastUpdate = now;
+                                        }
                                     }
                                 }
                             });
+                    // 最小展示 300ms：即使瞬间解压也让用户看到动画
+                    long elapsed = System.currentTimeMillis() - startMs;
+                    if (elapsed < 300) {
+                        try { Thread.sleep(300 - elapsed); } catch (Exception e) {}
+                    }
                     file = vf;
                     parser = vf.getParser();
                     decompPct = -1;

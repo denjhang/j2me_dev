@@ -72,10 +72,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int scroll;
 
     private final BrowserMIDlet midlet;
-    private final VgmFile file;
+    private VgmFile file;
+    private VgmParser parser;
+    private String pendingName;
+    private byte[] pendingBytes;
     final Ay2Midi ay;
     private Ay2Midi ay2;
-    private final VgmParser parser;
     private final int listIndex;
 
     private final Command cmdSettings = new Command("Settings", Command.SCREEN, 1);
@@ -107,9 +109,64 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int kbTneLx;          // TNE 字符 x 起点（底图/动态共用，一个公式）
     private int kbH = 15;
     private int kbPitch = 17;
-    private final Font small;
-    private final Font titleFont;
-    private final Font tiny;
+    private Font small;
+    private Font titleFont;
+    private Font tiny;
+
+    /** 解压状态：>0 时进度条兼做解压进度，-1 完成，-2 错误。 */
+    private volatile int decompPct = -1;
+    private String decompStatus = "";
+
+    public PlayScreen(BrowserMIDlet midlet, String name, byte[] rawBytes,
+                      int listIndex) {
+        this.midlet = midlet;
+        this.file = null;
+        this.listIndex = listIndex;
+        this.parser = null;
+        this.ay = new Ay2Midi();
+        pendingName = name;
+        pendingBytes = rawBytes;
+        initCommon();
+        // 后台线程：解压 + 解析，进度回调直接更新 decompPct → repaint
+        decompPct = 0;
+        decompStatus = "Decompressing...";
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    final byte[] raw = pendingBytes;
+                    VgmFile vf = VgmFile.fromBytes(pendingName, raw,
+                            new com.denjhang.vgm.Gzip.Progress() {
+                                public void onProgress(int inPos, int inTotal, int outLen) {
+                                    if (inTotal > 0) {
+                                        decompPct = inPos * 100 / inTotal;
+                                        repaint();
+                                    }
+                                }
+                            });
+                    file = vf;
+                    parser = vf.getParser();
+                    decompPct = -1;
+                    if (file.header.chipClock[0x12] != 0) {
+                        ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
+                    }
+                    if (ay.ready) {
+                        ay.forceRefreshAll();
+                        ay.setMasterVol(masterVol);
+                    }
+                    if (file.header.ayClock2 != 0) {
+                        attachChip2();
+                    }
+                    startPlay(true);
+                    marqueeBaseMs = System.currentTimeMillis();
+                    repaint();
+                } catch (Throwable t) {
+                    decompPct = -2;
+                    decompStatus = t.toString();
+                    repaint();
+                }
+            }
+        }).start();
+    }
 
     public PlayScreen(BrowserMIDlet midlet, VgmFile file, int listIndex) {
         this.midlet = midlet;
@@ -117,13 +174,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.listIndex = listIndex;
         this.parser = file.getParser();
         this.ay = new Ay2Midi();
-        setFullScreenMode(true);
-        addCommand(cmdSettings);
-        addCommand(cmdBack);
-        setCommandListener(this);
-        small = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        titleFont = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
-        tiny = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+        initCommon();
         if (file.header.chipClock[0x12] != 0) {
             ay.setClock(file.header.chipClock[0x12] & 0x3FFFFFFF);
         }
@@ -141,6 +192,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         midlet.refreshListNowPlaying();
         Thread ui = new Thread(this);
         ui.start();
+    }
+
+    private void initCommon() {
+        setFullScreenMode(true);
+        addCommand(cmdSettings);
+        addCommand(cmdBack);
+        setCommandListener(this);
+        small = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+        titleFont = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
+        tiny = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
     }
 
     private void attachChip2() {
@@ -420,6 +481,39 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     private void paintHud(Graphics g, int w, int h) {
+        // ---- 解压阶段：进度条兼做解压进度 ----
+        if (decompPct >= 0 || decompPct == -2) {
+            g.setFont(titleFont);
+            g.setColor(0xF0EDE4);
+            g.drawString(clip(pendingName != null ? pendingName : "", 22),
+                    6, 4, Graphics.TOP | Graphics.LEFT);
+            g.setFont(tiny);
+
+            int barY = 60;
+            int barW = w - 40;
+            int barH = 10;
+            g.setColor(0x1B2430);
+            g.fillRoundRect(6, barY, barW, barH, barH, barH);
+            int filled = barW * Math.max(0, decompPct) / 100;
+            if (filled > 2) {
+                g.setColor(0x3E7BA8);
+                g.fillRoundRect(6, barY, filled, barH, barH, barH);
+                g.setColor(0x6FB1DE);
+                g.fillRoundRect(6, barY, filled, barH / 2, barH, barH);
+            }
+            g.setFont(small);
+            if (decompPct == -2) {
+                g.setColor(0xFF7C7C);
+                g.drawString("Error: " + clip(decompStatus, 20), 6, barY + 18,
+                        Graphics.TOP | Graphics.LEFT);
+            } else {
+                g.setColor(0x6FB1DE);
+                g.drawString(decompStatus + " " + decompPct + "%", 6, barY + 18,
+                        Graphics.TOP | Graphics.LEFT);
+            }
+            return;   // 解压期间不画其他 HUD
+        }
+
         // ---- 标题跑马灯（GD3 标题/文件名，超宽往返滚动）----
         String title = pick(file.header.gd3Title, file.header.gd3TitleEn);
         if (title.length() == 0) {

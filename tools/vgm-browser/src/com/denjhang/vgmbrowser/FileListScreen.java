@@ -315,12 +315,10 @@ public class FileListScreen extends List implements CommandListener {
             fc = (FileConnection) Connector.open(en.url, Connector.READ);
             in = fc.openInputStream();
             byte[] data = VgmFile.readAll(in);
-            VgmFile vf = VgmFile.fromBytes(en.name, data);
-            // 打开 VGM 直接进播放（用户定案），不走详情屏
+            // 直接传原始字节进播放器：VGZ 解压在播放器内做（进度条兼做解压进度）
             if (idx >= 0) {
-                midlet.openPlay(vf, idx);
+                midlet.openPlayRaw(en.name, data, idx);
             } else {
-                // 从列表双击打开：也直接播放，传当前索引
                 int currentIdx = -1;
                 for (int j = 0; j < entries.size(); j++) {
                     if (entries.elementAt(j) == en) {
@@ -328,7 +326,7 @@ public class FileListScreen extends List implements CommandListener {
                         break;
                     }
                 }
-                midlet.openPlay(vf, currentIdx);
+                midlet.openPlayRaw(en.name, data, currentIdx);
             }
         } catch (Throwable t) {
             showAlert("解析失败: " + t);

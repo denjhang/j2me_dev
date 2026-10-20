@@ -8,5 +8,5 @@ MicroEdition-Configuration: CLDC-1.1
 Nokia-MIDlet-On-Screen-Keypad: no
 MIDlet-Permissions: javax.microedition.io.Connector.file.read
 MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write
-MIDlet-Jar-Size: 48848
+MIDlet-Jar-Size: 50844
 MIDlet-Jar-URL: VgmBrowser.jar

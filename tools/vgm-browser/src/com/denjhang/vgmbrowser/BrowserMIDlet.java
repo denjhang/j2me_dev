@@ -44,6 +44,12 @@ public class BrowserMIDlet extends MIDlet {
         Display.getDisplay(this).setCurrent(new ToneTestScreen(this));
     }
 
+    void openPlayRaw(String name, byte[] rawBytes, int listIndex) {
+        releasePlay();
+        play = new PlayScreen(this, name, rawBytes, listIndex);
+        Display.getDisplay(this).setCurrent(play);
+    }
+
     void openPlay(VgmFile file, int listIndex) {
         releasePlay();
         play = new PlayScreen(this, file, listIndex);

@@ -717,16 +717,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (gh < 0) {
             gh = 0;
         }
-        int gd3Max = gd3Img.getHeight() - gh;
-        if (gd3Max < 0) {
-            gd3Max = 0;
-        }
-        if (gd3Scroll > gd3Max) {
-            gd3Scroll = gd3Max;
-        }
-        if (gd3Scroll < 0) {
-            gd3Scroll = 0;
-        }
         // 调试区：标签下面多行（Engine/事件计数/首个异常/时钟等）
         String[][] dbg = debugRows();
         int dbgH = dbg.length * 13 + 4;
@@ -737,6 +727,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         if (gd3Scroll > gd3Max2) {
             gd3Scroll = gd3Max2;
+        }
+        if (gd3Scroll < 0) {
+            gd3Scroll = 0;
         }
         int cw2 = g.getClipWidth();
         int ch2 = g.getClipHeight();

@@ -774,7 +774,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         long clk = hd.chipClock[0x12] & 0x3FFFFFFF;
         boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
         return new String[][]{
-            {"Engine", ay.midiStatus() + " (" + ENGINE_NAMES[engineIdx] + ")"},
+            {"Engine", ENGINE_NAMES[engineIdx] + " - " + ay.midiStatus()},
             {"Clock", clk + " Hz" + (dual ? " x2" : "")},
             {"Events", ay.eventStats()},
             {"Bend", ay.getBendSensText() + " / " + ay.getBendRangePct() + "%"},

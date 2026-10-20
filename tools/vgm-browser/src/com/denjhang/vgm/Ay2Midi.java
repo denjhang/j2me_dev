@@ -234,9 +234,7 @@ public class Ay2Midi {
                 if (toneCtrl[i] == null) {
                     return false;
                 }
-                toneCtrl[i].setSequence(silenceSeq());
                 tonePlayer[i].prefetch();
-                tonePlayer[i].start();
             }
             return true;
         } catch (Throwable t) {
@@ -250,14 +248,6 @@ public class Ay2Midi {
             }
             return false;
         }
-    }
-
-    private static byte[] silenceSeq() {
-        return new byte[]{
-            ToneControl.VERSION, 1,
-            ToneControl.TEMPO, 30,
-            ToneControl.SILENCE, 16,
-        };
     }
 
     // tone 去重/节流状态：setSequence 会重启音符，频繁调用等于永远在重启（无声）
@@ -291,14 +281,18 @@ public class Ay2Midi {
             return;                                   // 纯音量变化且太密，跳过
         }
         try {
-            // 探针实测：KEmulator 只认 VERSION+TEMPO+裸音符对（BLOCK/REPEAT/SET_VOLUME 全拒）；
-            // 同音符重复多段获得持续音，音高变化时重设序列（播放中重设安全，探针 G 验证）
+            // 探针实测：KEmulator 只认 VERSION+TEMPO+裸音符对；必须 setSequence 后 start
+            // （预启动的播放器上换序列不发声）。stop 状态下 setSequence+start = 探针 H 路径。
             byte n = (byte) note;
+            if (tonePlayer[ch].getState() >= Player.STARTED) {
+                tonePlayer[ch].stop();
+            }
             toneCtrl[ch].setSequence(new byte[]{
                 ToneControl.VERSION, 1,
                 ToneControl.TEMPO, 30,
                 n, 127, n, 127, n, 127, n, 127, n, 127, n, 127,
             });
+            tonePlayer[ch].start();
             toneLastNote[ch] = note;
             toneLastVol[ch] = v;
             toneLastMs[ch] = now;
@@ -311,13 +305,16 @@ public class Ay2Midi {
     }
 
     private void toneSilence(int ch) {
-        if (ch < 0 || ch > 2 || toneCtrl[ch] == null) {
+        if (ch < 0 || ch > 2 || tonePlayer[ch] == null) {
             return;
         }
         try {
-            toneCtrl[ch].setSequence(silenceSeq());
+            if (tonePlayer[ch].getState() >= Player.STARTED) {
+                tonePlayer[ch].stop();
+            }
         } catch (Throwable ignored) {
         }
+        toneLastNote[ch] = -1;
     }
 
 

@@ -274,6 +274,7 @@ public class Ay2Midi {
         if (note < 0) note = 60;
         if (note > 126) note = 126;
         try {
+            // 规范：REPEAT 后跟 块ID、重复次数（之前写反导致序列非法、无声）
             toneCtrl[ch].setSequence(new byte[]{
                 ToneControl.VERSION, 1,
                 ToneControl.TEMPO, 30,
@@ -281,7 +282,7 @@ public class Ay2Midi {
                 ToneControl.BLOCK_START, 0,
                 (byte) note, 64,
                 ToneControl.BLOCK_END, 0,
-                ToneControl.REPEAT, 127, 0,
+                ToneControl.REPEAT, 0, 127,
             });
         } catch (Throwable ignored) {
         }

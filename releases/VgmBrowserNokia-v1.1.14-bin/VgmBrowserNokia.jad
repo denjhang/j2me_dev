@@ -1,7 +1,8 @@
 MIDlet-Name: VgmBrowserNokia
 MIDlet-Version: 1.1.14n
 MIDlet-Vendor: Denjhang
-MIDlet-1: VgmBrowserNokia,/icon.png,com.denjhang.vgmbrowser.BrowserMIDlet
+MIDlet-1: VgmBrowserNokia,,com.denjhang.vgmbrowser.BrowserMIDlet
+MIDlet-Icon: /icon.png
 MIDlet-Description: AY8910 VGM Player - fixed Nokia (tone) engine build
 MicroEdition-Profile: MIDP-2.0
 MicroEdition-Configuration: CLDC-1.1
@@ -10,5 +11,5 @@ Nokia-MIDlet-No-Exit: true
 MIDlet-Splash-Screen-Image: suppress
 MIDlet-Permissions: javax.microedition.io.Connector.file.read
 MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write
-MIDlet-Jar-Size: 88552
+MIDlet-Jar-Size: 88550
 MIDlet-Jar-URL: VgmBrowserNokia.jar

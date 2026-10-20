@@ -557,17 +557,28 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.drawString(title, 6 + mx, 4, Graphics.TOP | Graphics.LEFT);
         g.setClip(0, 0, cw, chh);
 
-        // ---- 进度条 ----
+        // ---- 进度条（解压中=解压进度，播放中=播放进度）----
         g.setFont(tiny);
         int barY = 26;
         int barW = w - 40;
         int barH = 10;
-        long total = file.header.totalSamples;
-        long cur = parser.getSamples();
-        int filled = total > 0 ? (int) (barW * cur / total) : 0;
-        if (filled > barW) {
-            filled = barW;
+        
+        boolean decompressing = (decompPct >= 0);
+        int filled = 0;
+        long total = 0;
+        long cur = 0;
+        
+        if (decompressing) {
+            // 解压进度
+            filled = barW * Math.max(0, decompPct) / 100;
+        } else {
+            // 播放进度
+            total = file.header.totalSamples;
+            cur = parser.getSamples();
+            filled = total > 0 ? (int) (barW * cur / total) : 0;
+            if (filled > barW) filled = barW;
         }
+        
         g.setColor(0x1B2430);
         g.fillRoundRect(6, barY, barW, barH, barH, barH);
         if (filled > 2) {
@@ -578,10 +589,18 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         g.setColor(0xE8E8E8);
         g.fillArc(6 + filled - 3, barY - 2, barH + 4, barH + 4, 0, 360);
+        
+        // 右上角标签：解压中 or 时间
         g.setColor(0x8894A8);
-        g.drawString(fmt(cur / 44100), 6, barY + 12, Graphics.TOP | Graphics.LEFT);
-        g.drawString(fmt(total / 44100), 6 + barW, barY + 12,
-                Graphics.TOP | Graphics.RIGHT);
+        if (decompressing) {
+            String label = "Decompressing " + decompPct + "%";
+            int lw = tiny.stringWidth(label);
+            g.drawString(label, 6 + barW - lw, barY - 2, Graphics.TOP | Graphics.LEFT);
+        } else {
+            g.drawString(fmt(cur / 44100), 6, barY + 12, Graphics.TOP | Graphics.LEFT);
+            g.drawString(fmt(total / 44100), 6 + barW, barY + 12,
+                    Graphics.TOP | Graphics.RIGHT);
+        }
 
         // ---- 状态行 ----
         int sy = barY + 27;

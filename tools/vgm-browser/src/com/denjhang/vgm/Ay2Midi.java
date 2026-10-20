@@ -263,18 +263,36 @@ public class Ay2Midi {
         };
     }
 
-    /** tone 引擎：给第 ch 个方波声部设连续音（vol 0-127 → 0-100）。 */
+    // tone 去重/节流状态：setSequence 会重启音符，频繁调用等于永远在重启（无声）
+    private final int[] toneLastNote = {-1, -1, -1};
+    private final int[] toneLastVol = {-1, -1, -1};
+    private final long[] toneLastMs = new long[3];
+    private static final int TONE_MIN_INTERVAL_MS = 100;
+    private static final int TONE_VOL_STEP = 12;
+
+    /** tone 引擎：给第 ch 个方波声部设连续音（vol 0-127 → 0-100）。
+     *  音符变化立即更新；只有音量变化时按 12 级量化 + 100ms 节流。 */
     private void toneSeq(int ch, int note, int vol) {
         if (ch < 0 || ch > 2 || toneCtrl[ch] == null) {
             return;
         }
+        if (note < 0) note = 60;
+        if (note > 126) note = 126;
         int v = vol * 100 / 127;
         if (v > 100) v = 100;
         if (v < 1) v = 1;
-        if (note < 0) note = 60;
-        if (note > 126) note = 126;
+        v = v / TONE_VOL_STEP * TONE_VOL_STEP;      // 量化，减少重发
+        if (v < 1) v = 1;
+        long now = System.currentTimeMillis();
+        boolean noteCh = note != toneLastNote[ch];
+        boolean volCh = v != toneLastVol[ch];
+        if (!noteCh && !volCh) {
+            return;                                   // 完全没变
+        }
+        if (!noteCh && now - toneLastMs[ch] < TONE_MIN_INTERVAL_MS) {
+            return;                                   // 纯音量变化且太密，跳过
+        }
         try {
-            // 规范：REPEAT 后跟 块ID、重复次数（之前写反导致序列非法、无声）
             toneCtrl[ch].setSequence(new byte[]{
                 ToneControl.VERSION, 1,
                 ToneControl.TEMPO, 30,
@@ -284,6 +302,12 @@ public class Ay2Midi {
                 ToneControl.BLOCK_END, 0,
                 ToneControl.REPEAT, 0, 127,
             });
+            if (tonePlayer[ch] != null) {
+                tonePlayer[ch].start();               // 部分实现 setSequence 后需重新 start
+            }
+            toneLastNote[ch] = note;
+            toneLastVol[ch] = v;
+            toneLastMs[ch] = now;
         } catch (Throwable ignored) {
         }
     }

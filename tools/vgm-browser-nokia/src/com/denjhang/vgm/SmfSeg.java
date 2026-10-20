@@ -38,7 +38,12 @@ public final class SmfSeg {
             long relTick = e[0] * PPQ / MS_PER_Q;
             vlq(tr, (int) (relTick - lastTick));
             lastTick = relTick;
-            tr.write((int) e[1]); tr.write((int) e[2]); tr.write((int) e[3]);
+            int st = (int) e[1];
+            tr.write(st);
+            tr.write((int) e[2]);
+            if (st < 0xC0 || st > 0xDF) {
+                tr.write((int) e[3]);
+            }
         }
         // 段尾静音补齐 + 全音符关
         long endTick = segMs * PPQ / MS_PER_Q;
@@ -58,11 +63,19 @@ public final class SmfSeg {
         for (int k = 0; k < ev.length; k++) {
             vlq(tr, (int) (atTick - lastTick));
             lastTick = atTick;
-            tr.write((int) ev[k][0]);
-            tr.write((int) ev[k][1]);
-            tr.write((int) ev[k][2]);
+            writeMsg(tr, ev[k]);
         }
         return lastTick;
+    }
+
+    /** MIDI 消息长度：0xC0-0xDF（Program Change/通道压力）两字节，其余三字节。 */
+    private static void writeMsg(ByteArrayOutputStream tr, long[] e) {
+        int st = (int) e[0];
+        tr.write(st);
+        tr.write((int) e[1]);
+        if (st < 0xC0 || st > 0xDF) {
+            tr.write((int) e[2]);
+        }
     }
 
     private static void vlq(ByteArrayOutputStream o, int value) {

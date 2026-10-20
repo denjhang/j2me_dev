@@ -378,6 +378,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     public int fillPct;                     // 填充进度（0-100，按字节）
     public int playPct;                     // 播放进度（0-100）
     public long progressBase;               // 进度基点（样本数，已播完部分）
+    public String playErr = "";             // 最近一次播放段失败原因（调试块可见）
     private long playStartWall;
     private static final int[] BUF_BYTES = {4096, 8192, 16384, 32768, 65536, 131072, 262144};
 
@@ -524,6 +525,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
             p.start();
         } catch (Throwable t) {
+            playErr = "" + t;
             if (p != null) {
                 try { p.close(); } catch (Throwable ignored) {}
             }
@@ -939,6 +941,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             {"Engine", ENGINE_NAMES[engineIdx] + " - " + ay.midiStatus()},
             {"BufA", bufInfo(0)},
             {"BufB", bufInfo(1)},
+            {"PlayErr", playErr.length() > 0 ? playErr : "-"},
             {"Clock", clk + " Hz" + (dual ? " x2" : "")},
             {"Events", ay.eventStats()},
             {"Bend", ay.getBendSensText() + " / " + ay.getBendRangePct() + "%"},

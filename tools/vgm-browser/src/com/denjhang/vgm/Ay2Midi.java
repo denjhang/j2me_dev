@@ -258,6 +258,12 @@ public class Ay2Midi {
         sendPans();
     }
 
+    /** MeBoy advanced 模式：每个 note-on 前重发 CC7，不依赖设备记住任何 CC 状态。 */
+    private void noteOn(int ch, int note, int velocity) {
+        send(CC | ch, CC_VOLUME, masterVol);
+        send(NOTE_ON | ch, note, velocity);
+    }
+
     /** nescube 音量模型：电平直接做 note-on 力度（最小 1，0 等于 note-off）。 */
     private static int vel(int level) {
         return level > 0 ? level : 1;
@@ -266,6 +272,7 @@ public class Ay2Midi {
     /** 电平变化时力度重发（参数为 MIDI 通道号）。 */
     private void retriggerVel(int midiCh, int note, int level) {
         if (note >= 0) {
+            send(CC | midiCh, CC_VOLUME, masterVol);
             send(NOTE_ON | midiCh, note, vel(level));
         }
     }
@@ -616,7 +623,7 @@ public class Ay2Midi {
         for (int i = 0; i < voices; i++) {
             int n = note + i * 12;
             if (n <= 127) {
-                send(NOTE_ON | buzzerCh, n, vel(buzzVol));
+                noteOn(buzzerCh, n, vel(buzzVol));
             }
         }
     }
@@ -1051,7 +1058,7 @@ public class Ay2Midi {
         for (int ch = 0; ch < 3; ch++) {
             if (noiseSounding[ch]) {
                 send(NOTE_OFF | noiseCh[ch], oldNote, 0);
-                send(NOTE_ON | noiseCh[ch], noiseNote, noiseVol[ch] > 0 ? vel(noiseVol[ch]) : 100);
+                noteOn(noiseCh[ch], noiseNote, noiseVol[ch] > 0 ? vel(noiseVol[ch]) : 100);
             }
         }
     }
@@ -1099,7 +1106,7 @@ public class Ay2Midi {
         }
         if (noiseOn && !noiseSounding[ch]) {
             noiseSounding[ch] = true;
-            send(NOTE_ON | noiseCh[ch], noiseNote, noiseVol[ch] > 0 ? vel(noiseVol[ch]) : 100);
+            noteOn(noiseCh[ch], noiseNote, noiseVol[ch] > 0 ? vel(noiseVol[ch]) : 100);
         } else if (!noiseOn && noiseSounding[ch]) {
             noiseSounding[ch] = false;
             send(NOTE_OFF | noiseCh[ch], noiseNote, 0);
@@ -1170,7 +1177,7 @@ public class Ay2Midi {
             curNote[ch] = note;
             curBend[ch] = bend;
             send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
-            send(NOTE_ON | toneCh[ch], note, curVol[ch] > 0 ? vel(curVol[ch]) : 100);
+            noteOn(toneCh[ch], note, curVol[ch] > 0 ? vel(curVol[ch]) : 100);
         } else if (Math.abs(bend - curBend[ch]) > 40) {
             curBend[ch] = bend;
             send(PITCH | toneCh[ch], bend & 0x7F, (bend >> 7) & 0x7F);
@@ -1221,7 +1228,7 @@ public class Ay2Midi {
             for (int i = 0; i < voices; i++) {
                 int n = note + i * 12;               // 基准 + 上行八度堆叠
                 if (n <= 127) {
-                    send(NOTE_ON | buzzerCh, n, vel(buzzVol));
+                    noteOn(buzzerCh, n, vel(buzzVol));
                 }
             }
         } else if (Math.abs(bend - curBend[ch]) > 40) {

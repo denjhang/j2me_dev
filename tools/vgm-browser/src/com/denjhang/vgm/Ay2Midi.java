@@ -2,6 +2,7 @@ package com.denjhang.vgm;
 
 import javax.microedition.media.Manager;
 import javax.microedition.media.control.ToneControl;
+import javax.microedition.media.control.VolumeControl;
 import javax.microedition.media.Player;
 import javax.microedition.media.control.MIDIControl;
 
@@ -301,6 +302,7 @@ public class Ay2Midi {
             if (midi == null) {
                 midi = (MIDIControl) player.getControl("MIDIControl");
             }
+            setPlayerVolume();
             return midi != null;
         } catch (Throwable t) {
             initError = t.toString();
@@ -321,6 +323,7 @@ public class Ay2Midi {
             if (midi == null) {
                 midi = (MIDIControl) player.getControl("MIDIControl");
             }
+            setPlayerVolume();
             return midi != null;
         } catch (Throwable t) {
             initError = t.toString();
@@ -340,6 +343,18 @@ public class Ay2Midi {
         }
     }
 
+    /** Tower Bloxx（诺基亚原厂）做法：显式把 Player 音量推到最大，默认可能是 0。 */
+    private void setPlayerVolume() {
+        try {
+            VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
+            if (vc != null) {
+                vc.setLevel(100);
+                vc.setMute(false);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
     private void safeClose() {
         if (player != null) {
             try {
@@ -352,8 +367,23 @@ public class Ay2Midi {
 
     /** 打开后只发音色 + 声像，其余 CC 一律不发（nescube 同款）。 */
     private void sendInitProgs() {
-        for (int i = 0; i < 6; i++) {
-            send(PROG | channelOf(i), progMap[i], 0);
+        // nescube 3.2 发布版用专用 API（不是 CC）：setProgram(ch,-1,patch) + setChannelVolume(ch,vol)。
+        // 诺基亚实现里 shortMidiEvent 的 PC/CC 可能被忽略，而 setChannelVolume 是通道路径。
+        for (int i = 0; i < SLOTS; i++) {
+            int ch = channelOf(i);
+            if (ch == 9) {
+                continue;
+            }
+            try {
+                midi.setProgram(ch, -1, progMap[i]);
+            } catch (Throwable t) {
+                send(PROG | ch, progMap[i], 0);   // 老实现没有 setProgram 时退回 CC
+            }
+            try {
+                midi.setChannelVolume(ch, masterVol);
+            } catch (Throwable t) {
+                send(CC | ch, CC_VOLUME, masterVol);
+            }
         }
         sendPans();
     }
@@ -366,7 +396,11 @@ public class Ay2Midi {
             }
             return;
         }
-        send(CC | ch, CC_VOLUME, masterVol);
+        try {
+            midi.setChannelVolume(ch, masterVol);
+        } catch (Throwable t) {
+            send(CC | ch, CC_VOLUME, masterVol);
+        }
         send(NOTE_ON | ch, note, velocity);
     }
 
@@ -1052,7 +1086,12 @@ public class Ay2Midi {
         }
         masterVol = v;
         for (int i = 0; i < CHANNELS; i++) {
-            send(CC | channelOf(i), CC_VOLUME, v);
+            int chm = channelOf(i);
+            try {
+                midi.setChannelVolume(chm, v);
+            } catch (Throwable t) {
+                send(CC | chm, CC_VOLUME, v);
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import javax.microedition.media.Manager;
 import javax.microedition.media.Player;
 import javax.microedition.media.control.MIDIControl;
 import javax.microedition.media.control.ToneControl;
+import javax.microedition.media.control.VolumeControl;
 
 /**
  * 独立 MIDI 诊断屏（不播放曲目）。
@@ -32,7 +33,7 @@ public class MidiTestScreen extends Canvas implements CommandListener {
         "6 channel sweep 0-6",
         "7 setChannelVolume API + note",
         "8 longMidiEvent note",
-        "9 pitch bend slide up",
+        "9 VolumeControl 100 + note",
         "0 ToneControl beep (reference)",    // 必响：不响就是整机音频问题
         "* playTone static (reference)",     // 必响
         "# close player",
@@ -74,6 +75,19 @@ public class MidiTestScreen extends Canvas implements CommandListener {
                 r[1] = "no MIDIControl";
                 closePlayer();
                 return r;
+            }
+            // 关键：显式设置 Player 音量（诺基亚默认可能为 0）
+            try {
+                VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
+                if (vc != null) {
+                    vc.setLevel(100);
+                    vc.setMute(false);
+                    r[0] = r[0] + "+vol100";
+                } else {
+                    r[0] = r[0] + "+noVolCtrl";
+                }
+            } catch (Throwable t) {
+                r[0] = r[0] + "+volEX";
             }
             return r;
         } catch (Throwable t) {
@@ -213,15 +227,25 @@ public class MidiTestScreen extends Canvas implements CommandListener {
     private void test9() throws Exception {
         String[] r = openMidi(true);
         if (midi == null) { results[8] = "FAIL " + r[1]; return; }
-        ev(0xC0, 80, 0);
-        ev(0x90, 60, 110);
-        for (int b = 8192; b < 16383; b += 256) {
-            ev(0xE0, b & 0x7F, (b >> 7) & 0x7F);
-            delay(25);
+        String vol = "?";
+        try {
+            VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
+            if (vc == null) {
+                vol = "no VC";
+            } else {
+                vc.setMute(false);
+                vc.setLevel(100);
+                vol = "lvl=" + vc.getLevel();
+            }
+        } catch (Throwable t) {
+            vol = "EX " + t;
         }
-        ev(0xE0, 0, 64);
+        ev(0xC0, 80, 0);
+        ev(0xB0, 7, 127);
+        ev(0x90, 60, 127);
+        delay(700);
         ev(0x80, 60, 0);
-        results[8] = "OK bend slide (heard?)";
+        results[8] = "OK vol " + vol + " (heard?)";
     }
 
     private void testTone() {

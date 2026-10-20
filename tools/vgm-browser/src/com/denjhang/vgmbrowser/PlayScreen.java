@@ -62,10 +62,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_ENVSAW_UNI = 5;
     private static final int ROW_ENVTRI_UNI = 6;
     private static final int ROW_BUZZ_VOL = 7;
-    private static final int ROW_LOOP = 8;
-    private static final int ROW_ORDER = 9;
-    private static final int ROW_CH0 = 10;
-    private static final int TOTAL_ROWS = 10 + Ay2Midi.SLOTS;
+    private static final int ROW_BEND_SENS = 8;
+    private static final int ROW_LOOP = 9;
+    private static final int ROW_ORDER = 10;
+    private static final int ROW_CH0 = 11;
+    private static final int TOTAL_ROWS = 11 + Ay2Midi.SLOTS;
     private static final int ROW_H = 16;
     private int cursor;
     private int scroll;
@@ -965,6 +966,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ENVSAW_UNI: return "Saw unison";
             case ROW_ENVTRI_UNI: return "Tri unison";
             case ROW_BUZZ_VOL: return "Buzzer vol";
+            case ROW_BEND_SENS: return "Bend sens";
             case ROW_LOOP: return "Loop count";
             case ROW_ORDER: return "Play order";
             default: return CH_NAMES[r - ROW_CH0];
@@ -983,6 +985,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
             case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
             case ROW_BUZZ_VOL: return String.valueOf(ay.getBuzzVol());
+            case ROW_BEND_SENS: return Ay2Midi.BEND_SENS_NAMES[ay.getBendSensIdx()];
             case ROW_LOOP: return LOOP_NAMES[loopIdx];
             case ROW_ORDER: return ORDER_NAMES[shuffle ? 1 : 0];
             default: return String.valueOf(ay.getProg(r - ROW_CH0));
@@ -1035,6 +1038,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 int v = ay.getBuzzVol() + dir * 10;
                 ay.setBuzzVol(v);
                 if (ay2 != null) ay2.setBuzzVol(v);
+                break;
+            }
+            case ROW_BEND_SENS: {
+                int idx = ay.getBendSensIdx() + dir;
+                ay.setBendSensIdx(idx);
+                if (ay2 != null) ay2.setBendSensIdx(idx);
                 break;
             }
             case ROW_LOOP:

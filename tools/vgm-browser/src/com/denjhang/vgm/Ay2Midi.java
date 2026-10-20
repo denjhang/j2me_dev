@@ -56,6 +56,13 @@ public class Ay2Midi {
     /** ±2 半音下每半音的弯音步数 = 8192/2 = 4096（vgm2mid PITCHBEND_STEPS_DEFAULT）。 */
     private static final int BEND_STEPS_PER_SEMI = 4096;
 
+    /** 弯音灵敏度（百分比，100=默认），可调 25-400。 */
+    public static final int[] BEND_SENS_CHOICES = {25, 50, 75, 100, 125, 150, 200, 300, 400};
+    public static final String[] BEND_SENS_NAMES = {
+        "x0.25", "x0.50", "x0.75", "x1.0", "x1.25", "x1.5", "x2.0", "x3.0", "x4.0"
+    };
+    private int bendSensIdx = 3;   // 默认 x1.0
+
     public static final int PROG_SQUARE = 80;
     public static final int PROG_BUZZER = 83;
     public static final int PROG_NOISE = 127;
@@ -335,6 +342,7 @@ public class Ay2Midi {
         envUniTri = src.envUniTri;
         buzzVol = src.buzzVol;
         masterVol = src.masterVol;
+        bendSensIdx = src.bendSensIdx;
         forceRefreshAll();
     }
 
@@ -778,6 +786,20 @@ public class Ay2Midi {
         return masterVol;
     }
 
+    public int getBendSensIdx() {
+        return bendSensIdx;
+    }
+
+    public int getBendSensPct() {
+        return BEND_SENS_CHOICES[bendSensIdx];
+    }
+
+    public void setBendSensIdx(int idx) {
+        if (idx < 0) idx = 0;
+        if (idx >= BEND_SENS_CHOICES.length) idx = BEND_SENS_CHOICES.length - 1;
+        bendSensIdx = idx;
+    }
+
     /** 主音量 0-127，立即推到全部通道（用于整体音量调节和淡出）。 */
     public void setMasterVol(int v) {
         if (v < 0) v = 0;
@@ -1034,7 +1056,8 @@ public class Ay2Midi {
      */
     private int centsToBend(int cents144) {
         long cents = (long) cents144 * 100 / 65536;
-        long bend = 8192 + cents * BEND_STEPS_PER_SEMI / 100;
+        // 灵敏度百分比乘在弯音偏移上（100=默认 vg2mid 刻度）
+        long bend = 8192 + cents * BEND_STEPS_PER_SEMI * getBendSensPct() / 10000;
         if (bend < 0) return 0;
         if (bend > 16383) return 16383;
         return (int) bend;

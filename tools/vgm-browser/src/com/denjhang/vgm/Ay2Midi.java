@@ -200,7 +200,11 @@ public class Ay2Midi {
             player.realize();
             player.start();
             // MeBoy 顺序：必须 start 之后才能拿到有效的 MIDIControl（诺基亚真机）
-            midi = (MIDIControl) player.getControl("MIDIControl");
+            midi = (MIDIControl) player.getControl("javax.microedition.media.control.MIDIControl");
+            if (midi == null) {
+                // 部分实现只认短名（KEmulator），部分只认全名（nescube 用全名）
+                midi = (MIDIControl) player.getControl("MIDIControl");
+            }
             if (midi == null) {
                 player.close();
                 player = null;

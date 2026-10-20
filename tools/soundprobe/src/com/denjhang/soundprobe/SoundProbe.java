@@ -386,20 +386,27 @@ public class SoundProbe extends Canvas implements Runnable {
         2, 74, 58, 64, 4, 0, 15, 28, (byte) 197, 24, (byte) 161, (byte) 202, 36, (byte) 140, 0, 0
     };
 
-    /** Nokia UI API 1.0：com.nokia.mid.sound.Sound（编译期 stub，真机走固件实现）。 */
+    /** Nokia UI API 1.0：逐方法容错——各固件方法集不同（S40 模拟器无 init）。 */
     private void testA() {
         show(9, "creating");
         try {
-            Class.forName("com.nokia.mid.sound.Sound");   // 真机存在性检查
+            Class.forName("com.nokia.mid.sound.Sound");   // 存在性检查
             com.nokia.mid.sound.Sound snd =
                     new com.nokia.mid.sound.Sound(POP_OTT, com.nokia.mid.sound.Sound.SOUND_FORMAT_TONE);
-            snd.init();
-            snd.setGain(255);
-            snd.play(3);
+            StringBuffer api = new StringBuffer("ctor");
+            try { snd.setGain(255); api.append("+gain"); } catch (Throwable ignored) {}
+            try { snd.init(); api.append("+init"); } catch (Throwable ignored) {}
+            try {
+                snd.play(3);
+                api.append("+play");
+            } catch (Throwable t) {
+                show(9, api + " playEX " + t);
+                return;
+            }
             pause(2500);
-            snd.stop();
-            snd.release();
-            show(9, "OK (heard?)");
+            try { snd.stop(); } catch (Throwable ignored) {}
+            try { snd.release(); api.append("+rel"); } catch (Throwable ignored) {}
+            show(9, api + " (heard?)");
         } catch (Throwable t) {
             show(9, "EX " + t);
         }

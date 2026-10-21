@@ -187,6 +187,13 @@ public class Ay2Midi {
 
     /** map[7]：0-2 方波，3-5 噪声，6 包络；必须避开 MIDI 9（GM 鼓）。 */
     public Ay2Midi(int[] map) {
+        this(map, RECORD_ONLY);
+    }
+
+    /** recordOnly=true：纯寄存器状态机 + 录制，不打开任何音频 Player。
+     *  PlayScreen 用两个 gen（纯状态机）驱动可视化，ay 负责实时发声。 */
+    public Ay2Midi(int[] map, boolean recordOnly) {
+        this.recordOnly = recordOnly;
         for (int i = 0; i < 3; i++) {
             toneCh[i] = map[i];
             noiseCh[i] = map[3];      // 噪声合并：三个槽同用一个 MIDI 通道
@@ -227,8 +234,11 @@ public class Ay2Midi {
         return vtime >= 0 ? vtime : System.currentTimeMillis();
     }
 
-    /** SMF 流引擎：只录制事件，不打开任何音频 Player。 */
+    /** SMF 流引擎：只录制事件，不打开任何音频 Player。
+     *  静态默认值；每个实例在构造时取一份（见 recordOnly）。 */
     public static boolean RECORD_ONLY = false;
+    /** 本实例是否纯状态机（不占音频资源）。ToneRT 下 gen/gen2 用它。 */
+    private boolean recordOnly;
     /** 录制时间基准（毫秒墙钟）。 */
     public long recBaseMs;
     /** 可视化重放：寄存器写扁平录制 {ms, reg, data,...}。 */
@@ -245,7 +255,7 @@ public class Ay2Midi {
     public static boolean preferTone = false;
 
     private boolean init() {
-        if (RECORD_ONLY) {
+        if (recordOnly) {
             ready = true;
             midiPath = "SMF";
             return true;
@@ -514,7 +524,9 @@ public class Ay2Midi {
             public void run() {
                 winBaseMs = (int) System.currentTimeMillis();
                 while (!toneQuit) {
-                    long d = winBaseMs + WIN_MS - System.currentTimeMillis();
+                    // 窗口边界按"上次实际切换点"对齐：线程迟到就补切，不丢整窗
+                    long now = System.currentTimeMillis();
+                    long d = winBaseMs + WIN_MS - now;
                     if (d > 0) {
                         try { Thread.sleep(d); } catch (InterruptedException e) { break; }
                     }
@@ -522,8 +534,12 @@ public class Ay2Midi {
                         break;
                     }
                     int base = winBaseMs;
-                    winBaseMs += WIN_MS;
+                    while (base + WIN_MS <= System.currentTimeMillis()) {
+                        base += WIN_MS;
+                    }
+                    winBaseMs = base + WIN_MS;
                     byte[][] seq = new byte[3][];
+                    boolean idle = true;
                     // 锁内快照 + 编码（数据量小），清环并滚动手尾状态
                     synchronized (evLock) {
                         for (int ch = 0; ch < 3; ch++) {
@@ -531,7 +547,27 @@ public class Ay2Midi {
                             evCount[ch] = 0;
                             carryNote[ch] = sustainNote[ch];
                             carryVol[ch] = sustainVol[ch];
+                            if (sustainNote[ch] >= 0 && sustainVol[ch] > 0) {
+                                idle = false;
+                            }
                         }
+                    }
+                    if (idle) {
+                        // 全静音：只切一次静音窗，之后拉长周期空转，避免无谓硬件操作
+                        for (int ch = 0; ch < 3; ch++) {
+                            Player tp = tonePlayer[ch];
+                            if (tp == null || toneCtrl[ch] == null) {
+                                continue;
+                            }
+                            try {
+                                if (tp.getState() >= Player.STARTED) {
+                                    tp.stop();
+                                }
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                        try { Thread.sleep(200); } catch (InterruptedException e) { break; }
+                        continue;
                     }
                     // 媒体调用放锁外；三声道同线程顺序切换（避免并发切换）
                     boolean ok = true;
@@ -963,7 +999,7 @@ public class Ay2Midi {
             return "FAIL: " + initError;
         }
         if (toneEngine) {
-            return "ToneRT win " + winOk + " bad " + winBad;
+            return "win " + winOk + " bad " + winBad;
         }
         StringBuffer sb = new StringBuffer(midiPath);
         if (sendErr.length() > 0) {

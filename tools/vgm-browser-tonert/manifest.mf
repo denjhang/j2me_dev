@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 MIDlet-Name: VgmBrowserToneRT
-MIDlet-Version: 1.0.0
+MIDlet-Version: 1.0.1
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowserToneRT,,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Icon: /icon.png

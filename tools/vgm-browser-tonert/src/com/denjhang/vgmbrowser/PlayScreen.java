@@ -81,8 +81,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_ENVTRI_UNI = 18;
     private static final int ROW_CH0 = 19;
     private static final int TOTAL_ROWS = 19 + Ay2Midi.SLOTS;
-    private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M", "2M"};
-    private int chunkIdx = 7;                 // 定案默认 512k（S60 不限堆；S40 走实时分支）
+    /** ToneRT 只有"窗口队列"概念：4k = 单窗口（最小内存，S40 首选），
+     *  8k = 预排一窗（更抗调度抖动）。不再有 SMF 分块档位。 */
+    private static final String[] CHUNK_NAMES = {"4k", "8k"};
+    private int chunkIdx = 0;                 // 默认 4k：S40 小内存，实时零缓冲
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
     private static final int ROW_H = 16;
     private int cursor;
@@ -96,8 +98,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     final Ay2Midi ay;
     private Ay2Midi ay2;
     /** 生产者转换器：录制 SMF 事件/寄存器（与可视实例 ay 分离，杜绝串扰）。 */
-    private final Ay2Midi gen;
-    private Ay2Midi gen2;
     private final int listIndex;
 
     private final Command cmdSettings = new Command("Settings", Command.SCREEN, 1);
@@ -115,7 +115,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private int masterVol = 100;
     // 双缓冲：生成大小档位
     static {
-        com.denjhang.vgm.Ay2Midi.RECORD_ONLY = true;   // 诺基亚分支：SMF 流引擎
+        // ToneRT 分支：ay/ay2 打开常驻 tone 引擎（实时发声），
+        com.denjhang.vgm.Ay2Midi.RECORD_ONLY = false;
     }
     private int engineIdx = 0;          // 0=MIDI：默认自动（MIDI 可用就用 MIDI，失败落 Tone）
 
@@ -151,7 +152,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.listIndex = listIndex;
         this.parser = null;
         this.ay = new Ay2Midi();
-        this.gen = new Ay2Midi();
         applyPersisted();
         engineIdx = ay.toneEngine ? 1 : 0;
         pendingName = name;
@@ -223,7 +223,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         this.listIndex = listIndex;
         this.parser = file.getParser();
         this.ay = new Ay2Midi();
-        this.gen = new Ay2Midi();
         applyPersisted();
         engineIdx = ay.toneEngine ? 1 : 0;
         initCommon();
@@ -348,56 +347,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 ay2 = null;
             }
         }
-        if (gen2 == null && ay2 != null) {
-            gen2 = new Ay2Midi(Ay2Midi.MAP_CHIP1);
-            gen2.setClock(clk);
-            gen2.copyConfigFrom(ay2);
-        }
     }
 
     /** 由 MIDlet 释放资源（切曲/退出）。返回列表不调用——后台继续播。 */
     public void release() {
         uiAlive = false;
         playing = false;
-        prepAlive = false;
-        synchronized (streamLock) {
-            streamLock.notifyAll();
-        }
-        synchronized (prepLock) {
-            prepWant = null;
-            if (prepPlayer != null) {
-                try { prepPlayer.close(); } catch (Throwable ignored) {}
-                prepPlayer = null;
-                prepSmf = null;
-            }
-        }
         ay.close();
-        gen.close();
         if (ay2 != null) {
             ay2.close();
         }
-        if (gen2 != null) {
-            gen2.close();
-        }
-        // 切曲防泄漏：主动清空所有大块数据，不等 GC（S60 上 GC 懒，会越滚越大）
-        gen.recF = null;
-        gen.regF = null;
-        gen.recN = 0;
-        gen.regN = 0;
-        if (gen2 != null) {
-            gen2.recF = null;
-            gen2.regF = null;
-            gen2.recN = 0;
-            gen2.regN = 0;
-        }
-        chunkSmf = null;
-        chunkRegs = null;
-        chunkRegs2 = null;
-        pendingSmf = null;
-        pendingRegs = null;
-        pendingRegs2 = null;
-        regPool = null;
-        reg2Pool = null;
         kbImg = null;
         gd3Img = null;
         dbgCache = null;
@@ -435,7 +394,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         playing = true;
         paused = false;
-        ensurePrepThread();
         play = new Thread(new Runnable() {
             public void run() {
                 playLoop();
@@ -444,113 +402,66 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         play.start();
     }
 
-    // ---- 单缓冲水位线（一条单调事件流，无 A/B 切换）----
-    //  1) 生产线程全速往流尾部追加（事件时间戳用歌曲虚拟时间 vtime）。
-    //  2) 播放线程从流头按水位切块：够 target 字节切一块，头指针前移，前缀懒压缩。
-    //  3) 软水位背压：未消费超 2 块，生产线程歇口气（不硬阻塞、无状态切换）。
-    //  4) 下一块在播放中段就切好并交给常驻线程预建 Player，块衔接只剩 start()。
-    //  5) 事件流是扁平 long[]（无 per-event 对象），内存约为 Vector 方案一半。
+    // ---- ToneRT 实时播放（ToneEngineProbe 同款：解析器按墙钟节奏直接喂寄存器）----
+    //  1) 生产线程边解析边把寄存器写进 ay（实时发声 + 可视化状态）。
+    //  2) 零录制、零切块、零 SMF：解析跟墙钟同步，音量/音高变化立刻进事件环，
+    //     tone 窗口线程每 250ms 出一个窗口（T6 切换常驻 Player）。
+    //  3) 暂停 = 停喂解析器 + allSoundOff；恢复 = 继续喂。
+    //  4) 进度条 = 解析器当前虚拟时间（vtime），不做块估算。
     public static final int PHASE_FILL = 0;
     public static final int PHASE_PLAY = 1;
-    public volatile int playPhase = PHASE_FILL;
+    public volatile int playPhase = PHASE_PLAY;
     public volatile int playPct;
     public volatile long progressBase;        // 样本
-    private volatile long playStartWall;      // 当前块播放起始墙钟（进度条用）
+    private volatile long playStartWall;      // 播放起始墙钟（进度条用）
     public String playErr = "";
     private volatile boolean feedEnded;
-    /** 暂停：只挂起线程与音频，不销毁不重建。 */
+    /** 暂停：只停喂解析器与静音，不销毁不重建。 */
     private volatile boolean paused;
 
-    private final Object streamLock = new Object();
-    private long consumedTotal;               // 已消费（播放）累计字节
-    private int headEvents;                   // gen 已切走事件数（前缀懒压缩）
-    private int head2Events;
-    private long streamHeadMs;                // 已切走到的时间
-    private Thread bufThread;
+    private long streamHeadMs;                // 解析器当前虚拟时间（ms）
 
-    /** 常驻预建线程：为下一块提前 create+realize+prefetch。 */
-    private final Object prepLock = new Object();
-    private javax.microedition.media.Player prepPlayer;
-    private byte[] prepSmf;                   // 身份校验：prepPlayer 对应的字节
-    private byte[] prepWant;                  // 请求预建的 smf
-    private volatile boolean prepAlive;
-    private Thread prepThread;
-
-    /** 当前块 / 预备下一块。 */
-    private byte[] chunkSmf;
-    private long chunkFrom, chunkTo;
-    private long[] chunkRegs, chunkRegs2;
-    private javax.microedition.media.Player chunkPrep;   // 随块带出的预建 Player
-    private byte[] pendingSmf;
-    private long pendingFrom, pendingTo;
-    private long[] pendingRegs, pendingRegs2;
-
-    /** 复用池：块构建器 + 寄存器数组（覆盖填充，不销毁重建）。 */
-    private final com.denjhang.vgm.SmfSeg.Builder segBuilder
-            = new com.denjhang.vgm.SmfSeg.Builder();
-    private long[] regPool;      // 当前块专用
-    private long[] reg2Pool;
-    private long[] regPoolPend;  // 预备块专用（与当前块隔离，防别名覆盖正在重放的数组）
-    private long[] reg2PoolPend;
-    private static final int[] BUF_BYTES = {4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152};
-
-    private int targetBytes() {
-        return BUF_BYTES[chunkIdx < BUF_BYTES.length ? chunkIdx : BUF_BYTES.length - 1];
-    }
-
-    /** 流中未消费字节（按估算 5 字节/事件）。 */
-    private int availBytes() {
-        return (gen.recN / 4 - headEvents) * 5
-                + (gen2 != null ? (gen2.recN / 4 - head2Events) * 5 : 0);
-    }
-
-    /** 生产线程：全速转换；水位线软背压（未消费超 2 块歇口气）。 */
+    /** 生产线程：解析器按墙钟推进，寄存器实时喂 ay。
+     *  ay 本身就是完整寄存器状态机（可视化直接读它），不再需要 gen 影子实例。 */
     private void playLoop() {
         int clk = file.header.chipClock[0x12] & 0x3FFFFFFF;
         if (clk != 0) {
-            gen.setClock(clk);
+            ay.setClock(clk);
         }
-        gen.copyConfigFrom(ay);
-        gen.recording = true;
-        gen.recordingReg = true;
-        gen.recBaseMs = 0;
-        gen.vtime = 0;
-        gen.recN = 0;
-        gen.regN = 0;
-        gen.recBytes = 0;
-        if (gen2 != null) {
-            gen2.setClock(clk);
-            gen2.copyConfigFrom(ay2);
-            gen2.recording = true;
-            gen2.recordingReg = true;
-            gen2.recBaseMs = 0;
-            gen2.vtime = 0;
-            gen2.recN = 0;
-            gen2.regN = 0;
-            gen2.recBytes = 0;
-        }
-        headEvents = 0;
-        head2Events = 0;
-        consumedTotal = 0;
-        streamHeadMs = parser.getSamples() / 44;   // 恢复播放时接着时间线走
-        playPhase = PHASE_FILL;
-        progressBase = streamHeadMs * 44;
+        progressBase = parser.getSamples() / 44;
+        playStartWall = System.currentTimeMillis();
         feedEnded = false;
         paused = false;
-        pendingSmf = null;
 
-        bufThread = new Thread(new Runnable() {
-            public void run() {
-                bufferPlayer();
-            }
-        });
-        bufThread.start();
-
+        long startMs = System.currentTimeMillis();
+        long vtimeBase = progressBase;      // 当前样本
         int pumpCount = 0;
         fillLoop:
         while (playing) {
             while (paused && playing) {
+                // 暂停：静音 + 停喂，恢复时重新对齐墙钟基准（否则会疯狂追赶）
+                ay.allSoundOff();
+                if (ay2 != null) {
+                    ay2.allSoundOff();
+                }
                 try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                if (!playing) {
+                    break fillLoop;
+                }
+                startMs = System.currentTimeMillis();
+                vtimeBase = parser.getSamples() / 44;
+                progressBase = vtimeBase * 44;
+                playStartWall = System.currentTimeMillis();
+            }
+            // 目标虚拟时间 = 墙钟流逝对应的样本数（起点对齐避免快慢漂移）
+            long targetMs = vtimeBase + (System.currentTimeMillis() - startMs);
+            long curMs = parser.getSamples() / 44;
+            if (curMs > targetMs) {
+                // 解析超前于墙钟：先睡到墙钟到位（实时节奏核心）
+                try {
+                    Thread.sleep(Math.min(50, curMs - targetMs));
+                } catch (InterruptedException e) { return; }
+                continue;
             }
             int t = parser.next();
             if (t == VgmParser.EV_END) {
@@ -564,441 +475,39 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
             if (t == VgmParser.EV_REG_WRITE && parser.evCmd == 0xA0) {
                 long ms = parser.getSamples() / 44;
-                gen.vtime = ms;
-                if (gen2 != null) {
-                    gen2.vtime = ms;
-                }
+                ay.vtime = ms;
                 if ((parser.evReg & 0x80) != 0) {
                     attachChip2();
-                    if (gen2 != null) {
-                        if (!gen2.recording) {
-                            gen2.recording = true;
-                            gen2.recordingReg = true;
-                            gen2.recBaseMs = 0;
-                            gen2.recBytes = 0;
-                            gen2.vtime = ms;
-                        }
-                        gen2.write(parser.evReg & 0x7F, parser.evData);
+                    if (ay2 != null) {
+                        ay2.vtime = ms;
+                        ay2.write(parser.evReg & 0x7F, parser.evData);
+                        ay2.tick();
                     }
                 } else {
-                    gen.write(parser.evReg, parser.evData);
+                    ay.write(parser.evReg, parser.evData);
+                }
+                ay.tick();
+            } else if (t == VgmParser.EV_WAIT) {
+                // 等待类：包络节拍推进（实时用墙钟）
+                ay.tick();
+                if (ay2 != null) {
+                    ay2.tick();
                 }
             }
-            gen.tick();
-            if (gen2 != null) {
-                gen2.tick();
-            }
-            // 周期性让出 CPU：大缓冲填充期长，不让出会饿死 UI 重统（动画/文字冻结）
+            // 周期性让出 CPU：解析太快时不给 UI 线程饿死
             if ((++pumpCount & 0xFF) == 0) {
                 try { Thread.sleep(2); } catch (InterruptedException e) { break fillLoop; }
             }
-            // 水位线：未消费超过 2 块，歇口气（软背压，内存有界）
-            while (playing && availBytes() > targetBytes() * 2) {
-                if (paused) {
-                    break;
-                }
-                try { Thread.sleep(20); } catch (InterruptedException e) { break fillLoop; }
-            }
         }
         feedEnded = true;
-        if (bufThread != null) {
-            try { bufThread.join(); } catch (InterruptedException ignored) {}
-            bufThread = null;
-        }
         if (playing) {
             playing = false;
-            gen.recording = false;
-            gen.recordingReg = false;
-            gen.vtime = -1;
-            if (gen2 != null) {
-                gen2.recording = false;
-                gen2.recordingReg = false;
-                gen2.vtime = -1;
-            }
             ay.allSoundOff();
             if (ay2 != null) {
                 ay2.allSoundOff();
             }
             autoNext();
         }
-    }
-
-    /** 消费者线程：首块到水位即播；块衔接用预备好的 Player。 */
-    private void bufferPlayer() {
-        try {
-            synchronized (streamLock) {
-                while (playing && !feedEnded && availBytes() < targetBytes()) {
-                    try { streamLock.wait(30); } catch (InterruptedException e) { return; }
-                }
-            }
-            playPhase = PHASE_PLAY;
-            while (playing) {
-                while (paused && playing) {
-                    try { Thread.sleep(50); } catch (InterruptedException e) { return; }
-                }
-                if (!playing) {
-                    break;
-                }
-                if (!takeNextChunk()) {
-                    if (feedEnded) {
-                        break;
-                    }
-                    try { Thread.sleep(20); } catch (InterruptedException e) { return; }
-                    continue;
-                }
-                progressBase = chunkFrom * 44;
-                playStartWall = System.currentTimeMillis();
-                playSeg(chunkSmf, chunkFrom, chunkTo, chunkRegs, chunkRegs2);
-                progressBase = chunkTo * 44;
-            }
-        } catch (Throwable t) {
-            playErr = "player: " + t;
-        }
-        playPhase = PHASE_FILL;
-    }
-
-    /** 取下一块：优先用已切好并预建 Player 的预备块。 */
-    private boolean takeNextChunk() {
-        synchronized (prepLock) {
-            if (pendingSmf != null) {
-                chunkSmf = pendingSmf;
-                chunkFrom = pendingFrom;
-                chunkTo = pendingTo;
-                chunkRegs = pendingRegs;
-                chunkRegs2 = pendingRegs2;
-                pendingSmf = null;
-                if (prepPlayer != null && prepSmf == chunkSmf) {
-                    chunkPrep = prepPlayer;
-                    prepPlayer = null;
-                    prepSmf = null;
-                }
-                return true;
-            }
-        }
-        chunkPrep = null;
-        return cutChunk(false);
-    }
-
-    /** 从流头切一块（够 target 字节），构建 SMF+寄存器并推进头指针。 */
-    private boolean cutChunk(boolean toPending) {
-        int tb = targetBytes();
-        int i0 = headEvents, j0 = head2Events;
-        int i = i0, j = j0;
-        long endMs = -1;
-        int bytes = 0;
-        while (bytes < tb) {
-            boolean has1 = i * 4 < gen.recN;
-            boolean has2 = gen2 != null && j * 4 < gen2.recN;
-            if (!has1 && !has2) {
-                break;
-            }
-            long t1 = has1 ? gen.recF[i * 4] : Long.MAX_VALUE;
-            long t2 = has2 ? gen2.recF[j * 4] : Long.MAX_VALUE;
-            if (t1 <= t2) {
-                endMs = t1;
-                i++;
-            } else {
-                endMs = t2;
-                j++;
-            }
-            bytes += 5;
-        }
-        if (endMs < 0) {
-            return false;
-        }
-        consumedTotal += bytes;
-        if (endMs <= streamHeadMs) {
-            endMs = streamHeadMs + 1;
-        }
-        long from = streamHeadMs;
-        byte[] smf = buildChunk(i0, i - i0, j0, j - j0, from, endMs);
-        long[] regs;
-        long[] regs2;
-        if (toPending) {
-            regs = drainRegs(gen, from, endMs, regPoolPend);
-            regs2 = gen2 != null ? drainRegs(gen2, from, endMs, reg2PoolPend) : null;
-            regPoolPend = regs;
-            reg2PoolPend = regs2;
-        } else {
-            regs = drainRegs(gen, from, endMs, regPool);
-            regs2 = gen2 != null ? drainRegs(gen2, from, endMs, reg2Pool) : null;
-            regPool = regs;
-            reg2Pool = regs2;
-        }
-        synchronized (streamLock) {
-            headEvents = i;
-            head2Events = j;
-            streamHeadMs = endMs;
-            lazyTrim();
-        }
-        if (toPending) {
-            pendingSmf = smf;
-            pendingFrom = from;
-            pendingTo = endMs;
-            pendingRegs = regs;
-            pendingRegs2 = regs2;
-        } else {
-            chunkSmf = smf;
-            chunkFrom = from;
-            chunkTo = endMs;
-            chunkRegs = regs;
-            chunkRegs2 = regs2;
-        }
-        return true;
-    }
-
-    /** 构建一块自包含 SMF（构建器跨块复用，配置静默同步）。 */
-    private byte[] buildChunk(int i0, int n1, int j0, int n2, long from, long to) {
-        gen.copyConfigQuiet(ay);
-        if (gen2 != null) {
-            gen2.copyConfigQuiet(ay2);
-        }
-        segBuilder.reset();
-        segBuilder.init(gen.initEvents());
-        if (gen2 != null) {
-            segBuilder.init(gen2.initEvents());
-        }
-        int i = i0, j = j0;
-        while (i < i0 + n1 || j < j0 + n2) {
-            boolean has1 = i < i0 + n1;
-            long t1 = has1 ? gen.recF[i * 4] : Long.MAX_VALUE;
-            long t2 = j < j0 + n2 && gen2 != null ? gen2.recF[j * 4] : Long.MAX_VALUE;
-            long[] e;
-            if (t1 <= t2) {
-                e = new long[]{gen.recF[i * 4], gen.recF[i * 4 + 1],
-                        gen.recF[i * 4 + 2], gen.recF[i * 4 + 3]};
-                i++;
-            } else {
-                e = new long[]{gen2.recF[j * 4], gen2.recF[j * 4 + 1],
-                        gen2.recF[j * 4 + 2], gen2.recF[j * 4 + 3]};
-                j++;
-            }
-            segBuilder.event(e[0] - from, (int) e[1], (int) e[2], (int) e[3]);
-        }
-        return segBuilder.build(to - from);
-    }
-
-    /** 前缀懒压缩：已消费事件超阈值才批量前移（摊销开销，流数组不无限增长）。 */
-    private void lazyTrim() {
-        if (headEvents > 1024) {
-            int keep = gen.recN / 4 - headEvents;
-            System.arraycopy(gen.recF, headEvents * 4, gen.recF, 0, keep * 4);
-            gen.recN = keep * 4;
-            headEvents = 0;
-        }
-        if (gen2 != null && head2Events > 1024) {
-            int keep = gen2.recN / 4 - head2Events;
-            System.arraycopy(gen2.recF, head2Events * 4, gen2.recF, 0, keep * 4);
-            gen2.recN = keep * 4;
-            head2Events = 0;
-        }
-        shrinkStream(gen);
-        if (gen2 != null) {
-            shrinkStream(gen2);
-        }
-        int rKeep = trimRegs(gen, streamHeadMs);
-        gen.regN = rKeep;
-        if (gen2 != null) {
-            gen2.regN = trimRegs(gen2, streamHeadMs);
-        }
-    }
-
-    /** 数组收缩：容量超过在留数据 8 倍且大于 32K long 时砍半，防止峰值容量永久占用。 */
-    private static void shrinkStream(Ay2Midi g) {
-        if (g.recF != null && g.recF.length > 8192 && g.recF.length > g.recN * 8) {
-            long[] n = new long[Math.max(8192, g.recN * 2)];
-            System.arraycopy(g.recF, 0, n, 0, g.recN);
-            g.recF = n;
-        }
-        if (g.regF != null && g.regF.length > 6144 && g.regF.length > g.regN * 8) {
-            long[] n = new long[Math.max(6144, g.regN * 2)];
-            System.arraycopy(g.regF, 0, n, 0, g.regN);
-            g.regF = n;
-        }
-    }
-
-    /** 寄存器流按时间压缩，返回新长度。 */
-    private static int trimRegs(Ay2Midi g, long headMs) {
-        int k = 0;
-        for (int p = 0; p < g.regN; p += 3) {
-            if (g.regF[p] >= headMs) {
-                break;
-            }
-            k = p + 3;
-        }
-        if (k > 0) {
-            System.arraycopy(g.regF, k, g.regF, 0, g.regN - k);
-        }
-        return g.regN - k;
-    }
-
-    /** 创建一块的 Player：create+realize+prefetch（开销大，尽量由常驻线程提前做）。 */
-    private javax.microedition.media.Player createSegPlayer(byte[] smf) throws Exception {
-        javax.microedition.media.Player p = javax.microedition.media.Manager.createPlayer(
-                new java.io.ByteArrayInputStream(smf), "audio/midi");
-        p.realize();
-        p.prefetch();
-        return p;
-    }
-
-    /** 常驻预建线程：等到活才干活，活干完继续等。 */
-    private void prepLoop() {
-        while (prepAlive) {
-            byte[] smf;
-            synchronized (prepLock) {
-                while (prepAlive && prepWant == null) {
-                    try {
-                        prepLock.wait(200);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-                if (!prepAlive) {
-                    return;
-                }
-                smf = prepWant;
-                prepWant = null;
-            }
-            javax.microedition.media.Player p = null;
-            try {
-                p = createSegPlayer(smf);
-            } catch (Throwable t) {
-                p = null;
-            }
-            synchronized (prepLock) {
-                if (p != null && smf == pendingSmf) {
-                    if (prepPlayer != null) {
-                        try { prepPlayer.close(); } catch (Throwable ignored) {}
-                    }
-                    prepPlayer = p;
-                    prepSmf = smf;
-                } else if (p != null) {
-                    try { p.close(); } catch (Throwable ignored) {}
-                }
-            }
-        }
-    }
-
-    private void ensurePrepThread() {
-        if (prepThread != null) {
-            return;
-        }
-        prepAlive = true;
-        prepThread = new Thread(new Runnable() {
-            public void run() {
-                prepLoop();
-            }
-        });
-        prepThread.start();
-    }
-
-    /** 播放中段：切好下一块并请求预建（错开块衔接瞬间的负载）。 */
-    private void buildPending() {
-        if (pendingSmf != null) {
-            return;
-        }
-        int tb = targetBytes();
-        if (availBytes() >= tb || (feedEnded && availBytes() > 0)) {
-            if (cutChunk(true)) {
-                synchronized (prepLock) {
-                    prepWant = pendingSmf;
-                    prepLock.notifyAll();
-                }
-            }
-        }
-    }
-
-    /** 播放一块：audio/midi 流 + 寄存器重放驱动可视化（vis 实例独立于生产状态）。 */
-    private void playSeg(byte[] smf, long startMs, long endMs,
-                         long[] regs, long[] regs2) {
-        javax.microedition.media.Player p = chunkPrep;
-        chunkPrep = null;
-        try {
-            if (p == null) {
-                p = createSegPlayer(smf);
-            }
-            javax.microedition.media.control.VolumeControl vc =
-                    (javax.microedition.media.control.VolumeControl) p.getControl("VolumeControl");
-            if (vc != null) {
-                vc.setLevel(masterVol * 75 / 100 + 20);
-                vc.setMute(false);
-            }
-            p.start();
-        } catch (Throwable t) {
-            playErr = "" + t;
-            if (p != null) {
-                try { p.close(); } catch (Throwable ignored) {}
-            }
-            return;
-        }
-        long segMs = endMs - startMs;
-        long t0 = System.currentTimeMillis();
-        int ri = 0, ri2 = 0;
-        while (playing) {
-            // 暂停：停住音频，线程挂起等待（不销毁），恢复后从停止位置续播
-            if (paused) {
-                try { p.stop(); } catch (Throwable ignored) {}
-                long parkT0 = System.currentTimeMillis();
-                while (paused && playing) {
-                    try { Thread.sleep(50); } catch (InterruptedException e) { return; }
-                }
-                t0 += System.currentTimeMillis() - parkT0;
-                if (!playing) {
-                    break;
-                }
-                try { p.start(); } catch (Throwable ignored) {}
-            }
-            long el = System.currentTimeMillis() - t0;
-            if (el >= segMs) {
-                break;
-            }
-            playPct = (int) (el * 100 / Math.max(1, segMs));
-            // 中段切好并预建下一块（无 A/B 切换，只是流头指针前移）
-            if (el >= 400) {
-                buildPending();
-            }
-            // 可视化重放（绝对时间轴）
-            while (ri < regs.length && regs[ri] - startMs <= el) {
-                ay.vtime = regs[ri];
-                ay.write((int) regs[ri + 1], (int) regs[ri + 2]);
-                ri += 3;
-            }
-            if (regs2 != null) {
-                while (ri2 < regs2.length && regs2[ri2] - startMs <= el) {
-                    ay2.vtime = regs2[ri2];
-                    ay2.write((int) regs2[ri2 + 1], (int) regs2[ri2 + 2]);
-                    ri2 += 3;
-                }
-            }
-            ay.vtime = startMs + el;
-            ay.tick();
-            if (ay2 != null) {
-                ay2.vtime = startMs + el;
-                ay2.tick();
-            }
-            try { Thread.sleep(10); } catch (InterruptedException e) { break; }
-        }
-        try { p.stop(); p.close(); } catch (Throwable ignored) {}
-    }
-
-    /** 块寄存器事件打包成扁平数组 {ms,reg,data,...}（数组跨块复用，覆盖填充）。 */
-    private static long[] drainRegs(Ay2Midi g, long from, long to, long[] reuse) {
-        int n = 0;
-        for (int p = 0; p < g.regN; p += 3) {
-            if (g.regF[p] > from && g.regF[p] <= to) {
-                n++;
-            }
-        }
-        long[] out = (reuse != null && reuse.length >= n * 3) ? reuse : new long[n * 3];
-        int k = 0;
-        for (int p = 0; p < g.regN; p += 3) {
-            if (g.regF[p] > from && g.regF[p] <= to) {
-                out[k++] = g.regF[p];
-                out[k++] = g.regF[p + 1];
-                out[k++] = g.regF[p + 2];
-            }
-        }
-        return out;
     }
 
     /** 切曲：先淡出再切。 */
@@ -1373,28 +882,17 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
     }
 
-    /** 单缓冲流状态：ahead = 未消费字节 / 水位线（2 块）。 */
+    /** 实时流状态：ToneRT 零缓冲，只显示解析器位置与窗口健康度。 */
     private String streamInfo() {
-        // 按水位线封顶：填充期 0→max，播放期钉在 max，只有切曲/歪路才回 0
-        int wm = targetBytes() * 2;
-        int avail = availBytes();
-        int fill = avail < wm ? avail : wm;
-        return "level " + (fill / 1024) + "k  " + streamState();
+        return "pos " + (parser.getSamples() / 44 / 1000) + "s  " + streamState();
     }
 
     private String streamTotal() {
-        int tb = targetBytes();
-        return "total " + (availBytes() / 1024) + "k  max " + (tb * 2 / 1024) + "k";
+        return ay.midiStatus();
     }
 
     private String streamState() {
-        if (playPhase == PHASE_FILL) {
-            return feedEnded ? "end" : "filling";
-        }
-        if (pendingSmf != null) {
-            return prepPlayer != null ? "next prep" : "next wait";
-        }
-        return "filling";
+        return feedEnded ? "end" : (paused ? "paused" : "rt");
     }
 
     /** JVM 内存：已用/总量（自动 K/M 单位）。total 是堆上限而非物理占用，

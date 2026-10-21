@@ -1,5 +1,5 @@
 MIDlet-Name: VgmBrowserSingle
-MIDlet-Version: 1.0.28
+MIDlet-Version: 1.0.31
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowserSingle,,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Icon: /icon.png
@@ -11,5 +11,5 @@ Nokia-MIDlet-No-Exit: true
 MIDlet-Splash-Screen-Image: suppress
 MIDlet-Permissions: javax.microedition.io.Connector.file.read
 MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write
-MIDlet-Jar-Size: 96914
+MIDlet-Jar-Size: 96904
 MIDlet-Jar-URL: VgmBrowserSingle.jar

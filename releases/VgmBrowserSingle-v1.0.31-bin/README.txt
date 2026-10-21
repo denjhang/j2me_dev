@@ -1,0 +1,1 @@
+v1.0.31: mainline = v1.0.30 (MONO default) + sync-buzz level aligned to PC raw buzzVol only. The repeating-shape sync buzzer (quest8/SNDH style) was REVERTED from mainline per architecture decision: extreme SNDH techniques stay out of the Nokia mainline (would need SISx native player); they live in the PWM branch.

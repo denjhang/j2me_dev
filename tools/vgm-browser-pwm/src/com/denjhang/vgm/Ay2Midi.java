@@ -168,6 +168,7 @@ public class Ay2Midi {
     private long lastR13At;
     private long r13Interval;      // 平滑后的重写间隔 ms
     private boolean syncBuzz;
+    private int syncBend = -1;        // 上次同步音的微调
     private int syncNote = -1;
 
     public Ay2Midi() {
@@ -779,6 +780,7 @@ public class Ay2Midi {
         buzzOffAll();
         stopSyncBuzz();
         syncBuzz = false;
+        syncBend = -1;
         r13Interval = 0;
         lastR13At = 0;
         noiseOneSounding = false;
@@ -963,7 +965,14 @@ public class Ay2Midi {
         envPause = false;
         envNextStepAt = now;
         updateEnvStepMs();
-        if (shapeSteps() == 0 && anyEnvMode()) {
+        // 同步蜂鸣两种入口：一次性形状（0-7）经典；重复形状（8-15）当
+        // 包络周期 > 重启间隔（被截断）时，可听音高同样是重触发率
+        // （quest8：形状 10/14 @329Hz 重启，包络周期 3.6-186ms 全被截断）。
+        long dtNow = lastR13At != 0 ? now - lastR13At : 0;
+        boolean canSync = anyEnvMode()
+                && (shapeSteps() == 0
+                    || (envStepMs > 0 && envStepMs * shapeSteps() > dtNow && dtNow > 0));
+        if (canSync) {
             if (lastR13At != 0) {
                 long dt = now - lastR13At;
                 if (dt > 0 && dt < 400) {
@@ -1016,17 +1025,24 @@ public class Ay2Midi {
         int bend = centsToBend(cents144);
 
         int voices = envUniSaw + 1;      // 同步蜂鸣属锯齿族
-        if (syncNote >= 0 && (syncNote != note || syncVoices != voices)) {
-            for (int i = 0; i < syncVoices; i++) {
-                int n = syncNote + i * 12;
-                if (n <= 127) {
-                    send(NOTE_OFF | buzzerCh, n, 0);
+        boolean changed = syncNote != note || syncVoices != voices;
+        if (changed) {
+            if (syncNote >= 0) {
+                for (int i = 0; i < syncVoices; i++) {
+                    int n = syncNote + i * 12;
+                    if (n <= 127) {
+                        send(NOTE_OFF | buzzerCh, n, 0);
+                    }
                 }
             }
+            syncNote = note;
+            syncVoices = voices;
+            send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
         }
-        syncNote = note;
-        syncVoices = voices;
-        send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
+        if (!changed && syncBend >= 0 && Math.abs(bend - syncBend) <= 16) {
+            return;                   // 音高未变不重发（防 quest8 型事件洪流）
+        }
+        syncBend = bend;
         send(CC | buzzerCh, CC_EXPRESSION, buzzLevel());
         for (int i = 0; i < voices; i++) {
             int n = note + i * 12;

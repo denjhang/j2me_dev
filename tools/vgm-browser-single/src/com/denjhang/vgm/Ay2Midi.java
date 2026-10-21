@@ -191,7 +191,7 @@ public class Ay2Midi {
         for (int i = 0; i < SLOTS; i++) {
             progMap[i] = DEFAULT_PROG[i];
         }
-        applyStereoMode(0);
+        applyStereoMode(6);   // 诺基亚默认 MONO：手机单塰声道上侧声像会衰减，主旋律通道被压低
         ready = init();
     }
 
@@ -1027,7 +1027,7 @@ public class Ay2Midi {
         syncNote = note;
         syncVoices = voices;
         send(PITCH | buzzerCh, bend & 0x7F, (bend >> 7) & 0x7F);
-        send(CC | buzzerCh, CC_EXPRESSION, buzzLevel());
+        send(CC | buzzerCh, CC_EXPRESSION, buzzVol);   // 对齐 PC 版
         for (int i = 0; i < voices; i++) {
             int n = note + i * 12;
             if (n <= 127) {

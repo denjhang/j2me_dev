@@ -1176,7 +1176,10 @@ public class Ay2Midi {
     // R8-10 高速重写（>=400Hz）时 DAC 输出听觉上是写入值的均值。
     // PWM 模式：逐写事件丢弃，20ms 窗发均值电平；占空比映射 SynthLead 音色。
     private static final int PWM_WIN_MS = 20;
-    private static final int PWM_ENTER_CNT = 8;     // 20ms 内 >=8 写 = 400Hz
+    // 门槛 ~75-100Hz：单窗 >=2 写立即进；两窗合计 >=3 写也进。
+    // 实测 SNDH 批量：PWM 声道 111Hz-22kHz；50Hz 为帧率音量更新（音乐性，排除）。
+    private static final int PWM_ENTER_CNT = 2;
+    private final int[] pwmPrevCnt = new int[3];
     private static final int[] PWM_PROGS = {82, 80, 84, 81};  // 桶0-3(暗薄→满亮)
     private final int[] pwmSum = new int[3];
     private final int[] pwmCnt = new int[3];
@@ -1184,6 +1187,10 @@ public class Ay2Midi {
     private final boolean[] pwmMode = new boolean[3];
     private final int[] pwmIdleWins = new int[3];
     private final int[] pwmProg = {-1, -1, -1};
+    // 覆盖率诊断（PC 验证用）：进入 PWM 模式的窗口数 / 总写入 / 被抚平写入
+    public final int[] pwmWinsIn = new int[3];
+    public final int[] pwmAmpTotal = new int[3];
+    public final int[] pwmAmpSuppressed = new int[3];
 
     /**
      * 包络作为波形的输出频率 = clock / (16 × period × steps)（yasp11 同款）。
@@ -1566,7 +1573,9 @@ public class Ay2Midi {
     private void ampWrite(int ch, int data) {
         pwmSum[ch] += data & 0x0F;
         pwmCnt[ch]++;
+        pwmAmpTotal[ch]++;
         if (pwmMode[ch]) {
+            pwmAmpSuppressed[ch]++;
             return;                     // 抚平：逐写不发事件
         }
         updateChannelCtl(ch);
@@ -1584,7 +1593,13 @@ public class Ay2Midi {
             pwmCnt[ch] = 0;
             pwmSum[ch] = 0;
             pwmWinAt[ch] = now;
-            if (cnt >= PWM_ENTER_CNT) {
+            pwmPrevCnt[ch] = cnt;
+            if (pwmMode[ch]) {
+                pwmWinsIn[ch]++;
+            }
+            // 门槛：单窗>=2(100Hz) 或 两窗合计>=3(~75Hz)。
+            // 50Hz 帧率音量更新是音乐性滑音/渐强（SNDH 批量实测存在），不得误入。
+            if (cnt >= PWM_ENTER_CNT || cnt + pwmPrevCnt[ch] >= 3) {
                 pwmIdleWins[ch] = 0;
                 if (!pwmMode[ch]) {
                     pwmMode[ch] = true;

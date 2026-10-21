@@ -1,5 +1,5 @@
 MIDlet-Name: VgmBrowserPWM
-MIDlet-Version: 0.9.0
+MIDlet-Version: 0.9.2
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowserPWM,,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Icon: /icon.png
@@ -11,5 +11,5 @@ Nokia-MIDlet-No-Exit: true
 MIDlet-Splash-Screen-Image: suppress
 MIDlet-Permissions: javax.microedition.io.Connector.file.read
 MIDlet-Permissions-Opt: javax.microedition.io.Connector.file.write
-MIDlet-Jar-Size: 97523
+MIDlet-Jar-Size: 97603
 MIDlet-Jar-URL: VgmBrowserPWM.jar

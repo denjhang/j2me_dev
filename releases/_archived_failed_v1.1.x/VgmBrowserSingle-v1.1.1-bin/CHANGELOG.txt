@@ -1,0 +1,17 @@
+v1.1.1 (2026-10-21)
+===================
+FIXED: Settings reset on track switch — volMode/polyLimit were lost because 
+       switchTrackFade didn't persist() before creating new PlayScreen.
+       Now persist() is called right before midlet.switchTrack().
+
+v1.1.0 (2026-10-21)
+===================
+NEW: Max poly limit (16/32/64/128, default 64)
+     - Global active-note ledger with CC123 panic on overflow
+     - Self-healing for screen-dim note leaks
+NEW: Strict mono enforcement (square channels only)
+     - One note per chip per MIDI channel
+     - Buzzer octave stacks exempt (multi-voice by design)
+NEW: Vol mode setting (CC7 / CC7+vel / CC7+CC11+vel, default triple)
+     - Multi-path volume guarantee for Nokia CC7-ignore quirk
+     - Each note-on carries CC7, velocity, and CC11 (when mode=2)

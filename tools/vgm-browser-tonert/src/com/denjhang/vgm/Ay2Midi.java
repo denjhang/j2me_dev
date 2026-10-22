@@ -287,7 +287,8 @@ public class Ay2Midi {
     }
 
     /** device://tone + 专职线程（ToneControl 兜底）。声部级容错：
-     *  个别声部拿不到 ToneControl 不整体失败（5300 模拟器实测），全坏才返回 false。 */
+     *  个别声部拿不到 ToneControl 不整体失败（5300 模拟器实测），全坏才返回 false。
+     *  KEmulator 等共享 Sequencer 的实现只能单声部（见 toneVoices 注释）。 */
     private boolean openToneEngine() {
         int okCount = 0;
         for (int i = 0; i < 3; i++) {
@@ -311,6 +312,30 @@ public class Ay2Midi {
             initError = "tone: all voices failed";
             return false;
         }
+        // 共享 Sequencer 检测：KEmulator 的 device://tone 返回 kemnn.by，
+        // 所有实例共用一个静态 javax.sound.midi.Sequencer，任一 Player 的
+        // stop()/deallocate() 都会把全局 Sequencer 停掉 —— 三路并行会互相
+        // 掐死、全程静音。真机（E5）每路独立声部，三路并行可用。
+        boolean shared = false;
+        try {
+            String cn = tonePlayer[0].getClass().getName();
+            if (cn.startsWith("kemnn.") || cn.indexOf("ToneImpl") >= 0) {
+                shared = true;
+            }
+        } catch (Throwable ignored) {
+        }
+        if (shared) {
+            for (int i = 1; i < 3; i++) {
+                if (tonePlayer[i] != null) {
+                    try { tonePlayer[i].close(); } catch (Throwable ignored) {}
+                    tonePlayer[i] = null;
+                    toneCtrl[i] = null;
+                }
+            }
+            toneVoices = 1;
+        } else {
+            toneVoices = 3;
+        }
         startToneThread();
         return true;
     }
@@ -320,6 +345,8 @@ public class Ay2Midi {
     //   stop → deallocate → setSequence → start
     // 引擎三定律见 docs/TONERT_HANDOFF.md §2（不要重新发明）。
     private static final int WIN_MS = 250;
+    /** 实际可用声部数：真机 3（三路独立 tone Player），共享 Sequencer 实现 1。 */
+    private int toneVoices = 3;
     /** 250ms @ TEMPO 127 / RESOLUTION 127 的窗口单位数（E5 实测标度）。 */
     private static final int WIN_UNITS = 68;
     /** 每声道每窗口事件上限：48 对 ×4B = 192B，加头部 < 256B 预算。 */

@@ -187,6 +187,7 @@ public class Ay2Midi {
             curBend[i] = 8192;
             curVol[i] = -1;
             noiseVol[i] = -1;
+            toneChFlag[toneCh[i]] = true;   // 方波通道按硬件语义单音
         }
         for (int i = 0; i < SLOTS; i++) {
             progMap[i] = DEFAULT_PROG[i];
@@ -487,13 +488,51 @@ public class Ay2Midi {
             }
             return;
         }
-        // nescube 3.2：NOTE_ON 力度恒 127，音量只走 setChannelVolume/CC7
-        try {
-            midi.setChannelVolume(ch, masterVol);
-        } catch (Throwable t) {
-            send(CC | ch, CC_VOLUME, masterVol);
+        // 单音强制：每个 MIDI 通道同一时刻只允许一个音（AY 硬件语义）。
+        // 蜂鸣器的八度堆叠是刻意复音：逐音入账，超上限全场急救。
+        if (toneChFlag[ch] && lastNoteOn[ch] >= 0) {
+            // 方波单音强制（AY 硬件语义）；蜂鸣器/噪声堆叠走账本+硬闸
+            send(NOTE_OFF | ch, lastNoteOn[ch], 0);
+            if (activeNotes > 0) {
+                activeNotes--;
+            }
         }
-        send(NOTE_ON | ch, note, 127);
+        lastNoteOn[ch] = note;
+        activeNotes++;
+        if (activeNotes > polyLimit) {
+            panicAll();                     // 泄露兼底：屏幕变暗等场景的自愈
+        }
+        // 三种音量模式：
+        // 0=API/CC7回退（v1.0.28旧行为，力度恒127）
+        // 1=CC7（每次note-on前发CC7=velocity，力度=127）
+        // 2=CC7+CC11+vel（三重保障：CC7+CC11+力度全部=velocity）
+        if (volMode == 0) {
+            // 旧行为：setChannelVolume API 优先，失败降级CC7，力度恒127
+            try {
+                midi.setChannelVolume(ch, masterVol);
+            } catch (Throwable t) {
+                send(CC | ch, CC_VOLUME, masterVol);
+            }
+            send(NOTE_ON | ch, note, 127);
+        } else if (volMode == 1) {
+            // CC7模式：每次note-on前刷CC7=velocity，力度=127
+            send(CC | ch, CC_VOLUME, velocity);
+            send(NOTE_ON | ch, note, 127);
+        } else {
+            // 三重模式：CC7 + CC11 + 力度全部=velocity
+            send(CC | ch, CC_VOLUME, velocity);
+            send(CC | ch, CC_EXPRESSION, velocity);
+            send(NOTE_ON | ch, note, velocity);
+        }
+    }
+
+    /** 全场急救：CC123 + 账本清零。 */
+    private void panicAll() {
+        for (int c = 0; c < 16; c++) {
+            send(CC | c, 123, 0);
+            lastNoteOn[c] = -1;
+        }
+        activeNotes = 0;
     }
 
     /** 设置菜单切换引擎：完全拆掉旧引擎再建新的，避免两个引擎状态互相污染。 */
@@ -715,6 +754,8 @@ public class Ay2Midi {
         bendSensPct = src.bendSensPct;
         bendRangePct = src.bendRangePct;
         volFollowMode = src.volFollowMode;
+        volMode = src.volMode;
+        polyLimit = src.polyLimit;
         forceRefreshAll();
     }
 
@@ -738,6 +779,8 @@ public class Ay2Midi {
         bendSensPct = src.bendSensPct;
         bendRangePct = src.bendRangePct;
         volFollowMode = src.volFollowMode;
+        volMode = src.volMode;
+        polyLimit = src.polyLimit;
     }
 
     public void forceRefreshAll() {
@@ -1167,6 +1210,19 @@ public class Ay2Midi {
 
     /** 慢/快包络分界：包络波形频率低于此值按音量模拟（约 20Hz 听感分界）。 */
     private static final int ENV_TONE_MIN_HZ = 20;
+    // ---- 复音上限（防音符泄露硬闸）与音量多重保障 ----
+    private int polyLimit = 64;
+    public int getPolyLimit() { return polyLimit; }
+    public void setPolyLimit(int n) { if (n > 0) polyLimit = n; }
+    public static final int[] POLY_CHOICES = {16, 32, 64, 128};
+    private int activeNotes;
+    private final int[] lastNoteOn = new int[16];
+    private final boolean[] toneChFlag = new boolean[16];
+    /** 音量多重保障：0=API/CC7回退（旧行为，力度恒127） 1=CC7 2=CC7+CC11+vel三重。 */
+    public static final String[] VOL_MODES = {"API", "CC7", "CC7+CC11+vel"};
+    private int volMode = 0;   // 默认旧行为（兼容性最好）
+    public int getVolMode() { return volMode; }
+    public void setVolMode(int m) { if (m >= 0 && m < VOL_MODES.length) volMode = m; }
     /** 快包络阈值：波形频率高于此值时听感上就是恒定平均音量的颤音，
      * 逐步模拟既跟不上（tick 补步 guard 限制）又造成事件风暴，直接用固定平均电平。 */
     private static final int FAST_ENV_HZ = 12;
@@ -1629,6 +1685,11 @@ public class Ay2Midi {
     }
 
     private void noteOff(int ch) {
+        int mc = toneCh[ch];
+        if (mc >= 0 && mc < 16 && lastNoteOn[mc] >= 0 && activeNotes > 0) {
+            activeNotes--;
+            lastNoteOn[mc] = -1;
+        }
         if (curNote[ch] >= 0) {
             if (toneEngine) {
                 toneSilence(ch);

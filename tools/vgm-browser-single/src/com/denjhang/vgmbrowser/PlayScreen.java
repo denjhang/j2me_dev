@@ -70,17 +70,19 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_ENVVOL = 7;
     private static final int ROW_BUZZ_VOL = 8;
     private static final int ROW_VOLFOLLOW = 9;
-    private static final int ROW_OCT = 10;
-    private static final int ROW_BEND_SENS = 11;
-    private static final int ROW_BEND_RANGE = 12;
-    private static final int ROW_STEREO = 13;
-    private static final int ROW_NOISEMAP = 14;
-    private static final int ROW_ENVSAW_OCT = 15;
-    private static final int ROW_ENVTRI_OCT = 16;
-    private static final int ROW_ENVSAW_UNI = 17;
-    private static final int ROW_ENVTRI_UNI = 18;
-    private static final int ROW_CH0 = 19;
-    private static final int TOTAL_ROWS = 19 + Ay2Midi.SLOTS;
+    private static final int ROW_VOLMODE = 10;
+    private static final int ROW_POLY = 11;
+    private static final int ROW_OCT = 12;
+    private static final int ROW_BEND_SENS = 13;
+    private static final int ROW_BEND_RANGE = 14;
+    private static final int ROW_STEREO = 15;
+    private static final int ROW_NOISEMAP = 16;
+    private static final int ROW_ENVSAW_OCT = 17;
+    private static final int ROW_ENVTRI_OCT = 18;
+    private static final int ROW_ENVSAW_UNI = 19;
+    private static final int ROW_ENVTRI_UNI = 20;
+    private static final int ROW_CH0 = 21;
+    private static final int TOTAL_ROWS = 21 + Ay2Midi.SLOTS;
     private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M", "2M"};
     private int chunkIdx = 7;                 // 定案默认 512k（S60 不限堆；S40 走实时分支）
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
@@ -284,6 +286,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (v.length > 27 && v[27] >= 0 && v[27] < Ay2Midi.VOL_FOLLOW_NAMES.length) {
             ay.setVolFollowMode(v[27]);
         }
+        if (v.length > 28 && v[28] >= 0 && v[28] < Ay2Midi.VOL_MODES.length) {
+            ay.setVolMode(v[28]);
+        }
+        if (v.length > 29 && v[29] > 0) {
+            ay.setPolyLimit(v[29]);
+        }
         ay.setEngineTone(engineIdx == 1);
         try {
             ay.setStereoMode(v[1]);
@@ -330,6 +338,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         v[25] = ay.getNoiseVolPct();
         v[26] = ay.getEnvVolPct();
         v[27] = ay.getVolFollowMode();
+        v[28] = ay.getVolMode();
+        v[29] = ay.getPolyLimit();
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
             v[16 + i] = ay.getProg(i);
         }
@@ -1019,6 +1029,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                     }
                 }
                 playing = false;
+                persist();  // 切曲前保存当前设置，防止新 PlayScreen 的 applyPersisted 冲掉
                 midlet.switchTrack(target);
             }
         }).start();
@@ -1893,6 +1904,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ENVVOL: return "Envelope vol";
             case ROW_BUZZ_VOL: return "Buzzer vol";
             case ROW_VOLFOLLOW: return "Vol follow";
+            case ROW_VOLMODE: return "Vol mode";
+            case ROW_POLY: return "Max poly";
             case ROW_OCT: return "Octave";
             case ROW_BEND_SENS: return "Bend sens";
             case ROW_BEND_RANGE: return "Bend range";
@@ -1918,6 +1931,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_ENVVOL: return ay.getEnvVolPct() + "%";
             case ROW_BUZZ_VOL: return String.valueOf(ay.getBuzzVol());
             case ROW_VOLFOLLOW: return Ay2Midi.VOL_FOLLOW_NAMES[ay.getVolFollowMode()];
+            case ROW_VOLMODE: return Ay2Midi.VOL_MODES[ay.getVolMode()];
+            case ROW_POLY: return String.valueOf(ay.getPolyLimit());
             case ROW_OCT: return (ay.getOct() >= 0 ? "+" : "") + ay.getOct();
             case ROW_BEND_SENS: return ay.getBendSensText();
             case ROW_BEND_RANGE: return ay.getBendRangePct() + "%";
@@ -1997,6 +2012,27 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                         % Ay2Midi.VOL_FOLLOW_NAMES.length;
                 ay.setVolFollowMode(m);
                 if (ay2 != null) ay2.setVolFollowMode(m);
+                break;
+            }
+            case ROW_VOLMODE: {
+                int m = (ay.getVolMode() + dir + Ay2Midi.VOL_MODES.length)
+                        % Ay2Midi.VOL_MODES.length;
+                ay.setVolMode(m);
+                if (ay2 != null) ay2.setVolMode(m);
+                break;
+            }
+            case ROW_POLY: {
+                int cur = ay.getPolyLimit();
+                int idx = 0;
+                for (int i = 0; i < Ay2Midi.POLY_CHOICES.length; i++) {
+                    if (Ay2Midi.POLY_CHOICES[i] == cur) {
+                        idx = i;
+                        break;
+                    }
+                }
+                idx = (idx + dir + Ay2Midi.POLY_CHOICES.length) % Ay2Midi.POLY_CHOICES.length;
+                ay.setPolyLimit(Ay2Midi.POLY_CHOICES[idx]);
+                if (ay2 != null) ay2.setPolyLimit(Ay2Midi.POLY_CHOICES[idx]);
                 break;
             }
             case ROW_OCT: {

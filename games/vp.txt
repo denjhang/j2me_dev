@@ -1,0 +1,55 @@
+Compiled from "JPianinho.java"
+public class jpianinho.JPianinho extends javax.microedition.midlet.MIDlet {
+  private jpianinho.Splash splash;
+
+  private jpianinho.JPianinhoCanvas piano;
+
+  private javax.microedition.lcdui.Display display;
+
+  public void startApp();
+    Code:
+       0: aload_0
+       1: getfield      #1                  // Field display:Ljavax/microedition/lcdui/Display;
+       4: aload_0
+       5: getfield      #2                  // Field splash:Ljpianinho/Splash;
+       8: invokevirtual #3                  // Method javax/microedition/lcdui/Display.setCurrent:(Ljavax/microedition/lcdui/Displayable;)V
+      11: return
+
+  public void pauseApp();
+    Code:
+       0: return
+
+  public void destroyApp(boolean);
+    Code:
+       0: return
+
+  public jpianinho.JPianinho();
+    Code:
+       0: aload_0
+       1: invokespecial #4                  // Method javax/microedition/midlet/MIDlet."<init>":()V
+       4: aload_0
+       5: new           #5                  // class jpianinho/Splash
+       8: dup
+       9: aload_0
+      10: invokespecial #6                  // Method jpianinho/Splash."<init>":(Ljpianinho/JPianinho;)V
+      13: putfield      #2                  // Field splash:Ljpianinho/Splash;
+      16: aload_0
+      17: new           #7                  // class jpianinho/JPianinhoCanvas
+      20: dup
+      21: invokespecial #8                  // Method jpianinho/JPianinhoCanvas."<init>":()V
+      24: putfield      #9                  // Field piano:Ljpianinho/JPianinhoCanvas;
+      27: aload_0
+      28: aload_0
+      29: invokestatic  #10                 // Method javax/microedition/lcdui/Display.getDisplay:(Ljavax/microedition/midlet/MIDlet;)Ljavax/microedition/lcdui/Display;
+      32: putfield      #1                  // Field display:Ljavax/microedition/lcdui/Display;
+      35: return
+
+  public void startPianinho();
+    Code:
+       0: aload_0
+       1: getfield      #1                  // Field display:Ljavax/microedition/lcdui/Display;
+       4: aload_0
+       5: getfield      #9                  // Field piano:Ljpianinho/JPianinhoCanvas;
+       8: invokevirtual #3                  // Method javax/microedition/lcdui/Display.setCurrent:(Ljavax/microedition/lcdui/Displayable;)V
+      11: return
+}

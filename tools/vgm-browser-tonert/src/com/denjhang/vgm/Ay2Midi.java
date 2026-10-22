@@ -596,8 +596,32 @@ public class Ay2Midi {
                         try { Thread.sleep(200); } catch (InterruptedException e) { break; }
                         continue;
                     }
-                    // 媒体调用放锁外；三声道同线程顺序切换（避免并发切换）
+                    // 媒体调用放锁外；同线程顺序切换（避免并发切换）。
+                    // 单声部（共享 Sequencer）：三声道窗口按窗口号轮转合成一条序列，
+                    // 交替喂给唯一 Player —— 保留旋律线，避免多 Player 互掐。
                     boolean ok = true;
+                    if (toneVoices == 1) {
+                        Player tp = tonePlayer[0];
+                        if (tp == null || toneCtrl[0] == null) {
+                            continue;
+                        }
+                        byte[] merged = seq[winOk % 3];
+                        try {
+                            if (tp.getState() >= Player.STARTED) {
+                                tp.stop();
+                            }
+                            tp.deallocate();
+                            toneCtrl[0].setSequence(merged);
+                            tp.start();
+                        } catch (Throwable t) {
+                            ok = false;
+                            winBad++;
+                        }
+                        if (ok) {
+                            winOk++;
+                        }
+                        continue;
+                    }
                     for (int ch = 0; ch < 3; ch++) {
                         Player tp = tonePlayer[ch];
                         if (tp == null || toneCtrl[ch] == null) {

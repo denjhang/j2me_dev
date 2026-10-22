@@ -1274,10 +1274,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             filled = barW * Math.max(0, decompPct) / 100;
         } else {
             // 播放进度（libvgm 同款：总长 = 第一遍 + 已循环次数 × 循环段）
-            boolean hasLoop = file.header.hasLoop();
-            total = file.header.totalSamples;
-            if (hasLoop && loopPlays > 0) {
-                total += loopPlays * file.header.loopSamples;
+            if (file != null && file.header != null) {
+                boolean hasLoop = file.header.hasLoop();
+                total = file.header.totalSamples;
+                if (hasLoop && loopPlays > 0) {
+                    total += loopPlays * file.header.loopSamples;
+                }
+            } else {
+                total = 0;
             }
             if (playPhase == PHASE_PLAY) {
                 cur = progressBase + (System.currentTimeMillis() - playStartWall) * 44;

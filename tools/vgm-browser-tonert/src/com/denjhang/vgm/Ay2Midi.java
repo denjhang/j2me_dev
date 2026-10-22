@@ -315,27 +315,16 @@ public class Ay2Midi {
         // 共享 Sequencer 检测：KEmulator 的 device://tone 返回 kemnn.by，
         // 所有实例共用一个静态 javax.sound.midi.Sequencer，任一 Player 的
         // stop()/deallocate() 都会把全局 Sequencer 停掉 —— 三路并行会互相
-        // 掐死、全程静音。真机（E5）每路独立声部，三路并行可用。
-        boolean shared = false;
-        try {
-            String cn = tonePlayer[0].getClass().getName();
-            if (cn.startsWith("kemnn.") || cn.indexOf("ToneImpl") >= 0) {
-                shared = true;
+        // 掐死、全程静音（用户耳测：单声部有声、多声部无声）。
+        // 因此统一只用 1 个 Player：三声道在窗口内合并成一条序列。
+        for (int i = 1; i < 3; i++) {
+            if (tonePlayer[i] != null) {
+                try { tonePlayer[i].close(); } catch (Throwable ignored) {}
+                tonePlayer[i] = null;
+                toneCtrl[i] = null;
             }
-        } catch (Throwable ignored) {
         }
-        if (shared) {
-            for (int i = 1; i < 3; i++) {
-                if (tonePlayer[i] != null) {
-                    try { tonePlayer[i].close(); } catch (Throwable ignored) {}
-                    tonePlayer[i] = null;
-                    toneCtrl[i] = null;
-                }
-            }
-            toneVoices = 1;
-        } else {
-            toneVoices = 3;
-        }
+        toneVoices = 1;
         startToneThread();
         return true;
     }
@@ -597,21 +586,24 @@ public class Ay2Midi {
                         continue;
                     }
                     // 媒体调用放锁外；同线程顺序切换（避免并发切换）。
-                    // 单声部（共享 Sequencer）：三声道窗口按窗口号轮转合成一条序列，
-                    // 交替喂给唯一 Player —— 保留旋律线，避免多 Player 互掐。
+                    // 单声部（共享 Sequencer）：挑一个"最有内容"的声部整窗播放。
+                    // 优先级：有音符变化 > 有长音 > 静音；相同时优先延续上一窗声部，
+                    // 这样旋律线不会每窗跳声部。
                     boolean ok = true;
                     if (toneVoices == 1) {
                         Player tp = tonePlayer[0];
-                        if (tp == null || toneCtrl[0] == null) {
+                        ToneControl tc = toneCtrl[0];
+                        if (tp == null || tc == null) {
                             continue;
                         }
-                        byte[] merged = seq[winOk % 3];
+                        int pick = pickVoice(seq);
+                        byte[] merged = seq[pick];
                         try {
                             if (tp.getState() >= Player.STARTED) {
                                 tp.stop();
                             }
                             tp.deallocate();
-                            toneCtrl[0].setSequence(merged);
+                            tc.setSequence(merged);
                             tp.start();
                         } catch (Throwable t) {
                             ok = false;
@@ -648,6 +640,37 @@ public class Ay2Midi {
         toneThread.setPriority(Thread.NORM_PRIORITY - 1);
         toneThread.start();
     }
+
+    /** 单声部模式挑窗：优先延续上一窗声部，其次选有实际发声的，最后看音量。
+     *  carry* 已由窗口线程在锁内拷好，这里读它们是窗口时刻的一致快照。 */
+    private int pickVoice(byte[][] seq) {
+        int best = -1;
+        int bestScore = -1;
+        for (int ch = 0; ch < 3; ch++) {
+            int score = 0;
+            int n = carryNote[ch];
+            int v = carryVol[ch];
+            if (n >= 0 && v > 0) {
+                score = 100 + v;                 // 有音在响
+            } else if (n >= 0) {
+                score = 50;                      // 有音但音量为 0
+            }
+            if (ch == singleLastCh) {
+                score += 30;                     // 延续上一窗声部
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = ch;
+            }
+        }
+        if (best >= 0 && bestScore > 0) {
+            singleLastCh = best;
+        }
+        return best >= 0 ? best : 0;
+    }
+
+    /** 单声部模式下上一窗播放的声道（-1 = 无）。 */
+    private int singleLastCh = -1;
 
     /** Tower Bloxx（诺基亚原厂）做法：显式把 Player 音量推到最大，默认可能是 0。 */
     private void setPlayerVolume() {

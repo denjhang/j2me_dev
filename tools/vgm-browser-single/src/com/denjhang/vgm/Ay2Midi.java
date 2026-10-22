@@ -498,9 +498,23 @@ public class Ay2Midi {
             }
         }
         lastNoteOn[ch] = note;
+        noteOnTime[ch] = System.currentTimeMillis();
         activeNotes++;
         if (activeNotes > polyLimit) {
-            panicAll();                     // 泄露兼底：屏幕变暗等场景的自愈
+            // LRU 替换：关掉最旧的音符，不是全部静音
+            int oldestCh = -1;
+            long oldestTime = Long.MAX_VALUE;
+            for (int i = 0; i < 16; i++) {
+                if (lastNoteOn[i] >= 0 && noteOnTime[i] < oldestTime) {
+                    oldestTime = noteOnTime[i];
+                    oldestCh = i;
+                }
+            }
+            if (oldestCh >= 0) {
+                send(NOTE_OFF | oldestCh, lastNoteOn[oldestCh], 0);
+                lastNoteOn[oldestCh] = -1;
+                activeNotes--;
+            }
         }
         // 三种音量模式：
         // 0=API/CC7回退（v1.0.28旧行为，力度恒127）
@@ -531,6 +545,7 @@ public class Ay2Midi {
         for (int c = 0; c < 16; c++) {
             send(CC | c, 123, 0);
             lastNoteOn[c] = -1;
+            noteOnTime[c] = 0;
         }
         activeNotes = 0;
     }
@@ -1217,6 +1232,7 @@ public class Ay2Midi {
     public static final int[] POLY_CHOICES = {16, 32, 64, 128};
     private int activeNotes;
     private final int[] lastNoteOn = new int[16];
+    private final long[] noteOnTime = new long[16];  // LRU 时间戳
     private final boolean[] toneChFlag = new boolean[16];
     /** 音量多重保障：0=API/CC7回退（旧行为，力度恒127） 1=CC7 2=CC7+CC11+vel三重。 */
     public static final String[] VOL_MODES = {"API", "CC7", "CC7+CC11+vel"};

@@ -111,3 +111,55 @@ powershell -NoProfile -File ./shot.ps1 -Out shot_game.png
 - `-bootclasspath` 只指向 CLDC + MIDP + MMAPI，**不能**混入桌面 Java SE 的类，否则真机上 `NoClassDefFoundError`
 - KEmulator 2.22 实测在 Java 8 下正常；其 README 也支持 OpenJDK 17-21（22+ 可用但调试工具不保证）
 - 部署到 E5：`.jar` 拷进去即可，**无需签名**
+
+## 开发工作流（模拟器调试）
+
+**关键原则**：修改代码后，先关闭模拟器 → 编译 → 启动模拟器 → **保持运行不要再动**，等待用户测试完成。反复开关模拟器会严重干扰调试。
+
+标准流程：
+```bash
+# 1. 如果模拟器在运行，先关闭
+taskkill //F //IM java.exe
+
+# 2. 修改源码后编译
+./build.sh tools/vgm-browser-single
+
+# 3. 编译成功后启动模拟器
+./run-kemulator.sh "$(pwd)/tools/vgm-browser-single/VgmBrowserSingle.jar"
+
+# 4. 保持模拟器运行，等待用户测试反馈
+```
+
+## 版本发布规范
+
+**严重教训**（2026-10-22）：从 v1.0.32 开始源码没有提交到 git，只打包了 release，导致源码险些丢失。
+
+**强制规范**：
+1. 每个版本**必须先提交源码到 git**，再打包 release
+2. 提交信息必须包含版本号和功能变更
+3. Release 目录结构：`releases/VgmBrowserSingle-vX.Y.Z-bin/`（包含 jar + jad + README.txt）
+4. 立即 push 到远程，不要拖延
+
+最近版本记录：
+- **v1.0.31**：基线版本（无缝循环，单缓冲水位线）
+- **v1.0.32**：双音量设置（Note-on vol / Vol follow）、蜂鸣器隔离、复音上限（16/32/64/128）
+- **v1.0.33**：分组设置界面、127乐器选择、Nokia优化默认值
+- **v1.0.34**：进度条修复（libvgm同款动态总长计算）
+
+## 项目记忆
+
+### 关键决策
+1. **实时 MIDI 引擎已死**（2026-10-21）：S40/诺基亚 `device://midi` 是空壳，只有 ToneControl 可用
+2. **单缓冲水位线为主线**：比双缓冲更流畅，E5 真机验证通过
+3. **v1.0.32+ 彻底解决诺基亚真机问题**：双音量设置 + 复音上限 + 蜂鸣器隔离
+
+### 当前问题与修复
+- ✅ **进度条显示修复**（v1.0.34）：有循环点的曲目在第二次循环时进度条会超过总长 → 改为 `total = totalSamples + loopPlays × loopSamples`（libvgm 同款算法）
+- ⚠️ **源码丢失风险**：v1.0.32/v1.0.33 源码未提交，从 stash@{1} 找回 → 已提交到 commit fd1a60b
+
+### 调试技巧
+- 进度条计算在 `PlayScreen.java:1277` 附近
+- 循环逻辑在 `PlayScreen.java:567`（`EV_END` 事件处理）
+- 音量/复音限制在 `Ay2Midi.java`
+- 不要碰循环播放本身（已经是无缝的），只改显示和切曲逻辑
+

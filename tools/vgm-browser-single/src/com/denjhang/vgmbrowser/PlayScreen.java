@@ -1884,15 +1884,25 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 break;
             }
             boolean sel = cursor == r;
+            boolean isHeader = isHeaderRow(r);
+            
             if (sel) {
                 g.setColor(0x1C2E44);
                 g.fillRect(4, y0 + i * ROW_H, w - 12, ROW_H - 1);
             }
-            g.setColor(sel ? 0x6FB1DE : 0xC8CDD6);
-            g.setFont(tiny);
-            g.drawString(rowName(r), 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.LEFT);
-            g.setColor(0xE8B44C);
-            g.drawString(rowValue(r), w - 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.RIGHT);
+            
+            // 标题行：加粗字体，高亮颜色
+            if (isHeader) {
+                g.setFont(titleFont);
+                g.setColor(0xF0EDE4);  // 亮白色（与顶部 Settings 标题同色）
+                g.drawString(rowName(r), 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.LEFT);
+            } else {
+                g.setFont(tiny);
+                g.setColor(sel ? 0x6FB1DE : 0xC8CDD6);
+                g.drawString(rowName(r), 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.LEFT);
+                g.setColor(0xE8B44C);
+                g.drawString(rowValue(r), w - 10, y0 + i * ROW_H + 1, Graphics.TOP | Graphics.RIGHT);
+            }
         }
         if (TOTAL_ROWS > visible) {
             int trackH = visible * ROW_H;

@@ -3,8 +3,10 @@ VgmBrowser v1.0.34 - AY-3-8910/YM2149 VGM Player for Nokia J2ME (MIDP 2.0)
 
 NEW IN v1.0.34
 --------------
-- Version bump only (functionally identical to v1.0.33)
-- Source code properly committed to git (v1.0.32/v1.0.33 sources were recovered from stash)
+- Progress bar calculation fixed for looped tracks (libvgm-style dynamic length)
+- Before: progress bar would exceed 100% on second loop iteration
+- After: total length = totalSamples + loopPlays × loopSamples (grows with each loop)
+- Loop playback itself unchanged (remains seamless)
 
 NEW IN v1.0.33
 --------------

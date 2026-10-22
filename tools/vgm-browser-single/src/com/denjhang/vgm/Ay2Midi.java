@@ -29,6 +29,42 @@ public class Ay2Midi {
     public static final String[] SLOT_NAMES = {
         "Env-Saw", "Env-Decay", "Env-Tri", "Env-Alt"
     };
+
+    /** GM 128 音色名称（0-127） */
+    public static final String[] GM_NAMES = {
+        "Acoustic Grand Piano", "Bright Acoustic Piano", "Electric Grand Piano", "Honky-tonk Piano",
+        "Electric Piano 1", "Electric Piano 2", "Harpsichord", "Clavi",
+        "Celesta", "Glockenspiel", "Music Box", "Vibraphone",
+        "Marimba", "Xylophone", "Tubular Bells", "Dulcimer",
+        "Drawbar Organ", "Percussive Organ", "Rock Organ", "Church Organ",
+        "Reed Organ", "Accordion", "Harmonica", "Tango Accordion",
+        "Acoustic Guitar (nylon)", "Acoustic Guitar (steel)", "Electric Guitar (jazz)", "Electric Guitar (clean)",
+        "Electric Guitar (muted)", "Overdriven Guitar", "Distortion Guitar", "Guitar harmonics",
+        "Acoustic Bass", "Electric Bass (finger)", "Electric Bass (pick)", "Fretless Bass",
+        "Slap Bass 1", "Slap Bass 2", "Synth Bass 1", "Synth Bass 2",
+        "Violin", "Viola", "Cello", "Contrabass",
+        "Tremolo Strings", "Pizzicato Strings", "Orchestral Harp", "Timpani",
+        "String Ensemble 1", "String Ensemble 2", "SynthStrings 1", "SynthStrings 2",
+        "Choir Aahs", "Voice Oohs", "Synth Voice", "Orchestra Hit",
+        "Trumpet", "Trombone", "Tuba", "Muted Trumpet",
+        "French Horn", "Brass Section", "SynthBrass 1", "SynthBrass 2",
+        "Soprano Sax", "Alto Sax", "Tenor Sax", "Baritone Sax",
+        "Oboe", "English Horn", "Bassoon", "Clarinet",
+        "Piccolo", "Flute", "Recorder", "Pan Flute",
+        "Blown Bottle", "Shakuhachi", "Whistle", "Ocarina",
+        "Lead 1 (square)", "Lead 2 (sawtooth)", "Lead 3 (calliope)", "Lead 4 (chiff)",
+        "Lead 5 (charang)", "Lead 6 (voice)", "Lead 7 (fifths)", "Lead 8 (bass + lead)",
+        "Pad 1 (new age)", "Pad 2 (warm)", "Pad 3 (polysynth)", "Pad 4 (choir)",
+        "Pad 5 (bowed)", "Pad 6 (metallic)", "Pad 7 (halo)", "Pad 8 (sweep)",
+        "FX 1 (rain)", "FX 2 (soundtrack)", "FX 3 (crystal)", "FX 4 (atmosphere)",
+        "FX 5 (brightness)", "FX 6 (goblins)", "FX 7 (echoes)", "FX 8 (sci-fi)",
+        "Sitar", "Banjo", "Shamisen", "Koto",
+        "Kalimba", "Bag pipe", "Fiddle", "Shanai",
+        "Tinkle Bell", "Agogo", "Steel Drums", "Woodblock",
+        "Taiko Drum", "Melodic Tom", "Synth Drum", "Reverse Cymbal",
+        "Guitar Fret Noise", "Breath Noise", "Seashore", "Bird Tweet",
+        "Telephone Ring", "Helicopter", "Applause", "Gunshot"
+    };
     public static final int[] ENV_SHAPE_DEFAULT = {81, 87, 82, 80};
 
     /** chip0：0-6 直排。 */
@@ -1236,7 +1272,7 @@ public class Ay2Midi {
     private final boolean[] toneChFlag = new boolean[16];
     /** 音量多重保障：0=API/CC7回退（旧行为，力度恒127） 1=CC7 2=CC7+CC11+vel三重。 */
     public static final String[] VOL_MODES = {"API", "CC7", "CC7+CC11+vel"};
-    private int volMode = 0;   // 默认旧行为（兼容性最好）
+    private int volMode = 1;   // Nokia 默认：CC7（真机实测有效）
     public int getVolMode() { return volMode; }
     public void setVolMode(int m) { if (m >= 0 && m < VOL_MODES.length) volMode = m; }
     /** 快包络阈值：波形频率高于此值时听感上就是恒定平均音量的颤音，
@@ -1304,14 +1340,14 @@ public class Ay2Midi {
     private int envOctSaw;      // 定案默认：锯齿 +0
     private int envOctTri;
     /** 上行八度复音：0=关 1=+1八度(2复音) 2=+2八度(3复音)。锯齿/三角独立。 */
-    private int envUniSaw = 2;   // 定案默认：上行 +2 八度（3 复音）
-    private int envUniTri = 1;   // 定案默认：上行 1 八度（2 复音）
+    private int envUniSaw = 2;   // Nokia 默认：+2 八度（3 复音）
+    private int envUniTri = 2;   // Nokia 默认：+2 八度（3 复音）
     /** 蜂鸣器音量（CC11），默认 100。 */
     private int buzzVol = 100;
     /** 音符内音量跟随模式（诺基亚忽略长音中的 CC11，需用其他方法表达变化）：
      *  0=retrigger 力度重发（当前，阈值 4） 1=note 切分（小段 note-on/off，每段新力度）
      *  2=CC7 通道音量（有些实现长音中认） 3=off（不跟随，最省事件） */
-    private int volFollowMode = 2;   // 定案默认：CC7（真机实测有效）
+    private int volFollowMode = 0;   // Nokia 默认：retrig（真机实测有效）
     public static final String[] VOL_FOLLOW_NAMES = {"retrig", "chop", "CC7", "off"};
     public int getVolFollowMode() { return volFollowMode; }
     public void setVolFollowMode(int m) {
@@ -1320,9 +1356,9 @@ public class Ay2Midi {
         }
     }
     /** 通道组音量%：方波/噪声/包络，100=原始；噪声默认 150（诺基亚需额外增益）。 */
-    private int sqVolPct = 80;    // 定案默认
-    private int noiseVolPct = 110;  // 定案默认
-    private int envVolPct = 120;    // 定案默认（包络/蜂鸣器组）
+    private int sqVolPct = 70;    // Nokia 默认
+    private int noiseVolPct = 80;  // Nokia 默认
+    private int envVolPct = 90;    // Nokia 默认（包络/蜂鸣器组）
 
     private static int scaleVol(int v, int pct) {
         int r = v * pct / 100;

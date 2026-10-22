@@ -9,7 +9,7 @@ import javax.microedition.rms.RecordStore;
  */
 public final class SettingsStore {
     private static final String RS_NAME = "vgmbrowser_cfg";
-    static final int VERSION = 2;   // 2: 槽位布局变更（10槽→8槽），旧记录作废回落默认
+    static final int VERSION = 3;   // 3: Nokia 优化默认值（Gen size 2M, 音量平衡, CC7, retrig, unison +2）
     /** 版本 + 13 项 + SLOTS 个音色。 */
     public static final int FIELDS = 20 + 10;
 

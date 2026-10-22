@@ -60,31 +60,39 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     //  定位:    Stereo / Noise map
     //  包络:    Env saw oct / Env tri oct / Saw unison / Tri unison
     //  乐器:    CH0..
-    private static final int ROW_MASTER = 0;
-    private static final int ROW_ENGINE = 1;
-    private static final int ROW_CHUNK = 2;
-    private static final int ROW_LOOP = 3;
-    private static final int ROW_ORDER = 4;
-    private static final int ROW_SQVOL = 5;
-    private static final int ROW_NOISEVOL = 6;
-    private static final int ROW_ENVVOL = 7;
-    private static final int ROW_BUZZ_VOL = 8;
-    private static final int ROW_VOLFOLLOW = 9;
-    private static final int ROW_VOLMODE = 10;
-    private static final int ROW_POLY = 11;
-    private static final int ROW_OCT = 12;
-    private static final int ROW_BEND_SENS = 13;
-    private static final int ROW_BEND_RANGE = 14;
-    private static final int ROW_STEREO = 15;
-    private static final int ROW_NOISEMAP = 16;
-    private static final int ROW_ENVSAW_OCT = 17;
-    private static final int ROW_ENVTRI_OCT = 18;
-    private static final int ROW_ENVSAW_UNI = 19;
-    private static final int ROW_ENVTRI_UNI = 20;
-    private static final int ROW_CH0 = 21;
-    private static final int TOTAL_ROWS = 21 + Ay2Midi.SLOTS;
+    // 设置界面行号（含分组标题）
+    private static final int ROW_HEADER_PLAYBACK = 0;
+    private static final int ROW_MASTER = 1;
+    private static final int ROW_ENGINE = 2;
+    private static final int ROW_CHUNK = 3;
+    private static final int ROW_LOOP = 4;
+    private static final int ROW_ORDER = 5;
+    private static final int ROW_HEADER_LEVEL = 6;
+    private static final int ROW_SQVOL = 7;
+    private static final int ROW_NOISEVOL = 8;
+    private static final int ROW_ENVVOL = 9;
+    private static final int ROW_BUZZ_VOL = 10;
+    private static final int ROW_HEADER_VOLBEHAVIOR = 11;
+    private static final int ROW_VOLMODE = 12;
+    private static final int ROW_VOLFOLLOW = 13;
+    private static final int ROW_POLY = 14;
+    private static final int ROW_HEADER_PITCH = 15;
+    private static final int ROW_OCT = 16;
+    private static final int ROW_BEND_SENS = 17;
+    private static final int ROW_BEND_RANGE = 18;
+    private static final int ROW_HEADER_ENVELOPE = 19;
+    private static final int ROW_ENVSAW_OCT = 20;
+    private static final int ROW_ENVTRI_OCT = 21;
+    private static final int ROW_ENVSAW_UNI = 22;
+    private static final int ROW_ENVTRI_UNI = 23;
+    private static final int ROW_HEADER_ROUTING = 24;
+    private static final int ROW_STEREO = 25;
+    private static final int ROW_NOISEMAP = 26;
+    private static final int ROW_HEADER_INSTRUMENTS = 27;
+    private static final int ROW_CH0 = 28;
+    private static final int TOTAL_ROWS = 28 + Ay2Midi.SLOTS;
     private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M", "2M"};
-    private int chunkIdx = 7;                 // 定案默认 512k（S60 不限堆；S40 走实时分支）
+    private int chunkIdx = 9;                 // Nokia 默认 2M（真机测试最优）
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
     private static final int ROW_H = 16;
     private int cursor;
@@ -1902,33 +1910,48 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     private String rowName(int r) {
         switch (r) {
+            case ROW_HEADER_PLAYBACK: return "-- Playback --";
             case ROW_MASTER: return "Master vol";
             case ROW_ENGINE: return "Engine";
             case ROW_CHUNK: return "Gen size";
             case ROW_LOOP: return "Loop count";
             case ROW_ORDER: return "Play order";
+            case ROW_HEADER_LEVEL: return "-- Level balance --";
             case ROW_SQVOL: return "Square vol";
             case ROW_NOISEVOL: return "Noise vol";
             case ROW_ENVVOL: return "Envelope vol";
             case ROW_BUZZ_VOL: return "Buzzer vol";
+            case ROW_HEADER_VOLBEHAVIOR: return "-- Volume behavior --";
+            case ROW_VOLMODE: return "Note-on vol";
             case ROW_VOLFOLLOW: return "Vol follow";
-            case ROW_VOLMODE: return "Vol mode";
             case ROW_POLY: return "Max poly";
+            case ROW_HEADER_PITCH: return "-- Pitch --";
             case ROW_OCT: return "Octave";
             case ROW_BEND_SENS: return "Bend sens";
             case ROW_BEND_RANGE: return "Bend range";
-            case ROW_STEREO: return "Stereo";
-            case ROW_NOISEMAP: return "Noise map";
+            case ROW_HEADER_ENVELOPE: return "-- Envelope voices --";
             case ROW_ENVSAW_OCT: return "Env saw octave";
             case ROW_ENVTRI_OCT: return "Env tri octave";
             case ROW_ENVSAW_UNI: return "Saw unison";
             case ROW_ENVTRI_UNI: return "Tri unison";
+            case ROW_HEADER_ROUTING: return "-- Routing --";
+            case ROW_STEREO: return "Stereo";
+            case ROW_NOISEMAP: return "Noise map";
+            case ROW_HEADER_INSTRUMENTS: return "-- Instruments --";
             default: return CH_NAMES[r - ROW_CH0];
         }
     }
 
     private String rowValue(int r) {
         switch (r) {
+            case ROW_HEADER_PLAYBACK:
+            case ROW_HEADER_LEVEL:
+            case ROW_HEADER_VOLBEHAVIOR:
+            case ROW_HEADER_PITCH:
+            case ROW_HEADER_ENVELOPE:
+            case ROW_HEADER_ROUTING:
+            case ROW_HEADER_INSTRUMENTS:
+                return "";  // 标题行无值
             case ROW_MASTER: return String.valueOf(masterVol);
             case ROW_ENGINE: return ENGINE_NAMES[engineIdx];
             case ROW_CHUNK: return CHUNK_NAMES[chunkIdx];
@@ -1952,11 +1975,21 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 return (ay.getEnvOctTri() >= 0 ? "+" : "") + ay.getEnvOctTri();
             case ROW_ENVSAW_UNI: return UNI_NAMES[ay.getEnvUni(false)];
             case ROW_ENVTRI_UNI: return UNI_NAMES[ay.getEnvUni(true)];
-            default: return String.valueOf(ay.getProg(r - ROW_CH0));
+            default:
+                // 乐器显示：数字 名称
+                int prog = ay.getProg(r - ROW_CH0);
+                return prog + " " + Ay2Midi.GM_NAMES[prog];
         }
     }
 
     private void adjust(int dir) {
+        // 标题行不可调节
+        if (cursor == ROW_HEADER_PLAYBACK || cursor == ROW_HEADER_LEVEL ||
+            cursor == ROW_HEADER_VOLBEHAVIOR || cursor == ROW_HEADER_PITCH ||
+            cursor == ROW_HEADER_ENVELOPE || cursor == ROW_HEADER_ROUTING ||
+            cursor == ROW_HEADER_INSTRUMENTS) {
+            return;
+        }
         switch (cursor) {
             case ROW_MASTER:
                 setMaster(masterVol + dir * 10);
@@ -2092,18 +2125,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 break;
             }
             default: {
+                // 乐器 0-127（GM 全范围）
                 int ch = cursor - ROW_CH0;
                 int cur = ay.getProg(ch);
-                int idx = findProg(cur);
-                int next = idx;
-                for (int step = 0; step < PROG_CHOICES.length; step++) {
-                    next += dir;
-                    if (next < 0) next = PROG_CHOICES.length - 1;
-                    if (next >= PROG_CHOICES.length) next = 0;
-                    if (PROG_CHOICES[next] != cur) break;
-                }
-                ay.setProg(ch, PROG_CHOICES[next]);
-                if (ay2 != null) ay2.setProg(ch, PROG_CHOICES[next]);
+                int next = cur + dir;
+                if (next < 0) next = 127;
+                if (next > 127) next = 0;
+                ay.setProg(ch, next);
+                if (ay2 != null) ay2.setProg(ch, next);
                 break;
             }
         }
@@ -2117,6 +2146,14 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             }
         }
         return 0;
+    }
+
+    /** 判断是否为标题行（不可选中） */
+    private boolean isHeaderRow(int r) {
+        return r == ROW_HEADER_PLAYBACK || r == ROW_HEADER_LEVEL ||
+               r == ROW_HEADER_VOLBEHAVIOR || r == ROW_HEADER_PITCH ||
+               r == ROW_HEADER_ENVELOPE || r == ROW_HEADER_ROUTING ||
+               r == ROW_HEADER_INSTRUMENTS;
     }
 
     // ------------------------------------------------------------ 工具
@@ -2145,9 +2182,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (keyCode == KEY_POUND) {
                 setMode(MODE_HUD);
             } else if (action == UP) {
-                cursor = cursor > 0 ? cursor - 1 : TOTAL_ROWS - 1;
+                do {
+                    cursor = cursor > 0 ? cursor - 1 : TOTAL_ROWS - 1;
+                } while (isHeaderRow(cursor));
             } else if (action == DOWN) {
-                cursor = cursor < TOTAL_ROWS - 1 ? cursor + 1 : 0;
+                do {
+                    cursor = cursor < TOTAL_ROWS - 1 ? cursor + 1 : 0;
+                } while (isHeaderRow(cursor));
             } else if (action == LEFT) {
                 adjust(-1);
             } else if (action == RIGHT) {
@@ -2200,6 +2241,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         mode = m;
         if (m == MODE_SETTINGS) {
+            // 确保光标不在标题行
+            if (isHeaderRow(cursor)) {
+                cursor = ROW_MASTER;  // 跳到第一个可选项
+            }
             removeCommand(cmdSettings);
             addCommand(cmdSetBack);
         } else {

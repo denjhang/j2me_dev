@@ -927,6 +927,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             {"Engine", ENGINE_NAMES[engineIdx] + " - " + ay.midiStatus()},
             {"Stream", streamInfo()},
             {"Buffer", streamTotal()},
+            {"ToneWin", "ok=" + ay.getWinOk() + " bad=" + ay.getWinBad() + " voice=" + ay.getToneVoices()},
             {"Mem", memInfo()},
             {"PlayErr", playErr.length() > 0 ? playErr : "-"},
             {"Clock", clk + " Hz" + (dual ? " x2" : "")},

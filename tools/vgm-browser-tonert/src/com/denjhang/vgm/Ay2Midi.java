@@ -1092,6 +1092,18 @@ public class Ay2Midi {
         return sb.toString();
     }
 
+    public int getWinOk() {
+        return winOk;
+    }
+
+    public int getWinBad() {
+        return winBad;
+    }
+
+    public int getToneVoices() {
+        return toneVoices;
+    }
+
     private static String clip(String s, int n) {
         if (s == null) return "";
         return s.length() > n ? s.substring(0, n) : s;

@@ -646,7 +646,9 @@ public class Ay2Midi {
     private void retriggerVel(int midiCh, int note, int level) {
         if (note >= 0) {
             send(CC | midiCh, CC_VOLUME, masterVol);
-            send(NOTE_ON | midiCh, note, vel(level));
+            // 遵循 volMode：只有 volMode=2 时才用 vel(level)，否则恒127
+            int velocity = (volMode == 2) ? vel(level) : 127;
+            send(NOTE_ON | midiCh, note, velocity);
         }
     }
 

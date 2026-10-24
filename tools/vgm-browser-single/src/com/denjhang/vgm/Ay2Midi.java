@@ -535,7 +535,7 @@ public class Ay2Midi {
             }
         }
         lastNoteOn[ch] = note;
-        noteOnTime[ch] = System.currentTimeMillis();
+        noteOnSeq[ch] = ++noteSeq;  // 轻量递增序列号，避免 currentTimeMillis() 系统调用
         activeNotes++;
         if (activeNotes > polyLimit) {
             // 复音超限策略：0=LRU替换（PC友好） 1=panic全静音（v1.0.32真机防泄漏）
@@ -544,10 +544,10 @@ public class Ay2Midi {
             } else {
                 // LRU 替换：关掉最旧的音符，不是全部静音
                 int oldestCh = -1;
-                long oldestTime = Long.MAX_VALUE;
+                long oldestSeq = Long.MAX_VALUE;
                 for (int i = 0; i < 16; i++) {
-                    if (lastNoteOn[i] >= 0 && noteOnTime[i] < oldestTime) {
-                        oldestTime = noteOnTime[i];
+                    if (lastNoteOn[i] >= 0 && noteOnSeq[i] < oldestSeq) {
+                        oldestSeq = noteOnSeq[i];
                         oldestCh = i;
                     }
                 }
@@ -587,7 +587,7 @@ public class Ay2Midi {
         for (int c = 0; c < 16; c++) {
             send(CC | c, 123, 0);
             lastNoteOn[c] = -1;
-            noteOnTime[c] = 0;
+            noteOnSeq[c] = 0;
         }
         activeNotes = 0;
     }
@@ -1280,7 +1280,8 @@ public class Ay2Midi {
     public static final int[] POLY_CHOICES = {16, 32, 64, 128};
     private int activeNotes;
     private final int[] lastNoteOn = new int[16];
-    private final long[] noteOnTime = new long[16];  // LRU 时间戳
+    private long noteSeq;  // 轻量级递增序列号，代替 currentTimeMillis()
+    private final long[] noteOnSeq = new long[16];  // LRU 序列号（避免系统调用）
     private final boolean[] toneChFlag = new boolean[16];
     
     /** 单音强制：true=方波通道强制单音(真机)  false=允许复音(PC,v1.0.31行为) */

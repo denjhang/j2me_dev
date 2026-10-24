@@ -1970,7 +1970,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_HEADER_ROUTING:
             case ROW_HEADER_INSTRUMENTS:
                 return "";  // 标题行无值
-            case ROW_PRESET: return "---";  // 预设不显示当前值，只用于快速应用
+            case ROW_PRESET: return "L=" + Ay2Midi.PRESET_NAMES[1] + " R=" + Ay2Midi.PRESET_NAMES[0];
             case ROW_MASTER: return String.valueOf(masterVol);
             case ROW_ENGINE: return ENGINE_NAMES[engineIdx];
             case ROW_CHUNK: return CHUNK_NAMES[chunkIdx];

@@ -526,7 +526,8 @@ public class Ay2Midi {
         }
         // 单音强制：每个 MIDI 通道同一时刻只允许一个音（AY 硬件语义）。
         // 蜂鸣器的八度堆叠是刻意复音：逐音入账，超上限全场急救。
-        if (toneChFlag[ch] && lastNoteOn[ch] >= 0) {
+        // monoTone 开关：PC 可禁用此优化，恢复 v1.0.31 复音行为
+        if (monoTone && toneChFlag[ch] && lastNoteOn[ch] >= 0) {
             // 方波单音强制（AY 硬件语义）；蜂鸣器/噪声堆叠走账本+硬闸
             send(NOTE_OFF | ch, lastNoteOn[ch], 0);
             if (activeNotes > 0) {
@@ -537,19 +538,24 @@ public class Ay2Midi {
         noteOnTime[ch] = System.currentTimeMillis();
         activeNotes++;
         if (activeNotes > polyLimit) {
-            // LRU 替换：关掉最旧的音符，不是全部静音
-            int oldestCh = -1;
-            long oldestTime = Long.MAX_VALUE;
-            for (int i = 0; i < 16; i++) {
-                if (lastNoteOn[i] >= 0 && noteOnTime[i] < oldestTime) {
-                    oldestTime = noteOnTime[i];
-                    oldestCh = i;
+            // 复音超限策略：0=LRU替换（PC友好） 1=panic全静音（v1.0.32真机防泄漏）
+            if (polyOverflow == 1) {
+                panicAll();
+            } else {
+                // LRU 替换：关掉最旧的音符，不是全部静音
+                int oldestCh = -1;
+                long oldestTime = Long.MAX_VALUE;
+                for (int i = 0; i < 16; i++) {
+                    if (lastNoteOn[i] >= 0 && noteOnTime[i] < oldestTime) {
+                        oldestTime = noteOnTime[i];
+                        oldestCh = i;
+                    }
                 }
-            }
-            if (oldestCh >= 0) {
-                send(NOTE_OFF | oldestCh, lastNoteOn[oldestCh], 0);
-                lastNoteOn[oldestCh] = -1;
-                activeNotes--;
+                if (oldestCh >= 0) {
+                    send(NOTE_OFF | oldestCh, lastNoteOn[oldestCh], 0);
+                    lastNoteOn[oldestCh] = -1;
+                    activeNotes--;
+                }
             }
         }
         // 三种音量模式：
@@ -809,6 +815,8 @@ public class Ay2Midi {
         volFollowMode = src.volFollowMode;
         volMode = src.volMode;
         polyLimit = src.polyLimit;
+        monoTone = src.monoTone;
+        polyOverflow = src.polyOverflow;
         forceRefreshAll();
     }
 
@@ -834,6 +842,8 @@ public class Ay2Midi {
         volFollowMode = src.volFollowMode;
         volMode = src.volMode;
         polyLimit = src.polyLimit;
+        monoTone = src.monoTone;
+        polyOverflow = src.polyOverflow;
     }
 
     public void forceRefreshAll() {
@@ -1272,6 +1282,19 @@ public class Ay2Midi {
     private final int[] lastNoteOn = new int[16];
     private final long[] noteOnTime = new long[16];  // LRU 时间戳
     private final boolean[] toneChFlag = new boolean[16];
+    
+    /** 单音强制：true=方波通道强制单音(真机)  false=允许复音(PC,v1.0.31行为) */
+    private boolean monoTone = true;   // 默认 true（真机优化）
+    public boolean getMonoTone() { return monoTone; }
+    public void setMonoTone(boolean m) { monoTone = m; }
+    public static final String[] MONO_NAMES = {"off", "on"};
+    
+    /** 复音超限策略：0=LRU替换  1=panic全静音(v1.0.32) */
+    private int polyOverflow = 0;   // 默认 0=LRU（PC 友好）
+    public int getPolyOverflow() { return polyOverflow; }
+    public void setPolyOverflow(int p) { if (p >= 0 && p < 2) polyOverflow = p; }
+    public static final String[] OVERFLOW_NAMES = {"LRU", "panic"};
+    
     /** 音量多重保障：0=API/CC7回退（旧行为，力度恒127） 1=CC7 2=CC7+CC11+vel三重。 */
     public static final String[] VOL_MODES = {"API", "CC7", "CC7+CC11+vel"};
     private int volMode = 1;   // Nokia 默认：CC7（真机实测有效）

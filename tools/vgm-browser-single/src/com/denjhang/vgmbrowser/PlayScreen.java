@@ -76,21 +76,23 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final int ROW_VOLMODE = 12;
     private static final int ROW_VOLFOLLOW = 13;
     private static final int ROW_POLY = 14;
-    private static final int ROW_HEADER_PITCH = 15;
-    private static final int ROW_OCT = 16;
-    private static final int ROW_BEND_SENS = 17;
-    private static final int ROW_BEND_RANGE = 18;
-    private static final int ROW_HEADER_ENVELOPE = 19;
-    private static final int ROW_ENVSAW_OCT = 20;
-    private static final int ROW_ENVTRI_OCT = 21;
-    private static final int ROW_ENVSAW_UNI = 22;
-    private static final int ROW_ENVTRI_UNI = 23;
-    private static final int ROW_HEADER_ROUTING = 24;
-    private static final int ROW_STEREO = 25;
-    private static final int ROW_NOISEMAP = 26;
-    private static final int ROW_HEADER_INSTRUMENTS = 27;
-    private static final int ROW_CH0 = 28;
-    private static final int TOTAL_ROWS = 28 + Ay2Midi.SLOTS;
+    private static final int ROW_MONOTONE = 15;
+    private static final int ROW_OVERFLOW = 16;
+    private static final int ROW_HEADER_PITCH = 17;
+    private static final int ROW_OCT = 18;
+    private static final int ROW_BEND_SENS = 19;
+    private static final int ROW_BEND_RANGE = 20;
+    private static final int ROW_HEADER_ENVELOPE = 21;
+    private static final int ROW_ENVSAW_OCT = 22;
+    private static final int ROW_ENVTRI_OCT = 23;
+    private static final int ROW_ENVSAW_UNI = 24;
+    private static final int ROW_ENVTRI_UNI = 25;
+    private static final int ROW_HEADER_ROUTING = 26;
+    private static final int ROW_STEREO = 27;
+    private static final int ROW_NOISEMAP = 28;
+    private static final int ROW_HEADER_INSTRUMENTS = 29;
+    private static final int ROW_CH0 = 30;
+    private static final int TOTAL_ROWS = 30 + Ay2Midi.SLOTS;
     private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M", "2M"};
     private int chunkIdx = 9;                 // Nokia 默认 2M（真机测试最优）
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
@@ -1937,6 +1939,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_VOLMODE: return "Note-on vol";
             case ROW_VOLFOLLOW: return "Vol follow";
             case ROW_POLY: return "Max poly";
+            case ROW_MONOTONE: return "Mono tone";
+            case ROW_OVERFLOW: return "Poly overflow";
             case ROW_HEADER_PITCH: return "-- Pitch --";
             case ROW_OCT: return "Octave";
             case ROW_BEND_SENS: return "Bend sens";
@@ -1976,6 +1980,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_VOLFOLLOW: return Ay2Midi.VOL_FOLLOW_NAMES[ay.getVolFollowMode()];
             case ROW_VOLMODE: return Ay2Midi.VOL_MODES[ay.getVolMode()];
             case ROW_POLY: return String.valueOf(ay.getPolyLimit());
+            case ROW_MONOTONE: return Ay2Midi.MONO_NAMES[ay.getMonoTone() ? 1 : 0];
+            case ROW_OVERFLOW: return Ay2Midi.OVERFLOW_NAMES[ay.getPolyOverflow()];
             case ROW_OCT: return (ay.getOct() >= 0 ? "+" : "") + ay.getOct();
             case ROW_BEND_SENS: return ay.getBendSensText();
             case ROW_BEND_RANGE: return ay.getBendRangePct() + "%";
@@ -2086,6 +2092,17 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 idx = (idx + dir + Ay2Midi.POLY_CHOICES.length) % Ay2Midi.POLY_CHOICES.length;
                 ay.setPolyLimit(Ay2Midi.POLY_CHOICES[idx]);
                 if (ay2 != null) ay2.setPolyLimit(Ay2Midi.POLY_CHOICES[idx]);
+                break;
+            }
+            case ROW_MONOTONE: {
+                ay.setMonoTone(!ay.getMonoTone());
+                if (ay2 != null) ay2.setMonoTone(ay.getMonoTone());
+                break;
+            }
+            case ROW_OVERFLOW: {
+                int p = (ay.getPolyOverflow() + dir + 2) % 2;
+                ay.setPolyOverflow(p);
+                if (ay2 != null) ay2.setPolyOverflow(p);
                 break;
             }
             case ROW_OCT: {

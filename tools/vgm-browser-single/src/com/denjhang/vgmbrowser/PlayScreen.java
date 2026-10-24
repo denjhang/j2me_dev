@@ -544,7 +544,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         gen.copyConfigFrom(ay);
         gen.recording = true;
-        gen.recordingReg = true;
+        gen.recordingReg = false;   // 修复：单曲播放不需要 regF，节省 50% 内存
         gen.recBaseMs = 0;
         gen.vtime = 0;
         gen.recN = 0;
@@ -554,7 +554,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             gen2.setClock(clk);
             gen2.copyConfigFrom(ay2);
             gen2.recording = true;
-            gen2.recordingReg = true;
+            gen2.recordingReg = false;   // 修复：单曲播放不需要 regF
             gen2.recBaseMs = 0;
             gen2.vtime = 0;
             gen2.recN = 0;
@@ -620,9 +620,23 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (gen2 != null) {
                 gen2.tick();
             }
-            // 周期性让出 CPU：大缓冲填充期长，不让出会饿死 UI 重统（动画/文字冻结）
+            // 周期性让出 CPU：大缓冲填充期长，不让出会饿死 UI 重绘（动画/文字冻结）
             if ((++pumpCount & 0xFF) == 0) {
                 try { Thread.sleep(2); } catch (InterruptedException e) { break fillLoop; }
+                
+                // 修复：定期清理已消费的事件（每 256 次解析 trim 一次）
+                if ((pumpCount & 0xFFF) == 0) {  // 每 4096 次解析
+                    synchronized (streamLock) {
+                        gen.recN = trimRec(gen, streamHeadMs);
+                        if (gen2 != null) {
+                            gen2.recN = trimRec(gen2, streamHeadMs);
+                        }
+                        shrinkStream(gen);
+                        if (gen2 != null) {
+                            shrinkStream(gen2);
+                        }
+                    }
+                }
             }
             // 水位线：未消费超过 2 块，歇口气（软背压，内存有界）
             while (playing && availBytes() > targetBytes() * 2) {
@@ -862,6 +876,21 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             System.arraycopy(g.regF, k, g.regF, 0, g.regN - k);
         }
         return g.regN - k;
+    }
+    
+    /** MIDI 事件流按时间压缩，返回新长度（修复内存膨胀）。 */
+    private static int trimRec(Ay2Midi g, long headMs) {
+        int k = 0;
+        for (int p = 0; p < g.recN; p += 4) {
+            if (g.recF[p] >= headMs) {
+                break;
+            }
+            k = p + 4;
+        }
+        if (k > 0) {
+            System.arraycopy(g.recF, k, g.recF, 0, g.recN - k);
+        }
+        return g.recN - k;
     }
 
     /** 创建一块的 Player：create+realize+prefetch（开销大，尽量由常驻线程提前做）。 */

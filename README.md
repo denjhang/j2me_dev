@@ -140,24 +140,47 @@ taskkill //F //IM java.exe
 3. Release 目录结构：`releases/VgmBrowserSingle-vX.Y.Z-bin/`（包含 jar + jad + README.txt）
 4. 立即 push 到远程，不要拖延
 
-最近版本记录：
-- **v1.0.31**：基线版本（无缝循环，单缓冲水位线）
-- **v1.0.32**：双音量设置（Note-on vol / Vol follow）、蜂鸣器隔离、复音上限（16/32/64/128）
-- **v1.0.33**：分组设置界面、127乐器选择、Nokia优化默认值
-- **v1.0.34**：进度条修复（libvgm同款动态总长计算）
+最近版本记录（完整技术细节见 [tools/vgm-browser-single/DEVELOPMENT.md](./tools/vgm-browser-single/DEVELOPMENT.md)）：
+- **v1.0.31**：PC 黄金版本（= v1.0.28 + 2 行，无单音强制/无复音管理/无时间戳调用）
+- **v1.0.32/33**：双音量设置、单音强制、`panicAll()` 复音全静音（PC 劣化开始）
+- **v1.0.34**：`panicAll()` → LRU 替换，**引入 `noteOnTime` 时间戳（PC 卡顿起点）**
+- **v1.0.35**：恢复 v1.0.33 特性、分组设置界面、GM 0-127 乐器、默认值转 Nokia 向
+- **v1.0.36**：双芯片/芯片类型识别修复（369 文件误判 293→0）
+- **v1.0.37**：切曲时 `System.gc()`（真机内存）
+- **v1.0.38**：`retriggerVel` 遵循 `volMode`
+- **v1.0.39**：新增 `Mono tone` / `Poly overflow` 开关（**引入持久化遗漏 Bug**）
+- **v1.0.40**：移除 `System.currentTimeMillis()`，改用递增序列号（**PC 流畅度恢复**）
+- **v1.0.41**：预设快速切换（PC / Nokia E5）+ PC 默认值 + **持久化 Bug 修复**
+
+## ⚠️ 新增配置选项的强制规范
+
+**每次新增用户可配置选项，必须完成 12 步**（详见 DEVELOPMENT.md）。历史上因遗漏导致严重 Bug：
+
+| Bug | 版本 | 症状 | 根因 |
+|-----|------|------|------|
+| PC 音质劣化 | v1.0.32-39 | 音符卡顿、听感变薄 | 单音强制 + panic 全静音 + `System.currentTimeMillis()` |
+| 设置切曲丢失 | v1.0.39 | 调整后切曲立即退回默认 | 未添加到 `applyPersisted()`/`persist()`，未扩展 `FIELDS` |
+| 切曲内存累积 | v1.0.37 | 真机播放中 OOM | 真机 GC 懒惰，未主动回收 |
+
+**最易遗漏的一步**：`PlayScreen.applyPersisted()` —— 遗漏会导致切曲后设置丢失，用户立即遇到。
 
 ## 项目记忆
 
 ### 关键决策
 1. **实时 MIDI 引擎已死**（2026-10-21）：S40/诺基亚 `device://midi` 是空壳，只有 ToneControl 可用
 2. **单缓冲水位线为主线**：比双缓冲更流畅，E5 真机验证通过
-3. **v1.0.32+ 彻底解决诺基亚真机问题**：双音量设置 + 复音上限 + 蜂鸣器隔离
+3. **PC 与真机需要不同配置**：v1.0.41 起用预设一键切换（PC / Nokia E5）
+4. **音频关键路径禁止系统调用**：v1.0.34 的 `System.currentTimeMillis()` 是 PC 卡顿主因
 
 ### 当前问题与修复
-- ✅ **进度条显示修复**（v1.0.34）：有循环点的曲目在第二次循环时进度条会超过总长 → 改为 `total = totalSamples + loopPlays × loopSamples`（libvgm 同款算法）
-- ⚠️ **源码丢失风险**：v1.0.32/v1.0.33 源码未提交，从 stash@{1} 找回 → 已提交到 commit fd1a60b
+- ✅ **PC 音质劣化**（v1.0.40 修复）：移除 `noteOnTime` 时间戳调用，改用递增序列号
+- ✅ **设置切曲丢失**（v1.0.41 修复）：补全 `applyPersisted()`/`persist()`，`FIELDS` 30→32
+- ✅ **双芯片误判**（v1.0.36 修复）：bit31→bit30，0x7C/0x7D→0x78/0x79
+- ✅ **进度条显示修复**（v1.0.34）：有循环点的曲目第二次循环时进度条超总长 → `total = totalSamples + loopPlays × loopSamples`
+- ⚠️ **源码丢失风险**：v1.0.32/v1.0.33 源码未提交，从 stash@{1} 找回 → 已提交到 `fd1a60b`
 
 ### 调试技巧
+- 开发规范与历史：`tools/vgm-browser-single/DEVELOPMENT.md`
 - 进度条计算在 `PlayScreen.java:1277` 附近
 - 循环逻辑在 `PlayScreen.java:567`（`EV_END` 事件处理）
 - 音量/复音限制在 `Ay2Midi.java`

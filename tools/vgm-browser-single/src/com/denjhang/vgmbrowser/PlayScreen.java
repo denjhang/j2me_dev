@@ -97,6 +97,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M", "2M"};
     private int chunkIdx = 9;                 // Nokia 默认 2M（真机测试最优）
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
+    private int presetIdx = 0;                // 当前预设：0=PC, 1=Nokia E5
     private static final int ROW_H = 16;
     private int cursor;
     private int scroll;
@@ -1970,7 +1971,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_HEADER_ROUTING:
             case ROW_HEADER_INSTRUMENTS:
                 return "";  // 标题行无值
-            case ROW_PRESET: return "L=" + Ay2Midi.PRESET_NAMES[1] + " R=" + Ay2Midi.PRESET_NAMES[0];
+            case ROW_PRESET: return Ay2Midi.PRESET_NAMES[presetIdx];
             case ROW_MASTER: return String.valueOf(masterVol);
             case ROW_ENGINE: return ENGINE_NAMES[engineIdx];
             case ROW_CHUNK: return CHUNK_NAMES[chunkIdx];
@@ -2013,10 +2014,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         switch (cursor) {
             case ROW_PRESET: {
-                // 左右键循环切换预设：PC <-> Nokia E5
-                int p = (dir > 0) ? 0 : 1;  // 右键=PC(0), 左键=Nokia E5(1)
-                ay.applyPreset(p);
-                if (ay2 != null) ay2.applyPreset(p);
+                presetIdx = (presetIdx + dir + Ay2Midi.PRESET_NAMES.length) % Ay2Midi.PRESET_NAMES.length;
+                ay.applyPreset(presetIdx);
+                if (ay2 != null) ay2.applyPreset(presetIdx);
                 break;
             }
             case ROW_MASTER:

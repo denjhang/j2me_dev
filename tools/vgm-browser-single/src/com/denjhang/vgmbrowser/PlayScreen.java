@@ -62,37 +62,38 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     //  乐器:    CH0..
     // 设置界面行号（含分组标题）
     private static final int ROW_HEADER_PLAYBACK = 0;
-    private static final int ROW_MASTER = 1;
-    private static final int ROW_ENGINE = 2;
-    private static final int ROW_CHUNK = 3;
-    private static final int ROW_LOOP = 4;
-    private static final int ROW_ORDER = 5;
-    private static final int ROW_HEADER_LEVEL = 6;
-    private static final int ROW_SQVOL = 7;
-    private static final int ROW_NOISEVOL = 8;
-    private static final int ROW_ENVVOL = 9;
-    private static final int ROW_BUZZ_VOL = 10;
-    private static final int ROW_HEADER_VOLBEHAVIOR = 11;
-    private static final int ROW_VOLMODE = 12;
-    private static final int ROW_VOLFOLLOW = 13;
-    private static final int ROW_POLY = 14;
-    private static final int ROW_MONOTONE = 15;
-    private static final int ROW_OVERFLOW = 16;
-    private static final int ROW_HEADER_PITCH = 17;
-    private static final int ROW_OCT = 18;
-    private static final int ROW_BEND_SENS = 19;
-    private static final int ROW_BEND_RANGE = 20;
-    private static final int ROW_HEADER_ENVELOPE = 21;
-    private static final int ROW_ENVSAW_OCT = 22;
-    private static final int ROW_ENVTRI_OCT = 23;
-    private static final int ROW_ENVSAW_UNI = 24;
-    private static final int ROW_ENVTRI_UNI = 25;
-    private static final int ROW_HEADER_ROUTING = 26;
-    private static final int ROW_STEREO = 27;
-    private static final int ROW_NOISEMAP = 28;
-    private static final int ROW_HEADER_INSTRUMENTS = 29;
-    private static final int ROW_CH0 = 30;
-    private static final int TOTAL_ROWS = 30 + Ay2Midi.SLOTS;
+    private static final int ROW_PRESET = 1;
+    private static final int ROW_MASTER = 2;
+    private static final int ROW_ENGINE = 3;
+    private static final int ROW_CHUNK = 4;
+    private static final int ROW_LOOP = 5;
+    private static final int ROW_ORDER = 6;
+    private static final int ROW_HEADER_LEVEL = 7;
+    private static final int ROW_SQVOL = 8;
+    private static final int ROW_NOISEVOL = 9;
+    private static final int ROW_ENVVOL = 10;
+    private static final int ROW_BUZZ_VOL = 11;
+    private static final int ROW_HEADER_VOLBEHAVIOR = 12;
+    private static final int ROW_VOLMODE = 13;
+    private static final int ROW_VOLFOLLOW = 14;
+    private static final int ROW_POLY = 15;
+    private static final int ROW_MONOTONE = 16;
+    private static final int ROW_OVERFLOW = 17;
+    private static final int ROW_HEADER_PITCH = 18;
+    private static final int ROW_OCT = 19;
+    private static final int ROW_BEND_SENS = 20;
+    private static final int ROW_BEND_RANGE = 21;
+    private static final int ROW_HEADER_ENVELOPE = 22;
+    private static final int ROW_ENVSAW_OCT = 23;
+    private static final int ROW_ENVTRI_OCT = 24;
+    private static final int ROW_ENVSAW_UNI = 25;
+    private static final int ROW_ENVTRI_UNI = 26;
+    private static final int ROW_HEADER_ROUTING = 27;
+    private static final int ROW_STEREO = 28;
+    private static final int ROW_NOISEMAP = 29;
+    private static final int ROW_HEADER_INSTRUMENTS = 30;
+    private static final int ROW_CH0 = 31;
+    private static final int TOTAL_ROWS = 31 + Ay2Midi.SLOTS;
     private static final String[] CHUNK_NAMES = {"4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M", "2M"};
     private int chunkIdx = 9;                 // Nokia 默认 2M（真机测试最优）
     private static final String[] ENGINE_NAMES = {"MIDI (S3)", "Tone (Nokia)"};
@@ -1925,6 +1926,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private String rowName(int r) {
         switch (r) {
             case ROW_HEADER_PLAYBACK: return "-- Playback --";
+            case ROW_PRESET: return "Preset";
             case ROW_MASTER: return "Master vol";
             case ROW_ENGINE: return "Engine";
             case ROW_CHUNK: return "Gen size";
@@ -1968,6 +1970,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             case ROW_HEADER_ROUTING:
             case ROW_HEADER_INSTRUMENTS:
                 return "";  // 标题行无值
+            case ROW_PRESET: return "---";  // 预设不显示当前值，只用于快速应用
             case ROW_MASTER: return String.valueOf(masterVol);
             case ROW_ENGINE: return ENGINE_NAMES[engineIdx];
             case ROW_CHUNK: return CHUNK_NAMES[chunkIdx];
@@ -2009,6 +2012,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             return;
         }
         switch (cursor) {
+            case ROW_PRESET: {
+                // 左右键循环切换预设：PC <-> Nokia E5
+                int p = (dir > 0) ? 0 : 1;  // 右键=PC(0), 左键=Nokia E5(1)
+                ay.applyPreset(p);
+                if (ay2 != null) ay2.applyPreset(p);
+                break;
+            }
             case ROW_MASTER:
                 setMaster(masterVol + dir * 10);
                 break;

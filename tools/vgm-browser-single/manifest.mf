@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 MIDlet-Name: VgmBrowserSingle
-MIDlet-Version: 1.0.40
+MIDlet-Version: 1.0.41
 MIDlet-Vendor: Denjhang
 MIDlet-1: VgmBrowserSingle,,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Icon: /icon.png

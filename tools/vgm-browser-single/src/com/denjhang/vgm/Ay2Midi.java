@@ -1296,6 +1296,41 @@ public class Ay2Midi {
     public void setPolyOverflow(int p) { if (p >= 0 && p < 2) polyOverflow = p; }
     public static final String[] OVERFLOW_NAMES = {"LRU", "panic"};
     
+    /** 预设组：快速切换 PC/Nokia 优化配置 */
+    public static final String[] PRESET_NAMES = {"PC", "Nokia E5"};
+    public void applyPreset(int preset) {
+        switch (preset) {
+            case 0:  // PC 预设
+                volMode = 0;           // API
+                volFollowMode = 2;     // CC7
+                monoTone = false;      // 允许复音
+                polyOverflow = 0;      // LRU
+                sqVolPct = 90;
+                noiseVolPct = 80;
+                envVolPct = 90;
+                setEnvUni(false, 2);   // saw unison +2
+                setEnvUni(true, 1);    // tri unison +1
+                stereoMode = 0;        // ABC
+                noiseMapMode = 1;      // C4 top
+                forceRefreshAll();
+                break;
+            case 1:  // Nokia E5 预设（真机默认）
+                volMode = 1;           // CC7
+                volFollowMode = 0;     // retrig
+                monoTone = true;       // 单音强制
+                polyOverflow = 0;      // LRU
+                sqVolPct = 100;
+                noiseVolPct = 100;
+                envVolPct = 100;
+                setEnvUni(false, 2);   // saw unison +2
+                setEnvUni(true, 0);    // tri unison off
+                stereoMode = 6;        // MONO
+                noiseMapMode = 1;      // C4 top
+                forceRefreshAll();
+                break;
+        }
+    }
+    
     /** 音量多重保障：0=API/CC7回退（旧行为，力度恒127） 1=CC7 2=CC7+CC11+vel三重。 */
     public static final String[] VOL_MODES = {"API", "CC7", "CC7+CC11+vel"};
     private int volMode = 1;   // Nokia 默认：CC7（真机实测有效）

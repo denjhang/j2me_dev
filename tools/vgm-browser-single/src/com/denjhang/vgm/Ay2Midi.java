@@ -1274,7 +1274,7 @@ public class Ay2Midi {
     /** 慢/快包络分界：包络波形频率低于此值按音量模拟（约 20Hz 听感分界）。 */
     private static final int ENV_TONE_MIN_HZ = 20;
     // ---- 复音上限（防音符泄露硬闸）与音量多重保障 ----
-    private int polyLimit = 64;
+    private int polyLimit = 128;   // PC 默认 128
     public int getPolyLimit() { return polyLimit; }
     public void setPolyLimit(int n) { if (n > 0) polyLimit = n; }
     public static final int[] POLY_CHOICES = {16, 32, 64, 128};
@@ -1285,7 +1285,7 @@ public class Ay2Midi {
     private final boolean[] toneChFlag = new boolean[16];
     
     /** 单音强制：true=方波通道强制单音(真机)  false=允许复音(PC,v1.0.31行为) */
-    private boolean monoTone = true;   // 默认 true（真机优化）
+    private boolean monoTone = false;   // PC 默认 false（允许复音）
     public boolean getMonoTone() { return monoTone; }
     public void setMonoTone(boolean m) { monoTone = m; }
     public static final String[] MONO_NAMES = {"off", "on"};
@@ -1305,6 +1305,7 @@ public class Ay2Midi {
                 volFollowMode = 2;     // CC7
                 monoTone = false;      // 允许复音
                 polyOverflow = 0;      // LRU
+                polyLimit = 128;       // 最大复音
                 sqVolPct = 90;
                 noiseVolPct = 80;
                 envVolPct = 90;
@@ -1319,6 +1320,7 @@ public class Ay2Midi {
                 volFollowMode = 0;     // retrig
                 monoTone = true;       // 单音强制
                 polyOverflow = 0;      // LRU
+                polyLimit = 64;        // 真机复音限制
                 sqVolPct = 100;
                 noiseVolPct = 100;
                 envVolPct = 100;

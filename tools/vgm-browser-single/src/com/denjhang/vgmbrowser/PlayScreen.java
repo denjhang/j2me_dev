@@ -422,6 +422,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         parser = null;
         file = null;
         pendingBytes = null;
+        // 切曲强制 GC：Nokia E5 等真机 GC 懒惰，不主动回收导致内存累积
+        System.gc();
     }
 
     public void run() {

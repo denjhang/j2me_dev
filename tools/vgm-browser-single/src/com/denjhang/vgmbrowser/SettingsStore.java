@@ -9,9 +9,9 @@ import javax.microedition.rms.RecordStore;
  */
 public final class SettingsStore {
     private static final String RS_NAME = "vgmbrowser_cfg";
-    static final int VERSION = 3;   // 3: Nokia 优化默认值（Gen size 2M, 音量平衡, CC7, retrig, unison +2）
-    /** 版本 + 13 项 + SLOTS 个音色。 */
-    public static final int FIELDS = 20 + 10;
+    static final int VERSION = 4;   // 4: PC 默认值 + monoTone + polyOverflow 持久化
+    /** 版本 + 13 项 + SLOTS 个音色 + 音量行为。 */
+    public static final int FIELDS = 20 + 12;
 
     private SettingsStore() {
     }

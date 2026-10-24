@@ -304,6 +304,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         if (v.length > 29 && v[29] > 0) {
             ay.setPolyLimit(v[29]);
         }
+        if (v.length > 30) {
+            ay.setMonoTone(v[30] != 0);
+        }
+        if (v.length > 31 && v[31] >= 0 && v[31] < 2) {
+            ay.setPolyOverflow(v[31]);
+        }
         ay.setEngineTone(engineIdx == 1);
         try {
             ay.setStereoMode(v[1]);
@@ -352,6 +358,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         v[27] = ay.getVolFollowMode();
         v[28] = ay.getVolMode();
         v[29] = ay.getPolyLimit();
+        v[30] = ay.getMonoTone() ? 1 : 0;
+        v[31] = ay.getPolyOverflow();
         for (int i = 0; i < Ay2Midi.SLOTS; i++) {
             v[16 + i] = ay.getProg(i);
         }

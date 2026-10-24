@@ -107,13 +107,11 @@ public class VgmHeader {
         // 芯片时钟：逐字段按 libvgm 的 SoundDevs 偏移表取
         readClocks(d, h);
 
-        // AY8910 附加字段：0x78=第二片时钟，0x7C=芯片类型，0x7D=标志
-        if (d.length > 0x78) {
-            h.ayClock2 = u32(d, 0x78);
-        }
-        if (d.length > 0x7D) {
-            h.ayChipType = d[0x7C] & 0xFF;
-            h.ayFlags = d[0x7D] & 0xFF;
+        // AY8910 附加字段：0x78=芯片类型，0x79=标志（libvgm AY8910_CFG）
+        // 第二片时钟在扩展头（0xBC），暂不支持，ayClock2 保留但始终为 0
+        if (d.length > 0x79) {
+            h.ayChipType = d[0x78] & 0xFF;
+            h.ayFlags = d[0x79] & 0xFF;
         }
 
         if (h.gd3Offset > 0 && h.gd3Offset + 12 <= d.length) {

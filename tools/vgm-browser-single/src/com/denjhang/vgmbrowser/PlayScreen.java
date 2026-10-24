@@ -1149,8 +1149,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         com.denjhang.vgm.VgmHeader hd = file.header;
         // 芯片/时钟信息置顶（无表头行，直接内容）
         long clk1 = hd.chipClock[0x12] & 0x3FFFFFFF;
-        boolean ym = (hd.chipClock[0x12] & 0x40000000) != 0 || hd.ayChipType != 0;
-        boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
+        boolean ym = hd.ayChipType != 0;  // 0x78: 0x00=AY8910, 0x10=YM2149
+        boolean dual = (hd.chipClock[0x12] & 0x40000000) != 0;  // bit30 = dual-chip flag
         java.util.Vector top = new java.util.Vector();
         if (clk1 > 0) {
             top.addElement("Chip");
@@ -1159,11 +1159,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             top.addElement(fmtHz(clk1));
         }
         if (dual) {
-            long clk2 = hd.ayClock2 != 0 ? (hd.ayClock2 & 0x3FFFFFFF) : clk1;
+            // 第二片时钟暂不支持（需解析扩展头 0xBC），回退用同一时钟
             top.addElement("Chip2");
             top.addElement(ym ? "YM2149 x2" : "AY8910 x2");
             top.addElement("Clock2");
-            top.addElement(fmtHz(clk2));
+            top.addElement(fmtHz(clk1));
         }
         top.addElement("VGM");
         top.addElement("v" + (hd.version >> 8) + "." + (hd.version & 0xFF));
@@ -1451,7 +1451,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         dbgCacheAt = now;
         com.denjhang.vgm.VgmHeader hd = file.header;
         long clk = hd.chipClock[0x12] & 0x3FFFFFFF;
-        boolean dual = (hd.chipClock[0x12] & 0x80000000) != 0 || hd.ayClock2 != 0;
+        boolean dual = (hd.chipClock[0x12] & 0x40000000) != 0;  // bit30 = dual-chip flag
         dbgCache = new String[][]{
             {"Engine", ENGINE_NAMES[engineIdx] + " - " + ay.midiStatus()},
             {"Stream", streamInfo()},

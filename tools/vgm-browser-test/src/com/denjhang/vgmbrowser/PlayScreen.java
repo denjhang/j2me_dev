@@ -532,6 +532,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private long[] reg2PoolPend;
     private static final int[] BUF_BYTES = {4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152};
 
+    /** 测试器专用：运行前覆盖块档（chunk.txt 探针）。 */
+    void setChunkLevel(int lvl) {
+        if (lvl >= 0 && lvl < BUF_BYTES.length) {
+            chunkIdx = lvl;
+        }
+    }
+
     private int targetBytes() {
         return BUF_BYTES[chunkIdx < BUF_BYTES.length ? chunkIdx : BUF_BYTES.length - 1];
     }

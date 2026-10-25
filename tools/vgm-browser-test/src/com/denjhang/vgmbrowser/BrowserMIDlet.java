@@ -22,6 +22,8 @@ public class BrowserMIDlet extends MIDlet {
     private static final boolean AUTO_PLAY_FULL = true;  // true=播放完整，false=限时切曲
     private static final int AUTO_PLAY_SECONDS = 30;  // 仅当 AUTO_PLAY_FULL=false 时生效
     private Thread autoPlayThread;
+    /** chunk.txt 读到的块档（-1=不覆盖），在每个 PlayScreen 创建后应用。 */
+    private int pendingChunkLevel = -1;
 
     public void startApp() {
         System.out.println("[TEST] === VgmBrowserSingle 测试版启动 ===");
@@ -44,6 +46,28 @@ public class BrowserMIDlet extends MIDlet {
     
     private void autoPlayLoop() {
         try {
+            // ---- 探针：读 /root/chunk.txt 覆盖块档（对比实验用，无需改码重编）----
+            try {
+                FileConnection cf = (FileConnection) Connector.open("file:///root/chunk.txt", Connector.READ);
+                try {
+                    java.io.InputStream cin = cf.openInputStream();
+                    java.io.ByteArrayOutputStream cb = new java.io.ByteArrayOutputStream();
+                    byte[] t = new byte[64];
+                    int n;
+                    while ((n = cin.read(t)) > 0) {
+                        cb.write(t, 0, n);
+                    }
+                    cin.close();
+                    String s = new String(cb.toByteArray()).trim();
+                    int lvl = Integer.parseInt(s);
+                    pendingChunkLevel = lvl;
+                    System.out.println("[TEST] chunk.txt 覆盖块档 = " + lvl);
+                } finally {
+                    cf.close();
+                }
+            } catch (Throwable t) {
+                System.out.println("[TEST] 无 chunk.txt，用默认块档");
+            }
             // 扫描目录获取所有 VGM 文件
             java.util.Vector files = new java.util.Vector();
             FileConnection dir = (FileConnection) Connector.open(AUTO_LOAD_DIR, Connector.READ);
@@ -169,7 +193,16 @@ public class BrowserMIDlet extends MIDlet {
     void openPlayRaw(String name, byte[] rawBytes, int listIndex) {
         releasePlay();
         play = new PlayScreen(this, name, rawBytes, listIndex);
+        applyChunkLevel();
         Display.getDisplay(this).setCurrent(play);
+    }
+
+    /** chunk.txt 探针：把覆盖档位应用到当前 PlayScreen。 */
+    private void applyChunkLevel() {
+        if (pendingChunkLevel >= 0 && play != null) {
+            play.setChunkLevel(pendingChunkLevel);
+            System.out.println("[TEST] 块档已应用 = " + pendingChunkLevel);
+        }
     }
 
     void openPlay(VgmFile file, int listIndex) {

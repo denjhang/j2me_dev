@@ -827,17 +827,17 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             boolean has1 = i < i0 + n1;
             long t1 = has1 ? gen.recF[i * 4] : Long.MAX_VALUE;
             long t2 = j < j0 + n2 && gen2 != null ? gen2.recF[j * 4] : Long.MAX_VALUE;
-            long[] e;
             if (t1 <= t2) {
-                e = new long[]{gen.recF[i * 4], gen.recF[i * 4 + 1],
-                        gen.recF[i * 4 + 2], gen.recF[i * 4 + 3]};
+                long ms = gen.recF[i * 4] - from;
+                segBuilder.event(ms, (int) gen.recF[i * 4 + 1],
+                        (int) gen.recF[i * 4 + 2], (int) gen.recF[i * 4 + 3]);
                 i++;
             } else {
-                e = new long[]{gen2.recF[j * 4], gen2.recF[j * 4 + 1],
-                        gen2.recF[j * 4 + 2], gen2.recF[j * 4 + 3]};
+                long ms = gen2.recF[j * 4] - from;
+                segBuilder.event(ms, (int) gen2.recF[j * 4 + 1],
+                        (int) gen2.recF[j * 4 + 2], (int) gen2.recF[j * 4 + 3]);
                 j++;
             }
-            segBuilder.event(e[0] - from, (int) e[1], (int) e[2], (int) e[3]);
         }
         return segBuilder.build(to - from);
     }

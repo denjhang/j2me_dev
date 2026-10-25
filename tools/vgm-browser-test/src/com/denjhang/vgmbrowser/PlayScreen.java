@@ -649,7 +649,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 try { Thread.sleep(2); } catch (InterruptedException e) { break fillLoop; }
             }
             // 水位线：未消费超过 2 块，歇口气（软背压，内存有界）
-            while (playing && availBytes() > targetBytes() * 2) {
+            // 文件模式不适用：整曲一次转完喂文件 Player，无块消费语义
+            while (!FILE_MODE && playing && availBytes() > targetBytes() * 2) {
                 if (paused) {
                     break;
                 }
@@ -684,8 +685,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         try {
             if (FILE_MODE) {
                 // 文件模式：整曲转 .mid 落盘 → createPlayer(file://) → KEmulator 自管
-                System.out.println("[FILE] entering file mode");
+                System.out.println("[FILE] entering file mode (thread="
+                        + Thread.currentThread().getName() + ")");
                 playWholeFile();
+                System.out.println("[FILE] bufferPlayer exited file mode");
                 return;
             }
             synchronized (streamLock) {
@@ -737,25 +740,37 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 文件模式主流程：等转换完成 → 整曲 SMF 落盘 → 文件 Player 循环播放。 */
     private void playWholeFile() {
         try {
+            System.out.println("[FILE] waiting feedEnded... playing=" + playing
+                    + " feedEnded=" + feedEnded
+                    + " recN=" + gen.recN + " regN=" + gen.regN
+                    + (gen2 != null ? " rec2N=" + gen2.recN : ""));
             // 等 fillLoop 转完（含循环展开）
             while (playing && !feedEnded) {
                 try { Thread.sleep(30); } catch (InterruptedException e) { return; }
             }
+            System.out.println("[FILE] feedEnded=" + feedEnded + " playing=" + playing
+                    + " recN=" + gen.recN + " regN=" + gen.regN);
             if (!playing) {
+                System.out.println("[FILE] aborted (playing=false), recN=" + gen.recN);
                 return;
             }
             // 整曲一次打包（recF 尚未被消费，headEvents=0）
             byte[] smf = buildWholeSmf();
             if (smf == null) {
                 playErr = "build whole smf failed";
+                System.out.println("[FILE] buildWholeSmf returned null");
                 return;
             }
+            System.out.println("[FILE] smf=" + smf.length + " bytes, writing...");
             String path = writeMidFile(smf);
             if (path == null) {
+                System.out.println("[FILE] writeMidFile failed, playErr=" + playErr);
                 return;   // playErr 已设
             }
+            System.out.println("[FILE] wrote OK, releasing pipeline");
             // 释放生产端全部大对象：MIDI 已在盘上，流水线不再需要
             releasePipeline();
+            System.out.println("[FILE] playing from file...");
             // 文件 Player：KEmulator 自己从文件读
             while (playing) {
                 while (paused && playing) {
@@ -770,12 +785,15 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 }
                 if (loopPlays < LOOP_CHOICES[loopIdx] - 1) {
                     loopPlays++;
+                    System.out.println("[FILE] reloop " + loopPlays);
                     continue;   // 循环重播
                 }
                 break;   // 播完（循环次数用尽）
             }
+            System.out.println("[FILE] playWholeFile done, loopPlays=" + loopPlays);
         } catch (Throwable t) {
             playErr = "file mode: " + t;
+            System.out.println("[FILE] playWholeFile EXC: " + t);
         }
     }
 
@@ -868,7 +886,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     }
 
     /** 释放生产端大对象：recF/VGM 字节/解析器（MIDI 已落盘）。
-     *  保留 regF——可视化回放需要它（走 AY 不走 MIDI）。 */
+     *  保留 regF——可视化回放需要它（走 AY 不走 MIDI）。
+     *  保留 file 引用——paint() 读 header（GD3 标题/曲目信息）不能为 null。 */
     private void releasePipeline() {
         gen.recF = new long[2048];
         gen.recN = 0;
@@ -876,13 +895,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             gen2.recF = new long[2048];
             gen2.recN = 0;
         }
-        // VGM 原始字节与解析器：file/parser 字段是整条链的根
-        parser = null;
+        // VGM 原始字节与解析器：file/parser 是整条链的根，release() 清 data，
+        // 但保 file 对象供 paint 读 GD3 标题/曲信息
         if (file != null) {
             file.release();
-            file = null;
         }
-        System.out.println("[FILE] pipeline released (regF kept for vis)");
+        System.out.println("[FILE] pipeline released (regF+file kept for vis/paint)");
         System.gc();
     }
 
@@ -890,6 +908,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private void playFileSeg(String url) {
         javax.microedition.media.Player p = null;
         try {
+            // 文件模式从"填充"进入"播放"：paint 据此解锁动态层（琴键/TNE 指示器）
+            playPhase = PHASE_PLAY;
             p = javax.microedition.media.Manager.createPlayer(url);
             p.realize();
             p.prefetch();
@@ -917,6 +937,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             int visRi = 0, visRi2 = 0;
             int regN1 = gen.regN / 3;
             int regN2 = gen2 != null ? gen2.regN / 3 : 0;
+            long visProbeAt = System.currentTimeMillis();
+            System.out.println("[VIS] start: regN1=" + regN1 + " regN2=" + regN2
+                    + " durMs=" + durMs
+                    + " gen.regN=" + gen.regN
+                    + (gen2 != null ? " gen2.regN=" + gen2.regN : ""));
             p.start();
             // 等待 endOfMedia：用 wait/notify（sleep 不释放 monitor 唤不醒）
             // 兜底：listener 不回调时，mediaTime 达到 duration 也算播完
@@ -936,6 +961,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 long el = p.getMediaTime() / 1000;
                 playPct = (int) (el * 100 / Math.max(1, durMs));
                 progressBase = el * 44;
+                // 可视化探针：每 5 秒打一次 visRi 推进情况（验证可视化数据在动）
+                long nowMs = System.currentTimeMillis();
+                if (nowMs - visProbeAt >= 5000) {
+                    visProbeAt = nowMs;
+                    System.out.println("[VIS] t=" + el + "ms visRi=" + visRi
+                            + "/" + regN1 + " visRi2=" + visRi2 + "/" + regN2
+                            + " curNote0=" + ay.visNote(0) + " curNote1=" + ay.visNote(1)
+                            + " curVol0=" + ay.visLevel(0)
+                            + " toneAct0=" + ay.visToneActive(0));
+                }
                 // 可视化重放（绝对时间轴，与 playSeg 1035-1046 同逻辑）
                 while (visRi < regN1 && gen.regF[visRi * 3] <= el) {
                     ay.vtime = gen.regF[visRi * 3];

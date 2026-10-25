@@ -26,6 +26,7 @@ public class VgmFile {
     /** 文件模式：MIDI 已落盘，VGM 原始字节立即释放（解析器随 data 失效，不可再用）。 */
     public void release() {
         data = new byte[0];
+        parser.release();
     }
 
     public static VgmFile fromBytes(String name, byte[] data) {

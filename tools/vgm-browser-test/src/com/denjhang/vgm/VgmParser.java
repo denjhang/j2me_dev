@@ -26,7 +26,7 @@ public class VgmParser {
         public int romSize;
     }
 
-    private final byte[] data;
+    private byte[] data;
     private final VgmHeader header;
 
     private int pos;
@@ -52,6 +52,11 @@ public class VgmParser {
         this.header = header;
         this.pos = header.dataOffset;
         this.samples = 0;
+    }
+
+    /** 文件模式：转换完成/落盘后释放 VGM 原始字节（parser 不可再用）。 */
+    public void release() {
+        data = new byte[0];
     }
 
     public VgmHeader getHeader() {

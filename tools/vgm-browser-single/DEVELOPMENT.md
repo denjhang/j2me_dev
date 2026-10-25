@@ -890,4 +890,82 @@ aa27459  v1.0.37  切曲 System.gc()
 - 新增性能问题 → 添加到「性能优化指南」
 - 每次发版 → 更新「版本演进历史」时间线
 
-**最后更新**：2026-10-25，v1.0.41 持久化修复
+**最后更新**：2026-10-25，性能分析进度（见下方章节）
+
+---
+
+## 性能分析进度（2026-10-25 下午，jmap 实证）
+
+> 本次分析在 `vgm-test-harness` 分支进行（独立测试器 + 自动播放 2025-Turbosound 双芯片曲），
+> 主线代码未动。结论用 jmap 抓堆实证，非读代码猜测。
+
+### 已确认：内存泄漏真根因
+
+**真凶：`javax.sound.midi.MidiEvent` / `FastShortMessage` 永不释放，堆积在 `Track` 里。**
+
+jmap `-histo:live`（强制 GC 后）实证，PID 1208，自动播 8 秒后：
+
+| 对象 | GC 后实例数 | 字节 | 备注 |
+|---|---|---|---|
+| `java.util.HashMap$Node` | 843,986 | 27 MB | Track 内部 HashMap 节点 |
+| `[B` byte[] | 843,176 | 26 MB | SMF 字节 + MidiEvent 内容 |
+| `javax.sound.midi.MidiEvent` | **838,954** | **20 MB** | **永不回收** |
+| `com.sun.media.sound.FastShortMessage` | **838,950** | **20 MB** | **永不回收** |
+| `javax.sound.midi.Sequence` | **2** | — | 活引用 |
+| `javax.sound.midi.Track` | **2** | — | 活引用 |
+| `PlayerImpl` | 2 | — | 1 可视 + 1 当前块 |
+
+**关键证据**：30 秒前后两个快照，`MidiEvent` 数量**一个不变**（838,954 → 838,954）——是死对象不是浮动垃圾。2 个 Track 平均持有 41.9 万事件/Track，与块大小（`chunkIdx=9` 默认 2MB / 5 字节 ≈ 40 万事件/块）完全吻合。
+
+**泄漏机制**（`PlayScreen.playSeg` 行 944-1014 + `Ay2Midi.createSegPlayer` 行 868-874）：
+1. 每块 SMF 字节流交给 `Manager.createPlayer(smf, "audio/midi")`
+2. KEmulator 底层用 `javax.sound.midi.Sequence` 解析 SMF，**每个 MIDI 事件建一个 `MidiEvent` + `FastShortMessage` 存进 `Track` 的 HashMap**
+3. `playSeg` 末尾 `p.close()`（行 1013），但 **KEmulator 的 `Player.close()` 没清空 `Sequence` 的 `Track` 内容**（模拟器实现缺陷，或 Sequence 被某处强引用住了）
+4. 旧块的事件全部永驻堆 → 每秒 +5MB（40 万事件 × 24 字节 ≈ 10MB/块，2 块/秒 → +20MB，实际 GC 抢救掉一部分 → +5MB/s 净增）
+
+**与 Bug #3（切曲内存累积）的关系**：Bug #3 是切曲时旧 PlayScreen 残留；本次是**单首曲子内部**的块级累积，两者叠加。`release()` 的 `System.gc()` 对本次无效——对象被活引用链持有，GC 不收。
+
+### 已确认：双芯片卡死的嫌疑
+
+**主嫌疑**：双芯片下 `buildChunk` 归并两路事件（`PlayScreen.java:793-810`），单块事件数翻倍 → `MidiEvent` 翻倍 → 堆压力翻倍 → GC 暴涨 → UI 线程饿死 → 画面冻结。
+
+**尚未单独验证**：需要起一次专跑双芯片，抓 `-verbose:gc` 日志和 `jstack` 线程 dump，确认 UI 线程是否在 GC 饥饿中。
+
+### 已确认：正确的调试方法
+
+**不用 JMX 端口**（实测会让 KEmulator 启动失败，进程秒退），**用 jmap Attach API**：
+
+```bash
+# 1. 起 KEmulator（不带 JMX，用 single 启动器参数）
+./run-test.sh
+
+# 2. 找 PID
+tasklist /FI "IMAGENAME eq java.exe"
+
+# 3. 抓对象直方图（无需 JMX，Attach API 自动发现本机进程）
+"tools/jdk8/bin/jmap.exe" -histo <PID>            # 全量
+"tools/jdk8/bin/jmap.exe" -histo:live <PID>       # 强制 GC 后（区分浮动 vs 泄漏）
+
+# 4. 两个快照对比增量，30 秒不变的对象 = 真泄漏
+# 5. 找 GC root（下一步定位谁持有 Track）
+"tools/jdk8/bin/jmap.exe" -dump:format=b,file=heap.hprof <PID>
+"tools/jdk8/bin/jhat.exe" heap.hprof              # 浏览引用链
+
+# 6. 线程状态（双芯片卡死时抓）
+"tools/jdk8/bin/jstack.exe" <PID>
+```
+
+**为什么前一轮 8 小时找不到**：前一轮只看 `System.out` 的 fps/内存数字，**完全没用 jmap 抓对象级证据**。内存数字只能告诉你"在涨"，不能告诉你"什么在涨、被谁持有"。jmap 一次就抓出 83.9 万 MidiEvent。
+
+### 待办
+
+- [ ] 双芯片卡死独立验证：`-verbose:gc` + `jstack`，确认是否 GC 饥饿
+- [ ] jhat 找 Track 的 GC root，确认是 KEmulator 内部缓存还是我方代码强引用
+- [ ] 修复方向候选：复用常驻 Sequencer + `setSequence` 替代每块 `createPlayer`（single 的 `prepLoop` 已朝此方向，但 `playSeg` 当前没用上常驻 `prepPlayer`）
+- [ ] 修复前必须先在主线验证：可视化/音频/交互每步人工确认，不再全自动下结论
+
+### 分支与产物
+
+- `vgm-test-harness` 分支：测试器源码 100% 对齐 single v1.0.41（前一轮坏改动全清除）+ 自动播放线程 + jmap 探针
+- `run-test.sh`：测试器启动器（不带 JMX，配 jmap 提示）
+- 探针：每秒 `[PERF]` fps/paintAvg/used/delta/total/chunkCut/chunkBuilt/buildMs/playMs + `[TEST]` release #N afterGc

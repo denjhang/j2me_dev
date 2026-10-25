@@ -118,7 +118,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private final Command cmdBack = new Command("List", Command.BACK, 2);
     private final Command cmdSetBack = new Command("Back", Command.OK, 1);
 
-    volatile boolean playing;  // package-private for BrowserMIDlet
+    private volatile boolean playing;
     private volatile boolean uiAlive = true;
     private Thread play;
     private String err;
@@ -227,6 +227,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }).start();
         // UI 线程（repaint 循环 + 按键）必须立即启动，否则界面卡死
         midlet.refreshListNowPlaying();
+        midlet.markerNewPlayer(listIndex, midlet.trackCount());
         Thread ui = new Thread(this);
         ui.start();
     }
@@ -264,6 +265,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         startPlay(true);
         marqueeBaseMs = System.currentTimeMillis();
         midlet.refreshListNowPlaying();
+        midlet.markerNewPlayer(listIndex, midlet.trackCount());
         Thread ui = new Thread(this);
         ui.start();
     }
@@ -436,6 +438,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         pendingBytes = null;
         // 切曲强制 GC：Nokia E5 等真机 GC 懒惰，不主动回收导致内存累积
         System.gc();
+        probeReleaseCount++;
+        Runtime rt = Runtime.getRuntime();
+        long afterGc = rt.totalMemory() - rt.freeMemory();
+        System.out.println("[TEST] PlayScreen.release #" + probeReleaseCount
+                + " afterGc used=" + (afterGc / 1024) + "K"
+                + " total=" + (rt.totalMemory() / 1024) + "K");
+        midlet.markerRelease();
     }
 
     public void run() {
@@ -544,7 +553,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
         gen.copyConfigFrom(ay);
         gen.recording = true;
-        gen.recordingReg = false;   // 修复：单曲播放不需要 regF（只用于录制，不影响可视化）
+        gen.recordingReg = true;
         gen.recBaseMs = 0;
         gen.vtime = 0;
         gen.recN = 0;
@@ -554,7 +563,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             gen2.setClock(clk);
             gen2.copyConfigFrom(ay2);
             gen2.recording = true;
-            gen2.recordingReg = false;   // 修复：gen2 也禁用 regF
+            gen2.recordingReg = true;
             gen2.recBaseMs = 0;
             gen2.vtime = 0;
             gen2.recN = 0;
@@ -605,7 +614,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                     if (gen2 != null) {
                         if (!gen2.recording) {
                             gen2.recording = true;
-                            gen2.recordingReg = false;   // 修复：gen2 也禁用 regF
+                            gen2.recordingReg = true;
                             gen2.recBaseMs = 0;
                             gen2.recBytes = 0;
                             gen2.vtime = ms;
@@ -620,25 +629,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (gen2 != null) {
                 gen2.tick();
             }
-            // 周期性让出 CPU：大缓冲填充期长，不让出会饿死 UI 重绘（动画/文字冻结）
+            // 周期性让出 CPU：大缓冲填充期长，不让出会饿死 UI 重统（动画/文字冻结）
             if ((++pumpCount & 0xFF) == 0) {
                 try { Thread.sleep(2); } catch (InterruptedException e) { break fillLoop; }
-                
-                // 修复：定期清理已消费的事件（每 512 次解析 trim 一次，更激进）
-                if ((pumpCount & 0x1FF) == 0) {  // 每 512 次解析
-                    synchronized (streamLock) {
-                        gen.recN = trimRec(gen, streamHeadMs);
-                        gen.regN = trimRegs(gen, streamHeadMs);  // 添加 regF trim
-                        if (gen2 != null) {
-                            gen2.recN = trimRec(gen2, streamHeadMs);
-                            gen2.regN = trimRegs(gen2, streamHeadMs);  // 添加 gen2 regF trim
-                        }
-                        shrinkStream(gen);
-                        if (gen2 != null) {
-                            shrinkStream(gen2);
-                        }
-                    }
-                }
             }
             // 水位线：未消费超过 2 块，歇口气（软背压，内存有界）
             while (playing && availBytes() > targetBytes() * 2) {
@@ -729,6 +722,19 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     /** 从流头切一块（够 target 字节），构建 SMF+寄存器并推进头指针。 */
     private boolean cutChunk(boolean toPending) {
+        long ct0 = System.currentTimeMillis();
+        try {
+            boolean r = cutChunkImpl(toPending);
+            if (r) {
+                probeChunksCut++;
+            }
+            return r;
+        } finally {
+            probeBuildMs += System.currentTimeMillis() - ct0;
+        }
+    }
+
+    private boolean cutChunkImpl(boolean toPending) {
         int tb = targetBytes();
         int i0 = headEvents, j0 = head2Events;
         int i = i0, j = j0;
@@ -797,6 +803,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     /** 构建一块自包含 SMF（构建器跨块复用，配置静默同步）。 */
     private byte[] buildChunk(int i0, int n1, int j0, int n2, long from, long to) {
+        byte[] smf = buildChunkImpl(i0, n1, j0, n2, from, to);
+        probeChunksBuilt++;
+        return smf;
+    }
+
+    private byte[] buildChunkImpl(int i0, int n1, int j0, int n2, long from, long to) {
         gen.copyConfigQuiet(ay);
         if (gen2 != null) {
             gen2.copyConfigQuiet(ay2);
@@ -853,22 +865,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     /** 数组收缩：容量超过在留数据 8 倍且大于 32K long 时砍半，防止峰值容量永久占用。 */
     private static void shrinkStream(Ay2Midi g) {
-        // 修复：trim 后 recN 很小时立刻 shrink（否则容量永不释放）
-        if (g.recF != null && g.recF.length > 16384 && g.recN < 1000) {
-            long[] n = new long[Math.max(8192, g.recN * 2)];
-            System.arraycopy(g.recF, 0, n, 0, g.recN);
-            g.recF = n;
-        } else if (g.recF != null && g.recF.length > 8192 && g.recF.length > g.recN * 8) {
+        if (g.recF != null && g.recF.length > 8192 && g.recF.length > g.recN * 8) {
             long[] n = new long[Math.max(8192, g.recN * 2)];
             System.arraycopy(g.recF, 0, n, 0, g.recN);
             g.recF = n;
         }
-        // regF 已禁用，但保留 shrink 逻辑
-        if (g.regF != null && g.regF.length > 12288 && g.regN < 100) {
-            long[] n = new long[Math.max(6144, g.regN * 2)];
-            System.arraycopy(g.regF, 0, n, 0, g.regN);
-            g.regF = n;
-        } else if (g.regF != null && g.regF.length > 6144 && g.regF.length > g.regN * 8) {
+        if (g.regF != null && g.regF.length > 6144 && g.regF.length > g.regN * 8) {
             long[] n = new long[Math.max(6144, g.regN * 2)];
             System.arraycopy(g.regF, 0, n, 0, g.regN);
             g.regF = n;
@@ -888,21 +890,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             System.arraycopy(g.regF, k, g.regF, 0, g.regN - k);
         }
         return g.regN - k;
-    }
-    
-    /** MIDI 事件流按时间压缩，返回新长度（修复内存膨胀）。 */
-    private static int trimRec(Ay2Midi g, long headMs) {
-        int k = 0;
-        for (int p = 0; p < g.recN; p += 4) {
-            if (g.recF[p] >= headMs) {
-                break;
-            }
-            k = p + 4;
-        }
-        if (k > 0) {
-            System.arraycopy(g.recF, k, g.recF, 0, g.recN - k);
-        }
-        return g.recN - k;
     }
 
     /** 创建一块的 Player：create+realize+prefetch（开销大，尽量由常驻线程提前做）。 */
@@ -984,6 +971,16 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 播放一块：audio/midi 流 + 寄存器重放驱动可视化（vis 实例独立于生产状态）。 */
     private void playSeg(byte[] smf, long startMs, long endMs,
                          long[] regs, long[] regs2) {
+        long pt0 = System.currentTimeMillis();
+        try {
+            playSegImpl(smf, startMs, endMs, regs, regs2);
+        } finally {
+            probePlayMs += System.currentTimeMillis() - pt0;
+        }
+    }
+
+    private void playSegImpl(byte[] smf, long startMs, long endMs,
+                             long[] regs, long[] regs2) {
         javax.microedition.media.Player p = chunkPrep;
         chunkPrep = null;
         try {
@@ -1139,15 +1136,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     // ------------------------------------------------------------ HUD 绘制
 
-    // ---- 测试模式：帧率和内存监控 ----
-    private long testFrameCount = 0;
-    private long testPaintTotalMs = 0;
-    private long testLastReportMs = 0;
+    // ---- 测试探针：只读，不改播放逻辑 ----
+    private long probeFrameCount;
+    private long probePaintMs;
+    private long probeReportAt;
+    private long probePrevUsed;
+    private static long probeChunksCut;
+    private static long probeChunksBuilt;
+    private static long probeBuildMs;
+    private static long probePlayMs;
+    private static long probeReleaseCount;
 
     protected void paint(Graphics g) {
-        long t0 = System.currentTimeMillis();
-        testFrameCount++;
-        
+        long pt0 = System.currentTimeMillis();
+        probeFrameCount++;
         int w = getWidth();
         int h = getHeight();
         g.setColor(0x0C1118);
@@ -1163,39 +1165,51 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 g.setColor(0x3E7BA8);
                 g.fillRoundRect(6, 30, (w - 16) * Math.max(0, decompPct) / 100, 10, 10, 10);
             }
-            testPaintTotalMs += (System.currentTimeMillis() - t0);
+            probePaintMs += System.currentTimeMillis() - pt0;
             return;
         }
         if (mode == MODE_SETTINGS) {
             paintSettings(g, w, h);
-            testPaintTotalMs += (System.currentTimeMillis() - t0);
+            probePaintMs += System.currentTimeMillis() - pt0;
             return;
         }
         paintHud(g, w, h);
-        
-        long paintMs = System.currentTimeMillis() - t0;
-        testPaintTotalMs += paintMs;
-        
-        // 每秒输出监控日志（包括 gen2）
+        probePaintMs += System.currentTimeMillis() - pt0;
+        probeReport();
+    }
+
+    /** 每秒打一行 perf 日志：fps、paint 均值、内存增量、块计数。 */
+    private void probeReport() {
         long now = System.currentTimeMillis();
-        if (testLastReportMs == 0) {
-            testLastReportMs = now;
-        } else if (now - testLastReportMs >= 1000) {
-            Runtime rt = Runtime.getRuntime();
-            long usedMem = rt.totalMemory() - rt.freeMemory();
-            double avgPaint = testFrameCount > 0 ? (double) testPaintTotalMs / testFrameCount : 0;
-            
-            String msg = "[PERF] fps=" + testFrameCount + ", avgPaint=" + avgPaint + "ms, mem=" + (usedMem / 1024) + "KB"
-                + ", gen.recN=" + gen.recN + ", gen.regN=" + gen.regN;
-            if (gen2 != null) {
-                msg += ", gen2.recN=" + gen2.recN + ", gen2.regN=" + gen2.regN;
-            }
-            System.out.println(msg);
-            
-            testFrameCount = 0;
-            testPaintTotalMs = 0;
-            testLastReportMs = now;
+        if (probeReportAt == 0) {
+            probeReportAt = now;
+            return;
         }
+        if (now - probeReportAt < 1000) {
+            return;
+        }
+        Runtime rt = Runtime.getRuntime();
+        long used = rt.totalMemory() - rt.freeMemory();
+        long delta = used - probePrevUsed;
+        double avgPaint = probeFrameCount > 0 ? (double) probePaintMs / probeFrameCount : 0;
+        System.out.println("[PERF] fps=" + probeFrameCount
+                + " paintAvg=" + (int) avgPaint + "ms"
+                + " used=" + (used / 1024) + "K"
+                + " delta=" + (delta / 1024) + "K"
+                + " total=" + (rt.totalMemory() / 1024) + "K"
+                + " chunkCut=" + probeChunksCut
+                + " chunkBuilt=" + probeChunksBuilt
+                + " buildMs=" + probeBuildMs
+                + " playMs=" + probePlayMs
+                + " genRecN=" + gen.recN
+                + " genRegN=" + gen.regN
+                + (gen2 != null
+                        ? " gen2RecN=" + gen2.recN + " gen2RegN=" + gen2.regN
+                        : ""));
+        probePrevUsed = used;
+        probeFrameCount = 0;
+        probePaintMs = 0;
+        probeReportAt = now;
     }
 
     /** 烘焙静态层：键盘底图 + GD3 表格。仅曲目打开/屏宽变化时调用。 */

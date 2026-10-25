@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 MIDlet-Name: VgmBrowserTest
 MIDlet-Version: 1.0.41-test
 MIDlet-Vendor: Denjhang
-MIDlet-1: VgmBrowserSingle,,com.denjhang.vgmbrowser.BrowserMIDlet
+MIDlet-1: VgmBrowserTest,,com.denjhang.vgmbrowser.BrowserMIDlet
 MIDlet-Icon: /icon.png
 Nokia-MIDlet-On-Screen-Keypad: no
 Nokia-MIDlet-No-Exit: true

@@ -60,10 +60,26 @@ public class FileListScreen extends List implements CommandListener {
         addCommand(cmdMidi);
         addCommand(cmdInfo);
         refreshNowPlaying();
-        // 模拟器直达 file:///root/vgm/；真机没有 root，静默失败回根列表
+// 模拟器直达 file:///root/vgm/；真机没有 root，静默失败回根列表
         if (!tryLoadDir("file:///root/vgm/")) {
             loadRoots();
         }
+        midlet.markerScanned(vgmCount());
+        if (vgmCount() > 0) {
+            // 自动播放第 0 首；后续切曲走主线 switchTrack / autoNext
+            openByIndex(0);
+        }
+    }
+
+    /** 仅返回当前目录中 .vgm/.vgz 数量（自动播放判定用）。 */
+    private int vgmCount() {
+        int c = 0;
+        for (int i = 0; i < entries.size(); i++) {
+            if (!((Entry) entries.elementAt(i)).dir) {
+                c++;
+            }
+        }
+        return c;
     }
 
     // ------------------------------------------------------------ 目录读取

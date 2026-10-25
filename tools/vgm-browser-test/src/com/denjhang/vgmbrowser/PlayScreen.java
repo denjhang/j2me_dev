@@ -867,14 +867,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
     }
 
-    /** 释放生产端大对象：recF/regF/VGM 字节/解析器（MIDI 已落盘）。 */
+    /** 释放生产端大对象：recF/VGM 字节/解析器（MIDI 已落盘）。
+     *  保留 regF——可视化回放需要它（走 AY 不走 MIDI）。 */
     private void releasePipeline() {
-        gen.recF = null;
-        gen.recN = 0;
         gen.recF = new long[2048];
         gen.recN = 0;
         if (gen2 != null) {
-            gen2.recF = null;
             gen2.recF = new long[2048];
             gen2.recN = 0;
         }
@@ -884,7 +882,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             file.release();
             file = null;
         }
-        System.out.println("[FILE] pipeline released");
+        System.out.println("[FILE] pipeline released (regF kept for vis)");
         System.gc();
     }
 
@@ -914,13 +912,21 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             });
             long durMs = p.getDuration() / 1000;
             fileSegDone = false;
+            // 可视化回放：按 getMediaTime 时间轴重放 regF 给 ay/ay2.write()
+            // regF 三元组 {ms, reg, data}，recBaseMs=0，ms 即绝对毫秒，与 mediaTime/1000 对齐
+            int visRi = 0, visRi2 = 0;
+            int regN1 = gen.regN / 3;
+            int regN2 = gen2 != null ? gen2.regN / 3 : 0;
             p.start();
+            // 等待 endOfMedia：用 wait/notify（sleep 不释放 monitor 唤不醒）
+            // 兜底：listener 不回调时，mediaTime 达到 duration 也算播完
             while (playing && !fileSegDone) {
                 while (paused && playing) {
                     try { p.stop(); } catch (Throwable ignored) {}
-                    long parkT0 = System.currentTimeMillis();
-                    while (paused && playing) {
-                        try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                    synchronized (PlayScreen.this) {
+                        while (paused && playing) {
+                            try { PlayScreen.this.wait(50); } catch (InterruptedException e) { return; }
+                        }
                     }
                     if (!playing) {
                         return;
@@ -930,7 +936,35 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 long el = p.getMediaTime() / 1000;
                 playPct = (int) (el * 100 / Math.max(1, durMs));
                 progressBase = el * 44;
-                try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                // 可视化重放（绝对时间轴，与 playSeg 1035-1046 同逻辑）
+                while (visRi < regN1 && gen.regF[visRi * 3] <= el) {
+                    ay.vtime = gen.regF[visRi * 3];
+                    ay.write((int) gen.regF[visRi * 3 + 1], (int) gen.regF[visRi * 3 + 2]);
+                    visRi++;
+                }
+                if (gen2 != null) {
+                    while (visRi2 < regN2 && gen2.regF[visRi2 * 3] <= el) {
+                        ay2.vtime = gen2.regF[visRi2 * 3];
+                        ay2.write((int) gen2.regF[visRi2 * 3 + 1], (int) gen2.regF[visRi2 * 3 + 2]);
+                        visRi2++;
+                    }
+                }
+                ay.vtime = el;
+                ay.tick();
+                if (ay2 != null) {
+                    ay2.vtime = el;
+                    ay2.tick();
+                }
+                // 兜底：KEmulator 某些路径不回调 endOfMedia，mediaTime 达到 duration 强制完成
+                if (durMs > 0 && el >= durMs - 50 && el <= durMs + 500) {
+                    fileSegDone = true;
+                    break;
+                }
+                synchronized (PlayScreen.this) {
+                    if (!fileSegDone && playing) {
+                        try { PlayScreen.this.wait(20); } catch (InterruptedException e) { return; }
+                    }
+                }
             }
         } catch (Throwable t) {
             playErr = "file player: " + t;

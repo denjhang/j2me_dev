@@ -118,6 +118,7 @@ public class BrowserMIDlet extends MIDlet {
                     
                     // 创建新的 PlayScreen
                     play = new PlayScreen(BrowserMIDlet.this, name, raw, idx);
+                    play.setSrcFile(AUTO_LOAD_DIR + name);
                     Display.getDisplay(BrowserMIDlet.this).setCurrent(play);
                     
                 } finally {
@@ -191,8 +192,14 @@ public class BrowserMIDlet extends MIDlet {
     }
 
     void openPlayRaw(String name, byte[] rawBytes, int listIndex) {
+        openPlayRaw(name, rawBytes, listIndex, null);
+    }
+
+    /** srcUrl=VGM 完整 URL；.mid 落到源目录的 vgm2mid/ 子目录。 */
+    void openPlayRaw(String name, byte[] rawBytes, int listIndex, String srcUrl) {
         releasePlay();
         play = new PlayScreen(this, name, rawBytes, listIndex);
+        play.setSrcFile(srcUrl);
         applyChunkLevel();
         Display.getDisplay(this).setCurrent(play);
     }

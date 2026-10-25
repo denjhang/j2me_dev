@@ -339,7 +339,7 @@ public class FileListScreen extends List implements CommandListener {
             byte[] data = VgmFile.readAll(in);
             // 直接传原始字节进播放器：VGZ 解压在播放器内做（进度条兼做解压进度）
             if (idx >= 0) {
-                midlet.openPlayRaw(en.name, data, idx);
+                midlet.openPlayRaw(en.name, data, idx, en.url);
             } else {
                 int currentIdx = -1;
                 for (int j = 0; j < entries.size(); j++) {
@@ -348,7 +348,7 @@ public class FileListScreen extends List implements CommandListener {
                         break;
                     }
                 }
-                midlet.openPlayRaw(en.name, data, currentIdx);
+                midlet.openPlayRaw(en.name, data, currentIdx, en.url);
             }
         } catch (Throwable t) {
             showAlert("Parse failed: " + t);

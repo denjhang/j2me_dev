@@ -730,12 +730,35 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     /** 文件模式开关（测试器验证用；主线验证后可做成设置项）。 */
     static final boolean FILE_MODE = true;
-    /** 落盘目录（KEmulator 虚拟 FS 下，真机为存储卡可见目录）。 */
+    /** 无源路径时的兜底落盘目录。 */
     private static final String MID_DIR = "file:///root/vgm2mid/";
+    /** 当前 VGM 的完整 URL；.mid 落在其所在目录的 vgm2mid/ 子目录（跟随源，不写死根目录）。 */
+    private String srcFileUrl;
+
+    /** 记录 VGM 源 URL（FileListScreen/自动测试器在创建后调用）。 */
+    void setSrcFile(String url) {
+        srcFileUrl = url;
+    }
+
+    /** 输出目录 = 源文件所在目录 + "vgm2mid/"；无源 URL 退回根目录。 */
+    private String midDirUrl() {
+        if (srcFileUrl == null) {
+            return MID_DIR;
+        }
+        int sl = srcFileUrl.lastIndexOf('/');
+        if (sl < 0) {
+            return MID_DIR;
+        }
+        return srcFileUrl.substring(0, sl + 1) + "vgm2mid/";
+    }
     /** 文件模式 Player（与块模式 Player 分离，release() 统一清理）。 */
     private javax.microedition.media.Player filePlayer;
     /** 文件模式：endOfMedia 已到（播放线程 wait 用）。 */
     private boolean fileSegDone;
+    /** 跳转请求（ms），-1=无；4/6 键 ±10s，playFileSeg 循环消费。 */
+    private volatile long seekMs = -1;
+    /** 文件 Player 的整曲时长（ms），供按键跳转钳位；非文件模式=0（禁用跳转）。 */
+    private volatile long fileDurMs;
 
     /** 文件模式主流程：等转换完成 → 整曲 SMF 落盘 → 文件 Player 循环播放。 */
     private void playWholeFile() {
@@ -830,9 +853,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 写 .mid 到 vgm2mid/ 目录，返回 file:// URL（失败置 playErr 返回 null）。 */
     private String writeMidFile(byte[] smf) {
         try {
+            final String dirUrl = midDirUrl();
             javax.microedition.io.file.FileConnection dir =
                     (javax.microedition.io.file.FileConnection)
-                    javax.microedition.io.Connector.open(MID_DIR);
+                    javax.microedition.io.Connector.open(dirUrl);
             try {
                 if (!dir.exists()) {
                     dir.mkdir();
@@ -858,7 +882,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             if (sb.length() == 0) {
                 sb.append('t');
             }
-            String url = MID_DIR + sb + ".mid";
+            String url = dirUrl + sb + ".mid";
             javax.microedition.io.file.FileConnection fc =
                     (javax.microedition.io.file.FileConnection)
                     javax.microedition.io.Connector.open(url,
@@ -931,6 +955,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 }
             });
             long durMs = p.getDuration() / 1000;
+            fileDurMs = durMs;
             fileSegDone = false;
             // 可视化回放：按 getMediaTime 时间轴重放 regF 给 ay/ay2.write()
             // regF 三元组 {ms, reg, data}，recBaseMs=0，ms 即绝对毫秒，与 mediaTime/1000 对齐
@@ -959,6 +984,29 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                     try { p.start(); } catch (Throwable ignored) {}
                 }
                 long el = p.getMediaTime() / 1000;
+                // 跳转：4/6 键置 seekMs → setMediaTime 让 MIDI 引擎跳，
+                // regF 按时间有序，从头快放重写到目标 ms，AY 寄存器状态即恢复。
+                if (seekMs >= 0) {
+                    long s = seekMs;
+                    seekMs = -1;
+                    if (s > durMs) s = durMs;
+                    if (s < 0) s = 0;
+                    try { p.setMediaTime(s * 1000000L); } catch (Throwable ignored) {}
+                    visRi = 0;
+                    visRi2 = 0;
+                    while (visRi < regN1 && gen.regF[visRi * 3] <= s) {
+                        ay.write((int) gen.regF[visRi * 3 + 1], (int) gen.regF[visRi * 3 + 2]);
+                        visRi++;
+                    }
+                    if (gen2 != null) {
+                        while (visRi2 < regN2 && gen2.regF[visRi2 * 3] <= s) {
+                            ay2.write((int) gen2.regF[visRi2 * 3 + 1], (int) gen2.regF[visRi2 * 3 + 2]);
+                            visRi2++;
+                        }
+                    }
+                    el = s;
+                    System.out.println("[SEEK] -> " + s + "ms visRi=" + visRi + "/" + regN1);
+                }
                 playPct = (int) (el * 100 / Math.max(1, durMs));
                 progressBase = el * 44;
                 // 可视化探针：每 5 秒打一次 visRi 推进情况（验证可视化数据在动）
@@ -1711,9 +1759,11 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             } else {
                 total = 0;
             }
-            if (playPhase == PHASE_PLAY) {
+            if (playPhase == PHASE_PLAY && fileDurMs == 0) {
+                // 块模式：progressBase 只在块边界更新，用墙钟补帧
                 cur = progressBase + (System.currentTimeMillis() - playStartWall) * 44;
             } else {
+                // 文件模式：progressBase 每 20ms 由 getMediaTime 刷新，无需墙钟
                 cur = progressBase;
             }
             filled = total > 0 ? (int) (barW * cur / total) : 0;
@@ -2673,6 +2723,20 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 paused = !paused;      // 挂起/恢复，不销毁线程
             } else {
                 startPlay(false);
+            }
+        } else if (keyCode == KEY_NUM4) {
+            if (fileDurMs > 0) {   // 文件模式才支持跳转
+                seekMs = progressBase / 44 - 10000;
+                if (seekMs < 0) {
+                    seekMs = 0;
+                }
+            }
+        } else if (keyCode == KEY_NUM6) {
+            if (fileDurMs > 0) {
+                seekMs = progressBase / 44 + 10000;
+                if (seekMs > fileDurMs) {
+                    seekMs = fileDurMs;
+                }
             }
         } else if (keyCode == KEY_NUM2) {
             gd3Scroll -= 24;

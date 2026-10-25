@@ -18,7 +18,7 @@
 
 **背景**：用户报告 PC 播放时 GUI 卡顿、内存膨胀到 300-400MB，双芯片曲目经常崩溃。
 
-**AI 操作**（Claude Sonnet 3.5，持续 8 小时）：
+**AI 操作**（**Claude Sonnet 5.5**，持续 8 小时）：
 1. 创建自动测试版本（`tools/vgm-browser-test`）
 2. 完整播放双芯片曲目，监控 fps、内存、regN、recN
 3. 分析日志，得出"regF 和 recF 无限增长导致内存膨胀"

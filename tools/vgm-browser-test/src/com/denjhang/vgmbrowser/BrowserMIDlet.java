@@ -1,38 +1,140 @@
 package com.denjhang.vgmbrowser;
 
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.lcdui.Display;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
-import javax.microedition.lcdui.Display;
-import javax.microedition.midlet.MIDlet;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 
 import com.denjhang.vgm.VgmFile;
 
 /**
- * VgmBrowserTest —— 自动播放测试器。
- *
- * 启动即扫 file:///root/vgm/ 下的 .vgm/.vgz，顺序播放一遍；
- * 主线 PlayScreen 的 autoNext 在曲终时调用 midlet.switchTrack(idx)，
- * 接力到下一首；列表放完后回到第 0 首。
- *
- * 与 single 的唯一区别：启动后自动播第 0 首（不需要按 ▶），
- * 以及自动切曲（single 默认 loopIdx=1，需手动切）。
- * 播放逻辑本身完全复用 single v1.0.41。
+ * VGM 浏览器 —— 测试版：自动加载固定 VGM 并输出帧率日志。
  */
 public class BrowserMIDlet extends MIDlet {
 
     private FileListScreen list;
     private PlayScreen play;
-    private boolean started;
+    
+    // ---- 测试模式：自动播放整个文件夹 ----
+    private static final String AUTO_LOAD_DIR = "file:///root/vgm/2025-Turbosound/";
+    private static final boolean AUTO_PLAY_FULL = true;  // true=播放完整，false=限时切曲
+    private static final int AUTO_PLAY_SECONDS = 30;  // 仅当 AUTO_PLAY_FULL=false 时生效
+    private Thread autoPlayThread;
 
     public void startApp() {
-        // 探针声明：启动事件，用于对齐 jmap 时机
-        System.out.println("[TEST] startApp");
-        if (!started) {
-            started = true;
+        System.out.println("[TEST] === VgmBrowserSingle 测试版启动 ===");
+        System.out.println("[TEST] 自动播放目录: " + AUTO_LOAD_DIR);
+        System.out.println("[TEST] 每首播放 " + AUTO_PLAY_SECONDS + " 秒后自动切曲");
+        
+        // 先初始化 list（PlayScreen 构造函数会调用 refreshListNowPlaying）
+        if (list == null) {
             list = new FileListScreen(this);
-            Display.getDisplay(this).setCurrent(list);
-            // 异步触发：等 list 把目录读进来再播第 0 首
-            // FileListScreen 构造里已 tryLoadDir("file:///root/vgm/")
+        }
+        
+        // 启动自动播放线程
+        autoPlayThread = new Thread(new Runnable() {
+            public void run() {
+                autoPlayLoop();
+            }
+        });
+        autoPlayThread.start();
+    }
+    
+    private void autoPlayLoop() {
+        try {
+            // 扫描目录获取所有 VGM 文件
+            java.util.Vector files = new java.util.Vector();
+            FileConnection dir = (FileConnection) Connector.open(AUTO_LOAD_DIR, Connector.READ);
+            try {
+                java.util.Enumeration e = dir.list();
+                while (e.hasMoreElements()) {
+                    String name = (String) e.nextElement();
+                    String lower = name.toLowerCase();
+                    if (lower.endsWith(".vgm") || lower.endsWith(".vgz")) {
+                        files.addElement(name);
+                    }
+                }
+            } finally {
+                dir.close();
+            }
+            
+            System.out.println("[TEST] 找到 " + files.size() + " 个 VGM 文件");
+            
+            if (files.size() == 0) {
+                System.out.println("[TEST] 目录为空，退出");
+                return;
+            }
+            
+            // 循环播放所有文件
+            int idx = 0;
+            while (true) {
+                String name = (String) files.elementAt(idx);
+                System.out.println("[TEST] (" + (idx + 1) + "/" + files.size() + ") 加载: " + name);
+                
+                // 加载文件
+                FileConnection fc = (FileConnection) Connector.open(AUTO_LOAD_DIR + name, Connector.READ);
+                try {
+                    long size = fc.fileSize();
+                    java.io.InputStream in = fc.openInputStream();
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream((int) size);
+                    byte[] tmp = new byte[8192];
+                    int r;
+                    while ((r = in.read(tmp)) > 0) {
+                        buf.write(tmp, 0, r);
+                    }
+                    in.close();
+                    byte[] raw = buf.toByteArray();
+                    
+                    System.out.println("[TEST] 文件已加载: " + raw.length + " bytes");
+                    
+                    // 关闭旧的播放
+                    releasePlay();
+                    
+                    // 创建新的 PlayScreen
+                    play = new PlayScreen(BrowserMIDlet.this, name, raw, idx);
+                    Display.getDisplay(BrowserMIDlet.this).setCurrent(play);
+                    
+                } finally {
+                    fc.close();
+                }
+                
+                if (AUTO_PLAY_FULL) {
+                    // 等待播放线程启动
+                    System.out.println("[TEST] 等待播放启动...");
+                    long waitStart = System.currentTimeMillis();
+                    while (play != null && !play.playing && (System.currentTimeMillis() - waitStart) < 5000) {
+                        Thread.sleep(100);
+                    }
+                    
+                    if (play == null || !play.playing) {
+                        System.out.println("[TEST] 播放未启动，跳过");
+                    } else {
+                        System.out.println("[TEST] 播放已启动，等待完成...");
+                        long startMs = System.currentTimeMillis();
+                        while (play != null && play.playing) {
+                            Thread.sleep(1000);
+                            long elapsedSec = (System.currentTimeMillis() - startMs) / 1000;
+                            if (elapsedSec % 10 == 0 && elapsedSec > 0) {
+                                System.out.println("[TEST] 播放中... " + elapsedSec + " 秒");
+                            }
+                        }
+                        System.out.println("[TEST] 播放完成，总时长: " + ((System.currentTimeMillis() - startMs) / 1000) + " 秒");
+                    }
+                    Thread.sleep(2000);  // 等 2 秒再切曲
+                } else {
+                    // 定时切曲
+                    Thread.sleep(AUTO_PLAY_SECONDS * 1000);
+                }
+                
+                // 切换到下一首
+                idx = (idx + 1) % files.size();
+            }
+            
+        } catch (Throwable t) {
+            System.out.println("[TEST] 自动播放失败: " + t);
+            t.printStackTrace();
         }
     }
 
@@ -80,7 +182,6 @@ public class BrowserMIDlet extends MIDlet {
     void releasePlay() {
         if (play != null) {
             play.release();
-            markerRelease();
             play = null;
         }
     }
@@ -91,10 +192,12 @@ public class BrowserMIDlet extends MIDlet {
         list.openByIndex(idx);
     }
 
+    /** 播放列表条目数（随机播放用）。 */
     int trackCount() {
         return list.entryCount();
     }
 
+    /** 后台播放是否存活。 */
     boolean playerAlive() {
         return play != null;
     }
@@ -103,30 +206,10 @@ public class BrowserMIDlet extends MIDlet {
         list.refreshNowPlaying();
     }
 
+    /** 回到正在播放的界面。 */
     void showPlayer() {
         if (play != null) {
             Display.getDisplay(this).setCurrent(play);
         }
-    }
-
-    // ---- 探针：在屏幕切换的契约事件上打标记，便于 jmap 对齐 ----
-
-    /** 由 PlayScreen.release() 末尾调用：标记一次旧实例释放完毕。 */
-    void markerRelease() {
-        Runtime rt = Runtime.getRuntime();
-        long used = rt.totalMemory() - rt.freeMemory();
-        // 旧实例已被 release() 清空大块引用；此处的 used 是"释放后、GC 前"的瞬时值
-        System.out.println("[TEST] release done, used=" + (used / 1024) + "K"
-                + " total=" + (rt.totalMemory() / 1024) + "K");
-    }
-
-    /** 由 PlayScreen 构造末尾调用：标记一次新实例就绪。 */
-    void markerNewPlayer(int listIndex, int total) {
-        System.out.println("[TEST] new PlayScreen idx=" + listIndex + "/" + total);
-    }
-
-    /** 启动后由 FileListScreen 完成扫描时回调。 */
-    void markerScanned(int total) {
-        System.out.println("[TEST] scanned vgm files: " + total);
     }
 }

@@ -1,10 +1,15 @@
 #!/bin/bash
-# 测试器启动器 —— 在 single 启动器基础上开启 JMX（端口 1099，无认证，仅本机）
+# 测试器启动器 —— 与 single 启动器参数完全一致（保证 KEmulator 能正常起）
 # 用法: ./run-test.sh [midlet.jar]
-# 不带参数则启动空模拟器
+# 默认调起 tools/vgm-browser-test/VgmBrowserTest.jar（自动播放版）
 #
-# 开 JMX 后可用 jconsole / jmap -histo <pid> 实时观察堆，定位内存泄漏。
-# 默认调起 tools/vgm-browser-test/VgmBrowserTest.jar（自动播放版）。
+# 不开 JMX 端口（实测会让 KEmulator 启动失败）。
+# jmap 用 Attach API 自动发现本机进程，不依赖 JMX 端口：
+#   jmap -histo <PID>                          # 对象直方图
+#   jmap -histo:live <PID>                     # 仅存活对象（触发一次 GC）
+#   jmap -dump:format=b,file=heap.hprof <PID>  # 完整堆转储
+#   jmap -heap <PID>                           # 堆摘要（代/已用/上限）
+# 探针日志走 System.out，在本进程 stdout 里。
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 KEM_DIR="$ROOT/emulators/kemnnx64"
@@ -26,21 +31,15 @@ fi
 
 cd "$KEM_DIR" || exit 1
 
-echo "== JMX 端口 1099（无认证，仅本机），可用："
-echo "   jconsole      → 连本地进程 PID（无需端口）"
+echo "== 启动测试器: $JAR"
+echo "== 探针日志在本进程 stdout；抓堆用 jmap（PID 见 tasklist java.exe）："
 echo "   jmap -histo <PID>            # 对象直方图"
+echo "   jmap -heap <PID>             # 堆摘要"
 echo "   jmap -dump:format=b,file=heap.hprof <PID>  # 完整堆转储"
 
-# jmap 自动发现本机进程（Attach API），不依赖 JMX 端口；
-# jconsole 用 JMX 端口 1099 连接。两套互补。
 exec "$JDK8/bin/java.exe" \
   -Xmx512M \
   -Djava.library.path="$KEM_DIR" \
   -Dfile.encoding=UTF-8 \
   -Dswt.autoScale=false \
-  -Dcom.sun.management.jmxremote \
-  -Dcom.sun.management.jmxremote.port=1099 \
-  -Dcom.sun.management.jmxremote.authenticate=false \
-  -Dcom.sun.management.jmxremote.ssl=false \
-  -Dcom.sun.management.jmxremote.host=127.0.0.1 \
   -jar "$KEM_DIR/KEmulator.jar" "$JAR"

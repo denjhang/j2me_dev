@@ -118,7 +118,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private final Command cmdBack = new Command("List", Command.BACK, 2);
     private final Command cmdSetBack = new Command("Back", Command.OK, 1);
 
-    private volatile boolean playing;
+    volatile boolean playing;  // package-private: 自动播放线程轮询用（测试器）
     private volatile boolean uiAlive = true;
     private Thread play;
     private String err;
@@ -227,7 +227,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }).start();
         // UI 线程（repaint 循环 + 按键）必须立即启动，否则界面卡死
         midlet.refreshListNowPlaying();
-        midlet.markerNewPlayer(listIndex, midlet.trackCount());
         Thread ui = new Thread(this);
         ui.start();
     }
@@ -265,7 +264,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         startPlay(true);
         marqueeBaseMs = System.currentTimeMillis();
         midlet.refreshListNowPlaying();
-        midlet.markerNewPlayer(listIndex, midlet.trackCount());
         Thread ui = new Thread(this);
         ui.start();
     }
@@ -444,7 +442,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         System.out.println("[TEST] PlayScreen.release #" + probeReleaseCount
                 + " afterGc used=" + (afterGc / 1024) + "K"
                 + " total=" + (rt.totalMemory() / 1024) + "K");
-        midlet.markerRelease();
     }
 
     public void run() {

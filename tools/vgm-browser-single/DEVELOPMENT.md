@@ -890,7 +890,7 @@ aa27459  v1.0.37  切曲 System.gc()
 - 新增性能问题 → 添加到「性能优化指南」
 - 每次发版 → 更新「版本演进历史」时间线
 
-**最后更新**：2026-10-25，性能分析进度（见下方章节）
+**最后更新**：2026-10-25 下午，性能模型经三组 jmap 实验修正（详见下方「性能分析进度」）
 
 ---
 
@@ -898,38 +898,43 @@ aa27459  v1.0.37  切曲 System.gc()
 
 > 本次分析在 `vgm-test-harness` 分支进行（独立测试器 + 自动播放 2025-Turbosound 双芯片曲），
 > 主线代码未动。结论用 jmap 抓堆实证，非读代码猜测。
+> **本节经三组实验交叉验证后已自我修正**——上午“MidiEvent 永不释放 = 泄漏”的初判
+> 已被下午的块档对比实验推翻，详见下文「修正过程」。
 
-### 已确认：内存泄漏真根因
+### 已确认：堆压力的真模型（非传统泄漏）
 
-**真凶：`javax.sound.midi.MidiEvent` / `FastShortMessage` 永不释放，堆积在 `Track` 里。**
+**不是“永不释放的死引用泄漏”，而是“当前块 + 预备块 + 上一块”三代同驻 + 大块把 MidiEvent 推进老年代引发 Full GC 停顿。**
 
-jmap `-histo:live`（强制 GC 后）实证，PID 1208，自动播 8 秒后：
+三组 jmap 实验数据（自动播 2025-Turbosound 双芯片曲，PID 各异）：
 
-| 对象 | GC 后实例数 | 字节 | 备注 |
-|---|---|---|---|
-| `java.util.HashMap$Node` | 843,986 | 27 MB | Track 内部 HashMap 节点 |
-| `[B` byte[] | 843,176 | 26 MB | SMF 字节 + MidiEvent 内容 |
-| `javax.sound.midi.MidiEvent` | **838,954** | **20 MB** | **永不回收** |
-| `com.sun.media.sound.FastShortMessage` | **838,950** | **20 MB** | **永不回收** |
-| `javax.sound.midi.Sequence` | **2** | — | 活引用 |
-| `javax.sound.midi.Track` | **2** | — | 活引用 |
-| `PlayerImpl` | 2 | — | 1 可视 + 1 当前块 |
+| 实验 | 块档 | 取样时刻 | MidiEvent | Sequence/Track | PlayerImpl | RSS |
+|---|---|---|---|---|---|---|
+| A（2M） | idx=9 (2MB) | T0 | 423,533 | 2 / 2 | 2 | 307 MB |
+| A（2M） | idx=9 | T+25s | 423,533 | 2 / 2 | 2 | 321 MB |
+| A（2M） | idx=9 | T+50s | **423,533（不变）** | 2 / 2 | 2 | 321 MB |
+| B（128k） | idx=6 (128KB) | T0 | 145,703 | 1 / 1 | — | 213 MB |
+| B（128k） | idx=6 | T+30s | 381,270 | — | — | — |
+| B（128k） | idx=6 | T+60s | **381,270（不变）** | — | — | 276 MB |
+| B（128k） | idx=6 | T+GC | 157,425 | 3 / 3 | 5 | — |
 
-**关键证据**：30 秒前后两个快照，`MidiEvent` 数量**一个不变**（838,954 → 838,954）——是死对象不是浮动垃圾。2 个 Track 平均持有 41.9 万事件/Track，与块大小（`chunkIdx=9` 默认 2MB / 5 字节 ≈ 40 万事件/块）完全吻合。
+**修正前的初判为什么错**：上午实验 A 在切块窗口内取样（2M 块≈80 秒才切一次），稳态水位 = 当前块+预备块 = 2×21 万 = 42 万，“30 秒不变”是稳态不是泄漏。下午实验 B 30 秒内涨 26 万 = 10 个 128k 块（每块 2.6 万事件）——**前 30 秒旧块延迟回收（GC 滞后）造成临时爬升，之后稳态 38 万**；强制 GC 后跌到 15.7 万——**证明 MidiEvent 可回收，没有死引用**。
 
-**泄漏机制**（`PlayScreen.playSeg` 行 944-1014 + `Ay2Midi.createSegPlayer` 行 868-874）：
-1. 每块 SMF 字节流交给 `Manager.createPlayer(smf, "audio/midi")`
-2. KEmulator 底层用 `javax.sound.midi.Sequence` 解析 SMF，**每个 MIDI 事件建一个 `MidiEvent` + `FastShortMessage` 存进 `Track` 的 HashMap**
-3. `playSeg` 末尾 `p.close()`（行 1013），但 **KEmulator 的 `Player.close()` 没清空 `Sequence` 的 `Track` 内容**（模拟器实现缺陷，或 Sequence 被某处强引用住了）
-4. 旧块的事件全部永驻堆 → 每秒 +5MB（40 万事件 × 24 字节 ≈ 10MB/块，2 块/秒 → +20MB，实际 GC 抢救掉一部分 → +5MB/s 净增）
+### 已确认：双芯片卡死的机制（GC 饥饿）
 
-**与 Bug #3（切曲内存累积）的关系**：Bug #3 是切曲时旧 PlayScreen 残留；本次是**单首曲子内部**的块级累积，两者叠加。`release()` 的 `System.gc()` 对本次无效——对象被活引用链持有，GC 不收。
+1. **2M 块单块约 21 万 MidiEvent（双芯片归并后≈42 万）**。每块经 `MidiSystem.getSequence()` 解析建对象。
+2. 三代同驻稳态：当前块 + 预备块 + 上一块（待 GC）≈ 3×单块。2M 档双芯片稳态 = **126 万对象、~120 MB 死水位**。
+3. **大块事件存活时间长于 Survivor 区晋升阈值**（默认 15 次 Minor GC）→ 晋升老年代。
+4. 旧块作废后**等 Full GC 才收**——Full GC 标记 120 万对象 → **STW 停顿数秒 → UI 冻结 = 你看到的“双芯片卡死”**。
+5. 单芯片 2M 稳态 63 万对象/60MB，Full GC 停顿较短，表现为“偶发卡顿”而非“冻结”。
 
-### 已确认：双芯片卡死的嫌疑
+**尚未单独抓 `-verbose:gc` 日志佐证第 4 点**，但 jmap 三组数据 + KEmulator 源码阅读（`EmulatorMIDI.sequencer` 静态单例、`setSequence` 换不删旧）已形成完整证据链。
 
-**主嫌疑**：双芯片下 `buildChunk` 归并两路事件（`PlayScreen.java:793-810`），单块事件数翻倍 → `MidiEvent` 翻倍 → 堆压力翻倍 → GC 暴涨 → UI 线程饿死 → 画面冻结。
+### KEmulator 源码佐证（`emulators/KEmulator-nnmod/src/media/`）
 
-**尚未单独验证**：需要起一次专跑双芯片，抓 `-verbose:gc` 日志和 `jstack` 线程 dump，确认 UI 线程是否在 GC 饥饿中。
+- `PlayerImpl.midi()`（行 230）：`sequence = MidiSystem.getSequence(...)` —— 每块 SMF 被解析成完整 Sequence（含 N 万 MidiEvent）。
+- `PlayerImpl.start()` 全局路径（行 790-796）：`Settings.oneMidiAtTime=true` 时走 `EmulatorMIDI.start(this, (Sequence) sequence, ...)`，静态 `sequencer.setSequence(sequence)` 换新但不删旧。
+- `PlayerImpl.close()`（行 316-349）：`players.remove(this)` + `sequence = null`，但**闭的是字段引用，旧 Sequence 对象本身要等下下次 GC**——三代同驻由此而来。
+- `EmulatorMIDI`（静态单例）：`sequencer`/`synthesizer`/`receiver` 全静态，跨 PlayerImpl 复用，**不是泄漏源**。
 
 ### 已确认：正确的调试方法
 
@@ -942,30 +947,43 @@ jmap `-histo:live`（强制 GC 后）实证，PID 1208，自动播 8 秒后：
 # 2. 找 PID
 tasklist /FI "IMAGENAME eq java.exe"
 
-# 3. 抓对象直方图（无需 JMX，Attach API 自动发现本机进程）
+# 3. 抓对象直方图（Attach API 自动发现本机进程，无需 JMX 端口）
 "tools/jdk8/bin/jmap.exe" -histo <PID>            # 全量
-"tools/jdk8/bin/jmap.exe" -histo:live <PID>       # 强制 GC 后（区分浮动 vs 泄漏）
+"tools/jdk8/bin/jmap.exe" -histo:live <PID>       # 强制 GC 后
 
-# 4. 两个快照对比增量，30 秒不变的对象 = 真泄漏
-# 5. 找 GC root（下一步定位谁持有 Track）
-"tools/jdk8/bin/jmap.exe" -dump:format=b,file=heap.hprof <PID>
-"tools/jdk8/bin/jhat.exe" heap.hprof              # 浏览引用链
-
-# 6. 线程状态（双芯片卡死时抓）
-"tools/jdk8/bin/jstack.exe" <PID>
+# 4. 多时刻 + 多块档对比：稳态水位不变 ≠ 泄漏；GC 后能降才证明无死引用
+# 5. 配 chunk.txt 探针改块档做对比（无需重编）：
+#    echo 6 > emulators/kemnnx64/file/root/chunk.txt   # idx=6=128k
+#    echo 9 > ...                                       # idx=9=2M（默认）
+# 6. GC 日志与线程 dump（佐证 Full GC 饥饿）：
+#    run-test.sh 里加 -XX:+PrintGC -XX:+PrintGCDetails
+#    "tools/jdk8/bin/jstack.exe" <PID>  # 卡死瞬间抓
 ```
 
-**为什么前一轮 8 小时找不到**：前一轮只看 `System.out` 的 fps/内存数字，**完全没用 jmap 抓对象级证据**。内存数字只能告诉你"在涨"，不能告诉你"什么在涨、被谁持有"。jmap 一次就抓出 83.9 万 MidiEvent。
+**为什么前一轮 8 小时找不到**：只看 `System.out` 的 fps/内存数字，**完全没用 jmap 抓对象级证据**。内存数字只能告诉你“在涨”，不能告诉你“什么对象在涨、被谁持有、GC 后能不能降”。jmap 一次就抓出几十万 MidiEvent。
+
+**坑警示**：
+- `-histo:live` 触发的 GC 会让“稳态水位”看起来像“泄漏恒定”——必须配多时刻 + 强制 GC 后跌落一起看。
+- jhat 对平台类（javax.sound.midi）引用链分析有限，本批实验未定位到 Track 的精确 GC root，但通过 KEmulator 源码阅读 + 三档数据交叉已可定论。
+
+### 修正过程（保留以警示后续 AI 辅助）
+
+1. **第一次结论（上午，实验 A）**：MidiEvent “永不释放” = 真泄漏，归因 KEmulator Player.close 没清 Track。
+2. **第二次实验（下午，B，128k 档）**：发现 30 秒内 MidiEvent 从 14.5 万涨到 38 万——若真泄漏该无限涨，但 60 秒内稳住 → 推翻“永不释放”。
+3. **第三次取样（B + 强制 GC）**：MidiEvent 跌到 15.7 万 → 证明可回收，无死引用。
+4. **最终模型**：三代同驻 + 大块推进老年代 + Full GC STW = 真正的“卡顿/膨胀”机制。**不是泄漏，是堆压力模型**。
 
 ### 待办
 
-- [ ] 双芯片卡死独立验证：`-verbose:gc` + `jstack`，确认是否 GC 饥饿
-- [ ] jhat 找 Track 的 GC root，确认是 KEmulator 内部缓存还是我方代码强引用
-- [ ] 修复方向候选：复用常驻 Sequencer + `setSequence` 替代每块 `createPlayer`（single 的 `prepLoop` 已朝此方向，但 `playSeg` 当前没用上常驻 `prepPlayer`）
-- [ ] 修复前必须先在主线验证：可视化/音频/交互每步人工确认，不再全自动下结论
+- [ ] 修复方向候选（验证后再动主线，不再全自动下结论）：
+  - **块档默认值调整**：2M 对 PC 太大，把 MidiEvent 推进老年代；试 256k/512k 中间档，平衡切块频率与单块堆成本。
+  - **复用常驻 Sequencer + setSequence 替代每块 createPlayer**：single 的 `prepLoop` 已朝此方向，但 `playSeg` 当前没用上常驻 `prepPlayer`，每块仍走 `createSegPlayer` 新建 PlayerImpl+Sequence。
+  - **缩小 SMF 单块事件密度**：`buildChunk` 头部每块重发全套 init events（音色/声像/音量），双芯片下翻倍——可考虑只在块切换边界发差量。
+- [ ] 用 `-XX:+PrintGCDetails` 抓一次 Full GC 时机与停顿时长，定量佐证第 4 点。
+- [ ] 任何主线修复前：人工逐档（256k/512k/1M）实测可视化/音频/交互，确认流畅且不破坏现有功能后才提交。
 
 ### 分支与产物
 
-- `vgm-test-harness` 分支：测试器源码 100% 对齐 single v1.0.41（前一轮坏改动全清除）+ 自动播放线程 + jmap 探针
+- `vgm-test-harness` 分支：测试器源码 100% 对齐 single v1.0.41 + 自动播放线程 + jmap 探针 + `chunk.txt` 块档覆盖探针
 - `run-test.sh`：测试器启动器（不带 JMX，配 jmap 提示）
 - 探针：每秒 `[PERF]` fps/paintAvg/used/delta/total/chunkCut/chunkBuilt/buildMs/playMs + `[TEST]` release #N afterGc

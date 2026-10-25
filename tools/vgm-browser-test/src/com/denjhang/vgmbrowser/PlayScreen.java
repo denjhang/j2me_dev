@@ -390,6 +390,17 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         uiAlive = false;
         playing = false;
         prepAlive = false;
+        // 文件模式：endOfMedia 等待线程退出
+        synchronized (this) {
+            fileSegDone = true;
+            notifyAll();
+        }
+        if (filePlayer != null) {
+            try { filePlayer.stop(); } catch (Throwable ignored) {}
+            try { filePlayer.deallocate(); } catch (Throwable ignored) {}
+            try { filePlayer.close(); } catch (Throwable ignored) {}
+            filePlayer = null;
+        }
         synchronized (streamLock) {
             streamLock.notifyAll();
         }
@@ -671,6 +682,12 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 消费者线程：首块到水位即播；块衔接用预备好的 Player。 */
     private void bufferPlayer() {
         try {
+            if (FILE_MODE) {
+                // 文件模式：整曲转 .mid 落盘 → createPlayer(file://) → KEmulator 自管
+                System.out.println("[FILE] entering file mode");
+                playWholeFile();
+                return;
+            }
             synchronized (streamLock) {
                 while (playing && !feedEnded && availBytes() < targetBytes()) {
                     try { streamLock.wait(30); } catch (InterruptedException e) { return; }
@@ -700,6 +717,233 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             playErr = "player: " + t;
         }
         playPhase = PHASE_FILL;
+    }
+
+    // ------------------------------------------------------------------
+    // 文件模式（xploreme 架构）：整曲一次转 .mid 落盘 → createPlayer(file://)
+    // → KEmulator 自管解析/播放 → endOfMedia 切曲 → stop/close/null/gc 完整释放。
+    // 无 2MB 切块、无 ByteArrayInputStream 驻留、无三代同驻。
+    // ------------------------------------------------------------------
+
+    /** 文件模式开关（测试器验证用；主线验证后可做成设置项）。 */
+    static final boolean FILE_MODE = true;
+    /** 落盘目录（KEmulator 虚拟 FS 下，真机为存储卡可见目录）。 */
+    private static final String MID_DIR = "file:///root/vgm2mid/";
+    /** 文件模式 Player（与块模式 Player 分离，release() 统一清理）。 */
+    private javax.microedition.media.Player filePlayer;
+    /** 文件模式：endOfMedia 已到（播放线程 wait 用）。 */
+    private boolean fileSegDone;
+
+    /** 文件模式主流程：等转换完成 → 整曲 SMF 落盘 → 文件 Player 循环播放。 */
+    private void playWholeFile() {
+        try {
+            // 等 fillLoop 转完（含循环展开）
+            while (playing && !feedEnded) {
+                try { Thread.sleep(30); } catch (InterruptedException e) { return; }
+            }
+            if (!playing) {
+                return;
+            }
+            // 整曲一次打包（recF 尚未被消费，headEvents=0）
+            byte[] smf = buildWholeSmf();
+            if (smf == null) {
+                playErr = "build whole smf failed";
+                return;
+            }
+            String path = writeMidFile(smf);
+            if (path == null) {
+                return;   // playErr 已设
+            }
+            // 释放生产端全部大对象：MIDI 已在盘上，流水线不再需要
+            releasePipeline();
+            // 文件 Player：KEmulator 自己从文件读
+            while (playing) {
+                while (paused && playing) {
+                    try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                }
+                if (!playing) {
+                    break;
+                }
+                playFileSeg(path);
+                if (!playing) {
+                    break;
+                }
+                if (loopPlays < LOOP_CHOICES[loopIdx] - 1) {
+                    loopPlays++;
+                    continue;   // 循环重播
+                }
+                break;   // 播完（循环次数用尽）
+            }
+        } catch (Throwable t) {
+            playErr = "file mode: " + t;
+        }
+    }
+
+    /** 整曲 SMF：init 头 + 两路 recF 归并（时间窗 [0, lastEventTime]）。 */
+    private byte[] buildWholeSmf() {
+        // 取两路 recF 末条事件时间作为曲长（recBaseMs=0，值即绝对毫秒）
+        long last1 = gen.recN >= 4 ? gen.recF[gen.recN - 4] : 0;
+        long last2 = (gen2 != null && gen2.recN >= 4) ? gen2.recF[gen2.recN - 4] : 0;
+        long to = Math.max(last1, last2) + 1000;   // +1s 收尾静音
+        com.denjhang.vgm.SmfSeg.Builder sb = new com.denjhang.vgm.SmfSeg.Builder();
+        sb.init(gen.initEvents());
+        if (gen2 != null) {
+            sb.init(gen2.initEvents());
+        }
+        int n1 = gen.recN / 4;
+        int n2 = gen2 != null ? gen2.recN / 4 : 0;
+        int i = 0, j = 0;
+        while (i < n1 || j < n2) {
+            long t1 = i < n1 ? gen.recF[i * 4] : Long.MAX_VALUE;
+            long t2 = j < n2 ? gen2.recF[j * 4] : Long.MAX_VALUE;
+            if (t1 <= t2) {
+                sb.event(gen.recF[i * 4], (int) gen.recF[i * 4 + 1],
+                        (int) gen.recF[i * 4 + 2], (int) gen.recF[i * 4 + 3]);
+                i++;
+            } else {
+                sb.event(gen2.recF[j * 4], (int) gen2.recF[j * 4 + 1],
+                        (int) gen2.recF[j * 4 + 2], (int) gen2.recF[j * 4 + 3]);
+                j++;
+            }
+        }
+        return sb.build(to);
+    }
+
+    /** 写 .mid 到 vgm2mid/ 目录，返回 file:// URL（失败置 playErr 返回 null）。 */
+    private String writeMidFile(byte[] smf) {
+        try {
+            javax.microedition.io.file.FileConnection dir =
+                    (javax.microedition.io.file.FileConnection)
+                    javax.microedition.io.Connector.open(MID_DIR);
+            try {
+                if (!dir.exists()) {
+                    dir.mkdir();
+                }
+            } finally {
+                dir.close();
+            }
+            String safe = midlet != null && file != null && file.name != null
+                    ? file.name : "track.mid";
+            int dot = safe.lastIndexOf('.');
+            if (dot > 0) {
+                safe = safe.substring(0, dot);
+            }
+            // 文件名只留安全字符，防真机 FS 拒绝
+            StringBuffer sb = new StringBuffer(safe.length() + 4);
+            for (int k = 0; k < safe.length(); k++) {
+                char c = safe.charAt(k);
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                        || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+                    sb.append(c);
+                }
+            }
+            if (sb.length() == 0) {
+                sb.append('t');
+            }
+            String url = MID_DIR + sb + ".mid";
+            javax.microedition.io.file.FileConnection fc =
+                    (javax.microedition.io.file.FileConnection)
+                    javax.microedition.io.Connector.open(url,
+                            javax.microedition.io.Connector.READ_WRITE);
+            try {
+                if (fc.exists()) {
+                    fc.delete();
+                }
+                fc.create();
+                java.io.OutputStream os = fc.openOutputStream();
+                try {
+                    os.write(smf);
+                } finally {
+                    os.close();
+                }
+            } finally {
+                fc.close();
+            }
+            System.out.println("[FILE] wrote " + smf.length + " bytes -> " + url);
+            return url;
+        } catch (Throwable t) {
+            playErr = "write mid: " + t;
+            return null;
+        }
+    }
+
+    /** 释放生产端大对象：recF/regF/VGM 字节/解析器（MIDI 已落盘）。 */
+    private void releasePipeline() {
+        gen.recF = null;
+        gen.recN = 0;
+        gen.recF = new long[2048];
+        gen.recN = 0;
+        if (gen2 != null) {
+            gen2.recF = null;
+            gen2.recF = new long[2048];
+            gen2.recN = 0;
+        }
+        // VGM 原始字节与解析器：file/parser 字段是整条链的根
+        parser = null;
+        if (file != null) {
+            file.release();
+            file = null;
+        }
+        System.out.println("[FILE] pipeline released");
+        System.gc();
+    }
+
+    /** 文件 Player 播一遍：KEmulator 自管，getMediaTime 驱动进度。 */
+    private void playFileSeg(String url) {
+        javax.microedition.media.Player p = null;
+        try {
+            p = javax.microedition.media.Manager.createPlayer(url);
+            p.realize();
+            p.prefetch();
+            javax.microedition.media.control.VolumeControl vc =
+                    (javax.microedition.media.control.VolumeControl) p.getControl("VolumeControl");
+            if (vc != null) {
+                vc.setLevel(masterVol * 75 / 100 + 20);
+                vc.setMute(false);
+            }
+            filePlayer = p;
+            p.addPlayerListener(new javax.microedition.media.PlayerListener() {
+                public void playerUpdate(javax.microedition.media.Player pl, String ev, Object d) {
+                    if ("endOfMedia".equals(ev)) {
+                        synchronized (PlayScreen.this) {
+                            fileSegDone = true;
+                            PlayScreen.this.notifyAll();
+                        }
+                    }
+                }
+            });
+            long durMs = p.getDuration() / 1000;
+            fileSegDone = false;
+            p.start();
+            while (playing && !fileSegDone) {
+                while (paused && playing) {
+                    try { p.stop(); } catch (Throwable ignored) {}
+                    long parkT0 = System.currentTimeMillis();
+                    while (paused && playing) {
+                        try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                    }
+                    if (!playing) {
+                        return;
+                    }
+                    try { p.start(); } catch (Throwable ignored) {}
+                }
+                long el = p.getMediaTime() / 1000;
+                playPct = (int) (el * 100 / Math.max(1, durMs));
+                progressBase = el * 44;
+                try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+            }
+        } catch (Throwable t) {
+            playErr = "file player: " + t;
+        } finally {
+            // xploreme 四连 + gc：完整释放
+            filePlayer = null;
+            if (p != null) {
+                try { p.stop(); } catch (Throwable ignored) {}
+                try { p.deallocate(); } catch (Throwable ignored) {}
+                try { p.close(); } catch (Throwable ignored) {}
+            }
+            System.gc();
+        }
     }
 
     /** 取下一块：优先用已切好并预建 Player 的预备块。 */

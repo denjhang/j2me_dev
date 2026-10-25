@@ -11,7 +11,7 @@ public class VgmFile {
 
     public final String name;
     public final int byteSize;
-    private final byte[] data;
+    private byte[] data;
     public final VgmHeader header;
     public final VgmParser parser;
 
@@ -21,6 +21,11 @@ public class VgmFile {
         this.byteSize = data.length;
         this.header = header;
         this.parser = new VgmParser(data, header);
+    }
+
+    /** 文件模式：MIDI 已落盘，VGM 原始字节立即释放（解析器随 data 失效，不可再用）。 */
+    public void release() {
+        data = new byte[0];
     }
 
     public static VgmFile fromBytes(String name, byte[] data) {

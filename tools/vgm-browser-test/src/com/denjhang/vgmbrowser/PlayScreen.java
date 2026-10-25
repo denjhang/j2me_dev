@@ -142,6 +142,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private static int gd3Scroll; // 静态：切曲新建 PlayScreen 实例后位置保留（盯健康度用）
     private int colX;             // 信息表键值分列 x（烘焙/动态调试行共用）
     private int builtW = -1;      // 构建时的屏宽（变了才重建）
+    private boolean layersWithoutFile;  // 图层是否用空 header 垫的（file 就绪后重建）
     private int kbStep;           // 键盘布局缓存（动态高亮要与底图对齐）
     private int kbKx;
     private int kbKeyW;
@@ -1520,19 +1521,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.setColor(0x0C1118);
         g.fillRect(0, 0, w, h);
 
-        if (file == null) {
-            // 解压尚未完成：file 还没赋值，任何 header 访问都会 NPE
-            g.setFont(small);
-            g.setColor(0xAAB4C4);
-            String s = pendingName != null ? pendingName : "Loading";
-            g.drawString(s, 6, 4, Graphics.TOP | Graphics.LEFT);
-            if (decompPct >= 0) {
-                g.setColor(0x3E7BA8);
-                g.fillRoundRect(6, 30, (w - 16) * Math.max(0, decompPct) / 100, 10, 10, 10);
-            }
-            probePaintMs += System.currentTimeMillis() - pt0;
-            return;
-        }
+        // 切曲瞬间 file 尚未解析完成也照常画完整 HUD（钢琴/信息/进度条都在），
+        // header 走 EMPTY_HEADER 兜底——任何时刻不允许界面出现大片空白。
         if (mode == MODE_SETTINGS) {
             paintSettings(g, w, h);
             probePaintMs += System.currentTimeMillis() - pt0;
@@ -1580,6 +1570,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     /** 烘焙静态层：键盘底图 + GD3 表格。仅曲目打开/屏宽变化时调用。 */
     private void buildLayers(int w) {
         builtW = w;
+        layersWithoutFile = (file == null || file.header == null);
         // 不复位滚动条：切曲后用户可盯着同一位置看运行健康度（paint 会夹紧）
 
         // ---- 键盘底图 ----
@@ -1614,7 +1605,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         // ---- 信息表（换行只算这一次）----
         colX = w * 30 / 100;
         java.util.Vector flat = new java.util.Vector();
-        com.denjhang.vgm.VgmHeader hd = file.header;
+        // 切曲瞬间 file 未就绪：用空 header 先填表，解析完成后 buildLayers 会重建
+        com.denjhang.vgm.VgmHeader hd = file != null && file.header != null
+                ? file.header : EMPTY_HEADER;
         // 芯片/时钟信息置顶（无表头行，直接内容）
         long clk1 = hd.chipClock[0x12] & 0x3FFFFFFF;
         boolean ym = hd.ayChipType != 0;  // 0x78: 0x00=AY8910, 0x10=YM2149
@@ -1633,8 +1626,10 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             top.addElement("Clock2");
             top.addElement(fmtHz(clk1));
         }
-        top.addElement("VGM");
-        top.addElement("v" + (hd.version >> 8) + "." + (hd.version & 0xFF));
+        if (hd.version > 0) {
+            top.addElement("VGM");
+            top.addElement("v" + (hd.version >> 8) + "." + (hd.version & 0xFF));
+        }
         for (int i = 0; i + 1 < top.size(); i += 2) {
             flat.addElement(top.elementAt(i));
             flat.addElement(top.elementAt(i + 1));
@@ -1694,11 +1689,18 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         return hz + " Hz";
     }
 
+    /** 解压/转换期间（file 未就绪）HUD 用的空 header：全默认值，hasLoop=false。 */
+    private static final com.denjhang.vgm.VgmHeader EMPTY_HEADER =
+            new com.denjhang.vgm.VgmHeader();
+
     private void paintHud(Graphics g, int w, int h) {
+        com.denjhang.vgm.VgmHeader hd0 = file != null && file.header != null
+                ? file.header : EMPTY_HEADER;
         // ---- 标题跑马灯（GD3 标题/文件名，超宽往返滚动）----
-        String title = pick(file.header.gd3Title, file.header.gd3TitleEn);
+        String title = pick(hd0.gd3Title, hd0.gd3TitleEn);
         if (title.length() == 0) {
-            title = file.name;
+            title = file != null && file.name != null
+                    ? file.name : (pendingName != null ? pendingName : "");
         }
         g.setFont(titleFont);
         g.setColor(0xF0EDE4);
@@ -1799,7 +1801,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         g.setFont(small);
         StringBuffer st = new StringBuffer();
         st.append(playing ? (paused ? "PAUSE" : "PLAY") : "PAUSE");
-        if (file.header.hasLoop()) {
+        if (hd0.hasLoop()) {
             st.append("  loop ").append(loopPlays).append('/').append(LOOP_NAMES[loopIdx]);
         }
         st.append(shuffle ? "  shuf #" : "  #").append(listIndex + 1);
@@ -1811,7 +1813,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
         }
 
         // ---- 键盘（底图烘焙）+ 动态高亮 ----
-        if (kbImg == null || builtW != w) {
+        // 若图层是拿空 header 先垫的，file 就绪后必须重建一次填入真实 GD3/芯片信息
+        if (kbImg == null || builtW != w || (layersWithoutFile && file != null)) {
             buildLayers(w);
         }
         int py = sy + 16;
@@ -1919,7 +1922,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             return dbgCache;
         }
         dbgCacheAt = now;
-        com.denjhang.vgm.VgmHeader hd = file.header;
+        com.denjhang.vgm.VgmHeader hd = file != null && file.header != null
+                ? file.header : EMPTY_HEADER;
         long clk = hd.chipClock[0x12] & 0x3FFFFFFF;
         boolean dual = (hd.chipClock[0x12] & 0x40000000) != 0;  // bit30 = dual-chip flag
         dbgCache = new String[][]{

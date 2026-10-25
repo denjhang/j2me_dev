@@ -907,6 +907,17 @@ aa27459  v1.0.37  切曲 System.gc()
   修复：文件模式直接用 `progressBase`（每 20ms 由 getMediaTime 刷新，无需外推）。
 - `vgm2mid/` 不再写死存储卡根目录：改为跟随 VGM 源文件所在目录
   （`PlayScreen.setSrcFile(url)` → `midDirUrl()` = 父目录 + vgm2mid/）。
+  嵌套目录实测：`file:///root/vgm/2025-Turbosound/vgm2mid/*.mid` ✓。
+- **切曲瞬间 GUI 全部元件消失、只剩标题（用户发现）**：不是解压/转换阻塞——
+  paint() 开头有 `file == null` 提前 return 的兜底分支（新 PlayScreen 在后台
+  解压+解析完成前 file 未赋值），整帧只画文件名。修复 = 渲染层永不清屏捷径：
+  ① 删提前 return，任何时刻走完整 paintHud（进度条/键盘/状态行/GD3/调试行都在）；
+  ② paintHud/buildLayers/debugRows 的 `file.header` 全部走 `EMPTY_HEADER` 兜底
+  （空串、hasLoop=false、version=0 不显示版本行）；
+  ③ `layersWithoutFile` 开关：空 header 垫的图层在 file 就绪后下一帧重建填入真实信息；
+  ④ 进度条本就兼解压进度（`decompPct >= 0` 时显示解压百分比）。
+  教训：**前端 GUI 与数据管道解耦——渲染永远可用占位数据画全，绝不为"数据没到"
+  而跳帧留白。**
 
 **P2 跳转（待肉眼验证）**：4/6 键 ±10s → `Player.setMediaTime(ms×1e6)`
 （KEmulator PlayerImpl 走 `midiSequencer.setMicrosecondPosition`，真机 MMAPI 必备）；
@@ -922,4 +933,4 @@ aa27459  v1.0.37  切曲 System.gc()
 - 新增性能问题 → 添加到「性能优化指南」
 - 每次发版 → 更新「版本演进历史」时间线
 
-**最后更新**：2026-10-25，v1.0.41 持久化修复
+**最后更新**：2026-10-26，文件引擎验证 + HUD 三修（时间/目录/切曲空白）

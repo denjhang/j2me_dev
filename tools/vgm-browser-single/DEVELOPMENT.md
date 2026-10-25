@@ -982,8 +982,78 @@ tasklist /FI "IMAGENAME eq java.exe"
 - [ ] 用 `-XX:+PrintGCDetails` 抓一次 Full GC 时机与停顿时长，定量佐证第 4 点。
 - [ ] 任何主线修复前：人工逐档（256k/512k/1M）实测可视化/音频/交互，确认流畅且不破坏现有功能后才提交。
 
+### 已定位：每秒 +3~5MB 的分配热点清单（行号以 single v1.0.41 为准）
+
+经 jmap 三组数据 + 源码逐行核对，"内存每秒涨 3~5MB"不是单一来源，是**四条热路径叠加**。全部是我方代码的可消除分配，无一是 KEmulator 不可控的：
+
+| # | 文件:行 | 路径 | 每秒分配估算 | 性质 |
+|---|---|---|---|---|
+| 1 | `PlayScreen.java:800-806`（`buildChunk` 归并循环） | 每个事件 `new long[]{ms,status,d1,d2}` 立即丢，只为喂 `segBuilder.event()` 一行 | 2M 块≈42 万事件/块，双芯片≈84 万；块切换时一次性，但块寿命跨多次 Minor GC → 多数晋升老年代 → 约 **2~3 MB/s 净增** | **纯垃圾**（用完即丢），可分配消除 |
+| 2 | `Ay2Midi.java:706-723`（`initEvents()`） | 每块头部 `new long[SLOTS+7+CHANNELS][]` + 一串 `new long[3]`，双芯片调 2 次 | 块切换频率下约 30~50 KB/块 → **0.5~1 MB/s**（量小但进老年代） | 可改为常驻复用数组 |
+| 3 | `SmfSeg.java:143-150`（`Builder.build`） | 每块 `tr.toByteArray()` + `new ByteArrayOutputStream(track.length+32)` + `o.toByteArray()`，复制两遍 | 2M SMF 块≈2MB 字节，双芯片≈4MB，块切换时复制 = **~4 MB/s 峰值**（块边界瞬时，但 GC 滞后摊到秒） | 可复用单个 byte[]，去掉双复制 |
+| 4 | `PlayScreen.java:1035-1046`（`playSeg` 寄存器回放） | 每块可视化重放把 `regF[]` 喂 `ay.write()`，**`regF[]` 本身存在只为可视化** | 不是分配，是**常驻 7~15 MB 死水位**（双芯片）；间接导致 GC 老年代基数膨胀 | 架构问题，见下方「下一步计划」 |
+
+**与 KEmulator `javax.sound.midi.MidiEvent` 的关系**（前一轮 jmap 看到的 83.9 万 MidiEvent）：
+- MidiEvent 是 KEmulator 用 `MidiSystem.getSequence(smf)` 解析我方 SMF 时**内部建的对象**，每事件 1 个 MidiEvent + 1 个 FastShortMessage，存进 `Track` 的 HashMap。
+- 这部分**不可直接消除**（KEmulator 实现内部），但它的量级被我方 #1/#3 放大——我方每块喂给 KEmulator 的 SMF 字节流里的事件密度，决定了 KEmulator 建多少 MidiEvent。
+- **降我方分配 #1/#2/#3 不影响 MidiEvent 数量**（SMF 内容不变），但**降低我方堆压力基数**，让 GC 处理 MidiEvent 时 STW 更短。
+
+**核心结论**：每秒 +3~5MB 里，**约 2.5~4 MB 是我方可消除分配**（#1+#2+#3），其余是 KEmulator 解析 SMF 的固有成本 + 三代同驻稳态水位。修掉 #1/#2/#3 后，"每秒涨"的曲线应明显趋平——但这只缓解"播放中增长"，不解决"切曲台阶式累积"和"双芯片卡死"。
+
+### 下一步计划：架构级修复（VGM 单遍转换 + 可视化改读 MIDI 事件）
+
+> 受用户启发：2MB 缓存是设计核心（单遍播放零卡顿），**不能降档**。
+> 真正要解决的是"内存无限制增长"——根源是**可视化数据源走错了路**。
+
+**当前架构的数据流（错）**：
+```
+VGM字节 ──解析──> gen.write() ──录制──> regF[]（寄存器历史，7~15MB，仅可视用）
+                       │
+                       └──录制──> recF[]（MIDI事件流，→ buildChunk → SMF → Player）
+playSeg:  播 SMF 的同时，把 regF[] 回放给 ay.write() 驱动 curNote[] 可视化
+           ↑ regF 存在的唯一理由
+```
+
+**问题**：VGM 字节 + 解析器 + regF[] 在整个播放期间全程驻留，**仅为喂可视化**。这是"切曲台阶累积"和"播放中持续涨"的架构根源。
+
+**目标架构的数据流（对）**：
+```
+VGM字节 ──单遍转换──> recF[]（MIDI事件流）──> buildChunk → SMF → Player
+                          │
+                          └──> 可视化渲染器直接读 recF[]（按通道号解析 curNote/curVol/noiseNote）
+转换完成 → 释放 VGM字节 / 解析器 / regF（regF 整个删除）
+```
+
+**为什么可行**：
+- `recF[]` 本身就是 `{ms, status, d1, d2}` 扁平 MIDI 事件流，已含全部 noteOn/noteOff/CC/program。
+- 可视化需要的 curNote（某通道当前音高）、curVol（velocity）、noiseNote、buzzNote，**全可从 recF 的 status 通道号 + d1/d2 反推**——不需要回放寄存器。
+- `smooth[]`（亮度动画）在 paint 时本地算，不依赖 ay 状态机。
+
+**内存对比**（双芯片 3 分钟曲）：
+| 结构 | 当前 | 目标 |
+|---|---|---|
+| VGM 原始字节 | 全程驻留 ~2MB | **转换完即释放 = 0** |
+| VgmParser + regF[] | 全程 ~15MB | **释放 = 0** |
+| recF[] (MIDI事件) | 保留 | 保留（不变） |
+| regF[] 寄存器历史 | 7~15MB | **删除 = 0** |
+| **播放期常驻** | **~20MB** | **~5MB**（仅 recF） |
+
+**节省 ~15MB 常驻**，且切曲时旧 PlayScreen 残留也只剩 recF，台阶累积大幅下降。
+
+**实施步骤（测试器分支先验证，主线后动）**：
+1. [ ] 测试器：删 `regF[]` 录制（`Ay2Midi.write` 行 966-975 的 recordingReg 分支）+ 删 `playSeg` 寄存器回放（行 1035-1046）。
+2. [ ] 测试器：实现"可视化读 recF"渲染器——按通道号 toneCh/noiseCh/buzzerCh 解析 noteOn/noteOff 维护 curNote[]，双芯片用 chip1/chip2 通道映射区分颜色。
+3. [ ] 测试器：转换完成后 `file=null; parser=null; gen.regF=null`（释放 VGM）。
+4. [ ] jmap 对比：常驻内存是否降到 ~5MB，"每秒涨"是否趋平。
+5. [ ] **人工肉眼确认**：钢琴动画、双芯片颜色、噪声/包络标记是否正常——**这步必须你来确认**，AI 看不见屏幕。
+6. [ ] 验证通过后移植主线，每步人工复核，不全自动下结论。
+
+**风险与回退**：
+- 可视化从"硬件寄存器语义"改为"MIDI 事件语义"，可能丢失某些仅寄存器能表达的细节（如 R13 同步蜂鸣器的重触发率→buzzNote）。**需在第 5 步肉眼确认时重点看蜂鸣器/包络动画**。
+- 若可视化退化，回退方案：保留 regF 但转换完只缓到曲目结束（不全程），或仅缓存可视相关寄存器子集（R0-R13 中只记 R8/R13 等可视驱动位）。
+
 ### 分支与产物
 
-- `vgm-test-harness` 分支：测试器源码 100% 对齐 single v1.0.41 + 自动播放线程 + jmap 探针 + `chunk.txt` 块档覆盖探针
+- `vgm-test-harness` 分支：测试器源码 100% 对齐 single v1.0.41 + 自动播放线程 + jmap 探针 + `chunk.txt` 块档覆盖探针 + buildChunk 分配消除实验
 - `run-test.sh`：测试器启动器（不带 JMX，配 jmap 提示）
 - 探针：每秒 `[PERF]` fps/paintAvg/used/delta/total/chunkCut/chunkBuilt/buildMs/playMs + `[TEST]` release #N afterGc

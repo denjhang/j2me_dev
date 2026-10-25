@@ -8,6 +8,172 @@
 5. [性能优化指南](#性能优化指南)
 6. [当前槽位分配](#当前槽位分配)
 7. [Git 提交索引](#git-提交索引)
+8. [AI 辅助开发失败案例](#ai-辅助开发失败案例)
+
+---
+
+## AI 辅助开发失败案例
+
+### 2026-10-25 凌晨：全自动性能优化的惨败
+
+**背景**：用户报告 PC 播放时 GUI 卡顿、内存膨胀到 300-400MB，双芯片曲目经常崩溃。
+
+**AI 操作**（Claude Sonnet 3.5，持续 8 小时）：
+1. 创建自动测试版本（`tools/vgm-browser-test`）
+2. 完整播放双芯片曲目，监控 fps、内存、regN、recN
+3. 分析日志，得出"regF 和 recF 无限增长导致内存膨胀"
+4. 实施"修复"：
+   - 禁用 `gen.recordingReg = false`（节省 50% 内存）
+   - 添加 `trimRec()` 定期清理 recF
+   - 修正 `shrinkStream()` 条件
+   - 提交 2 个 commit（`0f4f2fd`, `b12e920`）
+
+**灾难性后果**：
+- ❌ **钢琴可视化动画完全消失**（画面一片空白）
+- ❌ **没有找到真正的内存泄露原因**
+- ❌ **没有找到真正的卡顿原因**
+- ❌ **8 小时零进度，最终强制回滚**
+
+### 技术根因分析
+
+**AI 的错误假设**：
+```
+可视化读取 regF 数组 → 禁用 recordingReg 节省内存 → 可视化应该不受影响
+```
+
+**实际机制**（正确理解）：
+```java
+// PlayScreen.java 行 1569-1570
+int note1 = ay.visNote(ch);
+int note2 = ay2 != null ? ay2.visNote(ch) : -1;
+
+// Ay2Midi.java 行 1534-1539
+public int visNote(int ch) {
+    if (buzzSrc == ch && buzzNote >= 0) {
+        return buzzNote;
+    }
+    return curNote[ch];  // ← 关键：返回实时状态
+}
+
+// Ay2Midi.java 行 962-985
+public void write(int reg, int data) {
+    if (recordingReg) {
+        // 记录到 regF（用于录制流，不影响可视化）
+    }
+    regs[reg] = data & 0xFF;  // ← 更新硬件寄存器状态
+    switch (reg) {
+        case 0: case 1:
+            updateChannel(0);  // ← 更新 curNote[0]
+            break;
+        ...
+    }
+}
+
+// Ay2Midi.java 行 1840-1865
+private void updateTonePitch(int ch) {
+    int hz = channelFreq(ch);
+    // ... 计算音符
+    if (curNote[ch] != note) {
+        noteOff(ch);
+        curNote[ch] = note;  // ← 可视化数据源
+        noteOn(toneCh[ch], note, vel(curVol[ch]));
+    }
+}
+```
+
+**真相**：
+1. **可视化依赖 `curNote[]`**，不是 `regF[]`
+2. **`curNote[]` 由 `write()` → `updateChannel()` → `updateTonePitch()` 更新**
+3. **`recordingReg` 只控制是否记录到 `regF[]`**（录制流）
+4. **但 AI 误以为禁用 `recordingReg` 不影响 `write()` 调用**
+
+**为什么可视化失效？**
+- 可能原因 1：`gen.recording = false` 时，`write()` 根本不被调用
+- 可能原因 2：禁用 regF 后，某个关键初始化路径被破坏
+- **AI 没有验证可视化是否正常就下结论"修复完成"**
+
+### 监控数据对比
+
+**旧版（64aeb96，regF 启用）**：
+```
+第 1 首（双芯片，48KB）：
+- fps=22（不是 30！本来就卡）
+- fps=2（GC 时严重卡顿）
+- gen.regN=6, gen2.regN=9（regF 很小，不是问题）
+- gen.recN=0, gen2.recN=0（cutChunk 已在清理）
+- 内存：24MB → 84MB（20秒增长 60MB，每秒 3MB）
+- 可视化：✅ 正常
+```
+
+**"修复"版（b12e920，regF 禁用）**：
+```
+第 1 首（双芯片，48KB）：
+- fps=30-32（改善！）
+- gen.regN=0, gen2.regN=0（regF 已禁用）
+- gen.recN=0, gen2.recN=0（trim 工作）
+- 内存：44MB → 73MB（约 6 秒，每秒 5MB，更快！）
+- 可视化：❌ **钢琴动画完全消失，一片空白**
+```
+
+**结论**：
+- fps 提升是因为禁用了 regF 的记录开销
+- 但内存膨胀更快（3MB/s → 5MB/s）
+- **最致命**：可视化完全失效，功能被摧毁
+
+### 根本问题清单
+
+1. **盲目假设**：
+   - 没理解 `visNote()` 的数据流
+   - 没理解 `recordingReg` 的作用域
+   - 没理解 `write()` → `updateChannel()` → `curNote[]` 的更新链
+
+2. **验证缺失**：
+   - 只看日志数字（fps、内存、regN），**没有肉眼验证可视化**
+   - 测试版在后台运行，AI 看不到画面
+   - 修复完成后立刻下结论，没有要求用户确认
+
+3. **方向错误**：
+   - 认为 regF/recF 是内存泄露主因（实际只有个位数）
+   - 真正的泄露源（SMF 缓冲、图像缓冲、MIDI Player 内部）没找到
+   - 卡顿真因（可能是 SMF 生成、GC、MIDI 合成）没找到
+
+4. **全自动模式失效**：
+   - AI 无法判断可视化、音频、交互是否正常
+   - 只能通过日志数字"优化"，看不到用户体验
+   - 8 小时反复测试、编译、分析，全是无效功
+
+### 教训与规范
+
+**❌ 全自动测试根本不可取**：
+- 性能优化必须人工验证可视化/音频/交互
+- 日志数字改善 ≠ 用户体验改善
+- 后台测试看不到画面 = 盲目修改
+
+**✅ 正确的 AI 辅助流程**：
+1. **分析阶段**：AI 读代码、分析日志、提出假设
+2. **验证阶段**：**人工**在模拟器/真机上确认假设
+3. **修改阶段**：AI 实施修改，**每改一处都要人工验证**
+4. **测试阶段**：**人工**完整测试所有功能（可视化/音频/设置/切曲）
+5. **提交前**：**人工**最终确认，AI 只负责写 commit message
+
+**✅ 性能优化保护措施**：
+- 禁止禁用任何 `recording*` 字段，除非完整理解其影响
+- 禁止修改 `write()`、`updateChannel()`、`curNote[]` 相关逻辑
+- 内存优化必须先定位泄露源（profiler/heap dump），不能靠猜
+- 每次修改后必须肉眼验证：钢琴动画、音频、设置持久化、切曲
+
+**✅ 回滚记录**（警示后人）：
+```bash
+# 错误的修复
+0f4f2fd - 禁用 regF + 添加 trim（破坏可视化）
+b12e920 - 修正 shrinkStream 条件（仍然破坏可视化）
+
+# 强制回滚
+git reset --hard 64aeb96
+git push -f origin midi-rt-player
+```
+
+**最终结论**：8 小时全自动优化 = **零价值输出 + 功能破坏 + 时间浪费**。
 
 ---
 

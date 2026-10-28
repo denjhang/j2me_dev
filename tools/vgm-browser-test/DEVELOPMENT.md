@@ -919,9 +919,24 @@ aa27459  v1.0.37  切曲 System.gc()
   教训：**前端 GUI 与数据管道解耦——渲染永远可用占位数据画全，绝不为"数据没到"
   而跳帧留白。**
 
-**P2 跳转（待肉眼验证）**：4/6 键 ±10s → `Player.setMediaTime(ms×1e6)`
-（KEmulator PlayerImpl 走 `midiSequencer.setMicrosecondPosition`，真机 MMAPI 必备）；
+**P2 跳转（2026-10-28 KEmulator 验证通过）**：7/9 键 ±10s → `Player.setMediaTime(ms×1000)`。
 可视化状态重建 = visRi 归 0、regF 从头快放重写到目标 ms（有序数组一次性 O(n)）。
+
+- **键位教训**：原设计用 4/6 键，但 MIDP 标准映射 `getGameAction(KEY_NUM4)==LEFT`、
+  `KEY_NUM6==RIGHT`——Nokia 上 4/6 物理上就是左右选键，keyPressed 的 LEFT/RIGHT
+  分支（切上/下曲）在前，seek 分支是**永远不可达的死代码**（用户实测按 4/6 变切曲）。
+  seek 改用 7/9 键（无 game action，键盘/真机均可直达）。
+- **单位教训**：MMAPI `setMediaTime` 参数是**微秒**。曾写 `ms×1e6`（把毫秒当秒换），
+  跳转值超千倍 → 播放头甩到曲尾 → KEmulator 立刻回调 endOfMedia → "跳完 10 秒秒切曲"。
+  正确换算 `ms×1000`。参考软件实证：xploreme `z.class` 与 QQ音乐2010 `ce.class/hx.class`
+  均把 `getMediaTime()` 原值直通存字段再喂 `setMediaTime()`（QQ 的跳转还带
+  getState 守卫：UNREALIZED/PREFETCHED 态不设位，start 前后各设一次），全程无 ×1e6。
+  这两家 2010 年 S40 软件都支持跳转 → 真机 MMAPI 这条路是通的。
+- **实测日志**（/tmp/kem_p2.log）：连按 9 键 `5445→15445→26885→37575→50800ms`
+  每次精确 +10s，seek 后无 endOfMedia、无切曲，[VIS] 时间轴正确续走。
+- 调试探针 `[KEY]`/`[SEEK]`/`[SWITCH]`/`[FILE] endOfMedia`/`[FILE] end by fallback`
+  保留在代码里，真机 P5 阶段照此抓日志。
+- CLDC 1.1 无 `Throwable.getStackTrace()`（Java 1.4 SE 才有），日志别打调用栈。
 
 ---
 
@@ -933,4 +948,4 @@ aa27459  v1.0.37  切曲 System.gc()
 - 新增性能问题 → 添加到「性能优化指南」
 - 每次发版 → 更新「版本演进历史」时间线
 
-**最后更新**：2026-10-26，文件引擎验证 + HUD 三修（时间/目录/切曲空白）
+**最后更新**：2026-10-28，P2 跳转验证通过（7/9 键 + setMediaTime 微秒单位修复）

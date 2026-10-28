@@ -756,7 +756,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
     private javax.microedition.media.Player filePlayer;
     /** 文件模式：endOfMedia 已到（播放线程 wait 用）。 */
     private boolean fileSegDone;
-    /** 跳转请求（ms），-1=无；4/6 键 ±10s，playFileSeg 循环消费。 */
+    /** 跳转请求（ms），-1=无；7/9 键 ±10s，playFileSeg 循环消费。 */
     private volatile long seekMs = -1;
     /** 文件 Player 的整曲时长（ms），供按键跳转钳位；非文件模式=0（禁用跳转）。 */
     private volatile long fileDurMs;
@@ -945,9 +945,13 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 vc.setMute(false);
             }
             filePlayer = p;
+            final long durMs = p.getDuration() / 1000;
+            fileDurMs = durMs;
             p.addPlayerListener(new javax.microedition.media.PlayerListener() {
                 public void playerUpdate(javax.microedition.media.Player pl, String ev, Object d) {
                     if ("endOfMedia".equals(ev)) {
+                        System.out.println("[FILE] endOfMedia callback at ms="
+                                + (pl.getMediaTime() / 1000) + " durMs=" + durMs);
                         synchronized (PlayScreen.this) {
                             fileSegDone = true;
                             PlayScreen.this.notifyAll();
@@ -955,8 +959,6 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                     }
                 }
             });
-            long durMs = p.getDuration() / 1000;
-            fileDurMs = durMs;
             fileSegDone = false;
             // 可视化回放：按 getMediaTime 时间轴重放 regF 给 ay/ay2.write()
             // regF 三元组 {ms, reg, data}，recBaseMs=0，ms 即绝对毫秒，与 mediaTime/1000 对齐
@@ -985,14 +987,18 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                     try { p.start(); } catch (Throwable ignored) {}
                 }
                 long el = p.getMediaTime() / 1000;
-                // 跳转：4/6 键置 seekMs → setMediaTime 让 MIDI 引擎跳，
+                // 跳转：7/9 键置 seekMs → setMediaTime 让 MIDI 引擎跳，
                 // regF 按时间有序，从头快放重写到目标 ms，AY 寄存器状态即恢复。
                 if (seekMs >= 0) {
+                    long before = el;
                     long s = seekMs;
                     seekMs = -1;
                     if (s > durMs) s = durMs;
                     if (s < 0) s = 0;
-                    try { p.setMediaTime(s * 1000000L); } catch (Throwable ignored) {}
+                    // MMAPI setMediaTime 参数=微秒（参考 xploreme/QQ音乐2010：
+                    // 直通 getMediaTime 原值，ms→µs 只 ×1000）。曾误写 ×1e6：
+                    // 位置甩到曲尾 → 立刻 endOfMedia → 假"播完"切曲。
+                    try { p.setMediaTime(s * 1000L); } catch (Throwable ignored) {}
                     visRi = 0;
                     visRi2 = 0;
                     while (visRi < regN1 && gen.regF[visRi * 3] <= s) {
@@ -1006,7 +1012,9 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                         }
                     }
                     el = s;
-                    System.out.println("[SEEK] -> " + s + "ms visRi=" + visRi + "/" + regN1);
+                    System.out.println("[SEEK] before=" + before + "ms -> " + s + "ms"
+                            + " (durMs=" + durMs + ") visRi=" + visRi + "/" + regN1
+                            + " fileSegDone=" + fileSegDone + " playing=" + playing);
                 }
                 playPct = (int) (el * 100 / Math.max(1, durMs));
                 progressBase = el * 44;
@@ -1041,6 +1049,7 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
                 }
                 // 兜底：KEmulator 某些路径不回调 endOfMedia，mediaTime 达到 duration 强制完成
                 if (durMs > 0 && el >= durMs - 50 && el <= durMs + 500) {
+                    System.out.println("[FILE] end by fallback: el=" + el + "ms durMs=" + durMs);
                     fileSegDone = true;
                     break;
                 }
@@ -1439,6 +1448,8 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
 
     /** 切曲：先淡出再切。 */
     private void switchTrackFade(final int target) {
+        System.out.println("[SWITCH] target=" + target + " vol=" + masterVol
+                + " playing=" + playing + " fileDurMs=" + fileDurMs);
         final int from = masterVol;
         new Thread(new Runnable() {
             public void run() {
@@ -2728,19 +2739,27 @@ public class PlayScreen extends Canvas implements CommandListener, Runnable {
             } else {
                 startPlay(false);
             }
-        } else if (keyCode == KEY_NUM4) {
+        } else if (keyCode == KEY_NUM7) {
+            // 跳转用 7/9：Nokia 上 4/6 就是左右选键（getGameAction→LEFT/RIGHT），
+            // 已被切上/下曲占用，seek 放 4/6 是死代码（用户实测按 4/6 变切曲）。
             if (fileDurMs > 0) {   // 文件模式才支持跳转
-                seekMs = progressBase / 44 - 10000;
+                long before = progressBase / 44;
+                seekMs = before - 10000;
                 if (seekMs < 0) {
                     seekMs = 0;
                 }
+                System.out.println("[KEY] 7  back10  before=" + before + "ms"
+                        + " seek=" + seekMs + "ms durMs=" + fileDurMs);
             }
-        } else if (keyCode == KEY_NUM6) {
+        } else if (keyCode == KEY_NUM9) {
             if (fileDurMs > 0) {
-                seekMs = progressBase / 44 + 10000;
+                long before = progressBase / 44;
+                seekMs = before + 10000;
                 if (seekMs > fileDurMs) {
                     seekMs = fileDurMs;
                 }
+                System.out.println("[KEY] 9  fwd10   before=" + before + "ms"
+                        + " seek=" + seekMs + "ms durMs=" + fileDurMs);
             }
         } else if (keyCode == KEY_NUM2) {
             gd3Scroll -= 24;

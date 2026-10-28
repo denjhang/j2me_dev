@@ -9,6 +9,8 @@
 6. [当前槽位分配](#当前槽位分配)
 7. [Git 提交索引](#git-提交索引)
 8. [AI 辅助开发失败案例](#ai-辅助开发失败案例)
+9. [重要参考项目](#重要参考项目逆向实证勿再从零试错)
+10. [文件引擎](#文件引擎vgm-test-harness-分支2026-10-26-验证)
 
 ---
 
@@ -881,6 +883,36 @@ aa27459  v1.0.37  切曲 System.gc()
 ```
 
 ---
+
+## 重要参考项目（逆向实证，勿再从零试错）
+
+本机 `games/` 目录下的商业 J2ME 软件是本项目 MMAPI 路线的**权威参考**，
+结论均来自 javap 反汇编 class 常量池/字节码，不是猜测：
+
+### xploreme（`games/xploreme_6brj1boi.jar`）—— 文件引擎架构蓝本
+
+- 已整体逆向（见 RESEARCH.md），**整曲→SMF→`createPlayer("file://…")`→OS 自管播放**
+  的文件引擎架构即源自它。
+- `z.class`：MMAPI 跳转用法——`getMediaTime()` 原值存入字段 `m:J`，
+  再原样喂 `setMediaTime(m)`（**微秒直通，全程无单位换算**）；另有
+  `setMediaTime(0)` 回到开头。用于恢复暂停位置/重播。
+
+### QQ音乐 2010（`games/qqmusic2010_zixing_net.jar`，2026-10-28 新增）—— 真机跳转能力实证
+
+- `ce.class` / `hh.class` / `hx.class` 共 **4 处 `setMediaTime` 调用**：
+  位置字段直通传递；`hx.class` 带状态守卫——`getState()` 为 UNREALIZED(0)/
+  PREFETCHED(100) 时不设位，`realize/prefetch 后 + start 前后` 各设一次。
+- 异常日志字符串 `"CommonOnlineThread:setMediaTime()"` 说明它 2010 年在
+  S40 真机大规模用过这条 API。
+- **推论：MMAPI `setMediaTime` 跳转在真机可行**，本项目 P2 照此实现；
+  KEmulator 的 setMediaTime 行为仅作参考，最终以真机为准。
+
+### 由此确立的 MMAPI 事实（两家一致）
+
+1. `getMediaTime()`/`setMediaTime()` 参数单位 = **微秒**；毫秒→微秒只 **×1000**
+   （本项目曾误写 ×1e6，见文件引擎章节 P2 Bug）。
+2. 跳转值 = 保存的 `getMediaTime` 原值，**不要自己造单位**。
+3. 设位前后检查 `getState()`，未 realize 的 Player 不设位。
 
 ## 文件引擎（vgm-test-harness 分支，2026-10-26 验证）
 

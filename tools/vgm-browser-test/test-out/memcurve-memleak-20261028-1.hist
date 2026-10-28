@@ -1,0 +1,40 @@
+
+ num     #instances         #bytes  class name
+----------------------------------------------
+   1:        130346       11470448  java.lang.reflect.Method
+   2:        388167        9729664  [Ljava.lang.Object;
+   3:        130127        9369144  java.lang.reflect.Field
+   4:        258884        6219616  [Ljava.lang.Class;
+   5:         57927        5756936  [B
+   6:        128289        3086936  [Ljava.lang.reflect.Method;
+   7:        128244        3077856  java.lang.Class$MethodArray
+   8:          2797        2493680  [I
+   9:        128843        2061488  java.lang.Integer
+  10:        128661        2058576  java.lang.Short
+  11:         24795        1846032  [C
+  12:         55532        1777024  java.util.HashMap$Node
+  13:         50227        1205448  javax.sound.midi.MidiEvent
+  14:         50225        1205400  com.sun.media.sound.FastShortMessage
+  15:           608         855272  [J
+  16:           310         587304  [Ljava.util.HashMap$Node;
+  17:         23287         558888  java.lang.String
+  18:          3901         485712  java.lang.Class
+  19:          8735         279520  java.awt.Color
+  20:          1422         154024  [F
+  21:          4027         128864  java.awt.Rectangle
+  22:          3405         108960  java.util.concurrent.ConcurrentHashMap$Node
+  23:          2013          64416  java.util.Hashtable$Entry
+  24:          1599          63960  java.lang.ref.Finalizer
+  25:          1390          55600  java.util.LinkedHashMap$Entry
+  26:          1288          51520  java.util.TreeMap$Entry
+  27:          1363          43616  sun.security.util.ObjectIdentifier
+  28:           720          40320  java.util.zip.ZipFile$ZipFileInputStream
+  29:           716          40096  java.util.zip.ZipFile$ZipFileInflaterInputStream
+  30:           525          37800  java.awt.geom.RoundRectIterator
+  31:          1004          37112  [Ljava.lang.String;
+  32:           178          37024  org.eclipse.swt.graphics.GCData
+  33:          2233          35728  java.lang.Object
+  34:           794          31760  java.math.BigInteger
+  35:            62          30320  [Ljava.util.concurrent.ConcurrentHashMap$Node;
+  36:           448          28672  net.java.games.input.RawMouseEvent
+  37:           893          28576  sun.security.util.DerInputBuffer

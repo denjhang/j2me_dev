@@ -1,0 +1,40 @@
+
+ num     #instances         #bytes  class name
+----------------------------------------------
+   1:        369332       14118520  [B
+   2:        367761       11768352  java.util.HashMap$Node
+   3:        362457        8698968  javax.sound.midi.MidiEvent
+   4:        362455        8698920  com.sun.media.sound.FastShortMessage
+   5:          6324        3722440  [I
+   6:         81660        3050680  [Ljava.lang.Object;
+   7:         28220        2483360  java.lang.reflect.Method
+   8:           310        2160168  [Ljava.util.HashMap$Node;
+   9:         28001        2016072  java.lang.reflect.Field
+  10:           211        1944248  [J
+  11:         23323        1760440  [C
+  12:         54632        1317568  [Ljava.lang.Class;
+  13:         26163         635912  [Ljava.lang.reflect.Method;
+  14:         26118         626832  java.lang.Class$MethodArray
+  15:         22736         545664  java.lang.String
+  16:          3902         485816  java.lang.Class
+  17:         26727         427632  java.lang.Integer
+  18:         26525         424400  java.lang.Short
+  19:          3408         109056  java.util.concurrent.ConcurrentHashMap$Node
+  20:          2039          65248  java.util.Hashtable$Entry
+  21:          1601          64040  java.lang.ref.Finalizer
+  22:          1877          60064  java.awt.Color
+  23:          1389          55560  java.util.LinkedHashMap$Entry
+  24:          1288          51520  java.util.TreeMap$Entry
+  25:          1363          43616  sun.security.util.ObjectIdentifier
+  26:           725          40600  java.util.zip.ZipFile$ZipFileInputStream
+  27:           717          40152  java.util.zip.ZipFile$ZipFileInflaterInputStream
+  28:          2288          36608  java.lang.Object
+  29:           903          34688  [Ljava.lang.String;
+  30:           316          34120  [F
+  31:           794          31760  java.math.BigInteger
+  32:            62          30320  [Ljava.util.concurrent.ConcurrentHashMap$Node;
+  33:           448          28672  net.java.games.input.RawMouseEvent
+  34:           893          28576  sun.security.util.DerInputBuffer
+  35:           893          28576  sun.security.util.DerValue
+  36:           135          24344  [Ljava.util.Hashtable$Entry;
+  37:           299          23920  java.lang.reflect.Constructor

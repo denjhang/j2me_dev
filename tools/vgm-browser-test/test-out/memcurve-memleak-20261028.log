@@ -1,0 +1,433 @@
+十月 28, 2026 5:50:55 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+警告: Found unknown Windows version: Windows 11
+十月 28, 2026 5:50:55 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+信息: Attempting to use default windows plug-in.
+十月 28, 2026 5:50:55 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+信息: Loading: net.java.games.input.DirectAndRawInputEnvironmentPlugin
+十月 28, 2026 5:50:55 下午 net.java.games.input.ControllerEnvironment log
+信息: Failed to initialize device HIDI2C Device because of: java.io.IOException: Failed to acquire device (8007001e)
+
+Found controller: USB PnP Sound Device
+Found controller: HIDI2C Device
+Found controller: Intel(R) HID Event Filter
+Found controller: 2.4G Mouse
+Found controller: AIRMARS GM02
+KEmulator nnx64 2.22 Running on Windows 11 amd64 (10.0), Java: 1.8.0_504 (Temurin)
+Get classes from E:\working\zcode-projects\j2me_dev\tools\vgm-browser-test\VgmBrowserTest.jar
+Checking for updates
+Get class com.denjhang.vgmbrowser.FileListScreen$1
+Get class com.denjhang.vgm.StreamPlayer$SynthStream
+Get class com.denjhang.vgmbrowser.PlayScreen$1$1
+Get class com.denjhang.vgmbrowser.PlayScreen$1
+Get class com.denjhang.vgmbrowser.DetailScreen$1
+Get class com.denjhang.vgmbrowser.SettingsStore
+Get class com.denjhang.vgmbrowser.PlayScreen$5
+Get class com.denjhang.vgm.Gzip$Progress
+Get class com.denjhang.vgmbrowser.CommandScreen
+Get class com.denjhang.vgm.SmfSeg$Builder
+Get class com.denjhang.vgmbrowser.CommandScreen$1
+Get class com.denjhang.vgm.PlayToneEngine$1
+Get class com.denjhang.vgm.PlayToneEngine
+Get class com.denjhang.vgmbrowser.FileListScreen$Entry
+Get class com.denjhang.vgm.VgmParser
+Get class com.denjhang.vgm.VgmHeader
+Get class com.denjhang.vgmbrowser.DetailScreen
+Get class com.denjhang.vgm.StreamPlayer$1
+Get class com.denjhang.vgm.VgmParser$DataBlock
+Get class com.denjhang.vgmbrowser.BrowserMIDlet$1
+Get class com.denjhang.vgmbrowser.PlayScreen$4
+Get class com.denjhang.vgmbrowser.FileListScreen
+Get class com.denjhang.vgm.VgmFile
+Get class com.denjhang.vgm.Gzip$Inflater
+Get class com.denjhang.vgmbrowser.PlayScreen$3
+Get class com.denjhang.vgmbrowser.BrowserMIDlet
+Get class com.denjhang.vgmbrowser.MidiTestScreen
+Get class com.denjhang.vgm.Gzip
+Get class com.denjhang.vgm.Ay2Midi$1
+Get class com.denjhang.vgmbrowser.ToneTestScreen
+Get class com.denjhang.vgmbrowser.PlayScreen$2
+Get class com.denjhang.vgm.Gzip$1
+Get class com.denjhang.vgm.SmfSeg
+Get class com.denjhang.vgm.StreamPlayer
+Get class com.denjhang.vgm.VgmCommandTable
+Get class com.denjhang.vgm.Ay2Midi
+Get class com.denjhang.vgmbrowser.PlayScreen
+Get class com.denjhang.vgm.ChunkedPlayer
+Get class com.denjhang.vgmbrowser.PlayScreen$6
+Get class com.denjhang.vgm.Gzip$GrowBuf
+Custom.jar.getResourceStream: /icon.png (9565)
+Launch MIDlet class: com.denjhang.vgmbrowser.BrowserMIDlet
+[TEST] === VgmBrowserSingle 测试版启动 ===
+[TEST] 自动播放目录: file:///root/vgm/2025-Turbosound/
+[TEST] 每首播放 30 秒后自动切曲
+System.getProperty#line.separator=
+
+File opened: file:///root/vgm/
+File opened: file:///root/vgm/
+File opened: file:///root/vgm/Beforeny2.vgz
+File opened: file:///root/vgm/bubbled-sKetch-.vgz
+File opened: file:///root/vgm/Digital-Espresso-Revision-2023-12-.vgz
+File opened: file:///root/vgm/Alla vill till himmelen.vgm
+File opened: file:///root/vgm/Beforeny2.vgm
+File opened: file:///root/vgm/bubbled-sKetch-.vgm
+File opened: file:///root/vgm/Bullet Sequence.vgm
+File opened: file:///root/vgm/Digital-Espresso-Revision-2023-12-.vgm
+File opened: file:///root/vgm/Reko7-Xenium-2022-.vgm
+File opened: file:///root/vgm/She-Stole-My-Cat.vgm
+File opened: file:///root/vgm/Solitude-Lost-Party-2024-1-.vgm
+File opened: file:///root/vgm/Thunderdome.vgm
+File opened: file:///root/chunk.txt
+[TEST] 无 chunk.txt，用默认块档
+File opened: file:///root/vgm/2025-Turbosound/
+[TEST] 找到 17 个 VGM 文件
+[TEST] (1/17) 加载: 03-wojtek-unreal-superhero-theme-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/03-wojtek-unreal-superhero-theme-1_merged.vgm
+[TEST] 文件已加载: 48198 bytes
+[RMS] midlet rms path: E:\working\zcode-projects\j2me_dev\emulators\kemnnx64\rms\RGVuamhhbmdfVmdtQnJvd3NlclRlc3Q=\
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+[FILE] entering file mode (thread=Thread-16)
+[FILE] waiting feedEnded... playing=true feedEnded=false recN=12 regN=39 rec2N=44
+[TEST] 播放已启动，等待完成...
+[FILE] feedEnded=true playing=true recN=85448 regN=16416
+[FILE] smf=200735 bytes, writing...
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+[FILE] wrote 200735 bytes -> file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+[FILE] wrote OK, releasing pipeline
+[FILE] pipeline released (regF+file kept for vis/paint)
+[FILE] playing from file...
+[MEDIA] createPlayer file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+[VIS] start: regN1=5472 regN2=9104 durMs=81340 gen.regN=16416 gen2.regN=27312
+[PERF] fps=32 paintAvg=1ms used=45516K delta=45516K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=52264K delta=6748K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=59013K delta=6748K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=66725K delta=7712K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=73160K delta=6434K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=4987ms visRi=313/5472 visRi2=623/9104 curNote0=72 curNote1=76 curVol0=80 toneAct0=true
+[PERF] fps=31 paintAvg=0ms used=24068K delta=-49091K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=31349K delta=7280K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=38835K delta=7486K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=45443K delta=6607K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=52506K delta=7063K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[TEST] 播放中... 10 秒
+[VIS] t=10005ms visRi=701/5472 visRi2=1306/9104 curNote0=76 curNote1=72 curVol0=80 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=61303K delta=8796K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=69249K delta=7946K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=74547K delta=5297K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=82038K delta=7490K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=24909K delta=-57128K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=15016ms visRi=1045/5472 visRi2=1973/9104 curNote0=91 curNote1=71 curVol0=72 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=33083K delta=8174K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=40683K delta=7599K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=18 paintAvg=0ms used=44705K delta=4021K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=53035K delta=8330K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=20025ms visRi=1433/5472 visRi2=2648/9104 curNote0=76 curNote1=77 curVol0=80 toneAct0=true
+[TEST] 播放中... 20 秒
+[PERF] fps=31 paintAvg=0ms used=62941K delta=9905K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=31 paintAvg=0ms used=70983K delta=8042K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=78308K delta=7325K total=197120K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=22479K delta=-55829K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=28617K delta=6138K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=25031ms visRi=1753/5472 visRi2=3282/9104 curNote0=72 curNote1=77 curVol0=80 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=35076K delta=6458K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=42867K delta=7791K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=51930K delta=9063K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=58069K delta=6138K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=66394K delta=8325K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=30050ms visRi=2102/5472 visRi2=3827/9104 curNote0=84 curNote1=72 curVol0=80 toneAct0=true
+[TEST] 播放中... 30 秒
+[PERF] fps=30 paintAvg=0ms used=75413K delta=9018K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=83002K delta=7588K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=90368K delta=7366K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=23709K delta=-66658K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=31444K delta=7734K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=35061ms visRi=2437/5472 visRi2=4307/9104 curNote0=72 curNote1=74 curVol0=80 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=39241K delta=7797K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=46976K delta=7734K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=54711K delta=7734K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=62446K delta=7734K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=70181K delta=7734K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=40069ms visRi=2711/5472 visRi2=4641/9104 curNote0=72 curNote1=72 curVol0=80 toneAct0=true
+[TEST] 播放中... 40 秒
+[PERF] fps=30 paintAvg=0ms used=78046K delta=7864K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=87044K delta=8998K total=204800K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=22474K delta=-64569K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=29076K delta=6601K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=37084K delta=8008K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=45077ms visRi=3071/5472 visRi2=5294/9104 curNote0=79 curNote1=71 curVol0=80 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=45024K delta=7939K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=28 paintAvg=0ms used=53032K delta=8008K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=58335K delta=5302K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=64936K delta=6601K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[TEST] 播放中... 50 秒
+[VIS] t=49175ms visRi=3370/5472 visRi2=5840/9104 curNote0=76 curNote1=79 curVol0=80 toneAct0=true
+[PERF] fps=12 paintAvg=0ms used=67616K delta=2680K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=74217K delta=6601K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=82226K delta=8008K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=23 paintAvg=0ms used=87529K delta=5302K total=203776K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=22482K delta=-65046K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=55262ms visRi=3790/5472 visRi2=6642/9104 curNote0=79 curNote1=74 curVol0=80 toneAct0=true
+[PERF] fps=22 paintAvg=0ms used=27927K delta=5445K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=34583K delta=6656K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=14 paintAvg=0ms used=43870K delta=9286K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=50526K delta=6656K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=55946K delta=5419K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=60292ms visRi=4175/5472 visRi2=7331/9104 curNote0=84 curNote1=77 curVol0=72 toneAct0=true
+[TEST] 播放中... 60 秒
+[PERF] fps=22 paintAvg=0ms used=62656K delta=6709K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=21 paintAvg=0ms used=68076K delta=5419K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=9 paintAvg=0ms used=75968K delta=7892K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=82703K delta=6735K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=65259ms visRi=4501/5472 visRi2=7986/9104 curNote0=67 curNote1=79 curVol0=80 toneAct0=true
+[PERF] fps=21 paintAvg=0ms used=88044K delta=5340K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=2 paintAvg=0ms used=23752K delta=-64292K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=29154K delta=5402K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=21 paintAvg=0ms used=35820K delta=6665K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=41223K delta=5402K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=70281ms visRi=4839/5472 visRi2=8454/9104 curNote0=72 curNote1=76 curVol0=72 toneAct0=true
+[TEST] 播放中... 70 秒
+[PERF] fps=22 paintAvg=0ms used=47998K delta=6774K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=53400K delta=5402K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=60125K delta=6724K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=65527K delta=5402K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=22 paintAvg=0ms used=72251K delta=6724K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[VIS] t=75293ms visRi=5177/5472 visRi2=8942/9104 curNote0=79 curNote1=72 curVol0=80 toneAct0=true
+[PERF] fps=22 paintAvg=0ms used=77654K delta=5402K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=29 paintAvg=0ms used=84831K delta=7176K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[SWITCH] target=1 vol=100 playing=true fileDurMs=81340
+[PERF] fps=31 paintAvg=0ms used=22917K delta=-61914K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #1 afterGc used=24288K total=197632K
+[FILE] playWholeFile done, loopPlays=2
+[FILE] bufferPlayer exited file mode
+[TEST] 播放完成，总时长: 78 秒
+[TEST] (2/17) 加载: a-cup-of-nes-tea-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/a-cup-of-nes-tea-1_merged.vgm
+[TEST] 文件已加载: 125903 bytes
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+[FILE] entering file mode (thread=Thread-27)
+[FILE] waiting feedEnded... playing=true feedEnded=false recN=1264 regN=297 rec2N=1604
+[TEST] 播放已启动，等待完成...
+[PERF] fps=13 paintAvg=0ms used=59732K delta=59732K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=243080 genRegN=56583 gen2RecN=229656 gen2RegN=40974
+[FILE] feedEnded=true playing=true recN=299200 regN=68910
+[FILE] smf=582820 bytes, writing...
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/a-cup-of-nes-tea-1_merged.mid
+[FILE] wrote 582820 bytes -> file:///root/vgm/2025-Turbosound/vgm2mid/a-cup-of-nes-tea-1_merged.mid
+[FILE] wrote OK, releasing pipeline
+[FILE] pipeline released (regF+file kept for vis/paint)
+[FILE] playing from file...
+[MEDIA] createPlayer file:///root/vgm/2025-Turbosound/vgm2mid/a-cup-of-nes-tea-1_merged.mid
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/a-cup-of-nes-tea-1_merged.mid
+[VIS] start: regN1=22970 regN2=16718 durMs=128968 gen.regN=68910 gen2.regN=50154
+[PERF] fps=30 paintAvg=0ms used=40895K delta=-18836K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=48872K delta=7976K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=57208K delta=8336K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=64552K delta=7344K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=72888K delta=8336K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=4988ms visRi=615/22970 visRi2=654/16718 curNote0=56 curNote1=-1 curVol0=72 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=80232K delta=7344K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=87557K delta=7324K total=198656K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=28 paintAvg=0ms used=34124K delta=-53433K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[TEST] 播放中... 10 秒
+[PERF] fps=22 paintAvg=0ms used=40536K delta=6411K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=46961K delta=6424K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=10007ms visRi=1240/22970 visRi2=1320/16718 curNote0=54 curNote1=50 curVol0=72 toneAct0=true
+[PERF] fps=22 paintAvg=0ms used=52565K delta=5604K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=58990K delta=6425K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=70682K delta=11691K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=15013ms visRi=2214/22970 visRi2=1995/16718 curNote0=63 curNote1=-1 curVol0=72 toneAct0=true
+[PERF] fps=22 paintAvg=0ms used=76055K delta=5373K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=82480K delta=6424K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=88904K delta=6424K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=95329K delta=6424K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[TEST] 播放中... 20 秒
+[PERF] fps=22 paintAvg=0ms used=35580K delta=-59749K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=20013ms visRi=3184/22970 visRi2=2676/16718 curNote0=61 curNote1=47 curVol0=72 toneAct0=true
+[PERF] fps=22 paintAvg=0ms used=41434K delta=5854K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=22 paintAvg=0ms used=48227K delta=6792K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=25 paintAvg=0ms used=53931K delta=5704K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=61897K delta=7965K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=69857K delta=7960K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=25028ms visRi=4156/22970 visRi2=3358/16718 curNote0=52 curNote1=-1 curVol0=72 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=77823K delta=7965K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=84668K delta=6844K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=92628K delta=7960K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=35730K delta=-56898K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[TEST] 播放中... 30 秒
+[PERF] fps=30 paintAvg=0ms used=43922K delta=8192K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=30031ms visRi=5134/22970 visRi2=4037/16718 curNote0=54 curNote1=117 curVol0=72 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=52207K delta=8284K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=7 paintAvg=0ms used=53405K delta=1198K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=61569K delta=8163K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=68607K delta=7037K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=76771K delta=8163K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[VIS] t=35047ms visRi=6056/22970 visRi2=4679/16718 curNote0=56 curNote1=-1 curVol0=72 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=84956K delta=8185K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=91972K delta=7016K total=197632K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[PERF] fps=30 paintAvg=0ms used=36953K delta=-55019K total=200192K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=68910 gen2RecN=0 gen2RegN=50154
+[SWITCH] target=2 vol=100 playing=true fileDurMs=128968
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #2 afterGc used=42289K total=200192K
+[FILE] playWholeFile done, loopPlays=2
+[FILE] bufferPlayer exited file mode
+[TEST] 播放中... 40 秒
+[TEST] 播放完成，总时长: 40 秒
+[TEST] (3/17) 加载: AY-Machine-2_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/AY-Machine-2_merged.vgm
+[TEST] 文件已加载: 155319 bytes
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+[FILE] entering file mode (thread=Thread-36)
+[FILE] waiting feedEnded... playing=true feedEnded=false recN=1440 regN=366 rec2N=824
+[TEST] 播放已启动，等待完成...
+[FILE] feedEnded=true playing=true recN=469628 regN=79767
+[FILE] smf=942254 bytes, writing...
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/AY-Machine-2_merged.mid
+[FILE] wrote 942254 bytes -> file:///root/vgm/2025-Turbosound/vgm2mid/AY-Machine-2_merged.mid
+[FILE] wrote OK, releasing pipeline
+[FILE] pipeline released (regF+file kept for vis/paint)
+[FILE] playing from file...
+[MEDIA] createPlayer file:///root/vgm/2025-Turbosound/vgm2mid/AY-Machine-2_merged.mid
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/AY-Machine-2_merged.mid
+[VIS] start: regN1=26589 regN2=22031 durMs=183812 gen.regN=79767 gen2.regN=66093
+[PERF] fps=32 paintAvg=0ms used=76549K delta=76549K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=84686K delta=8136K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=18 paintAvg=0ms used=97784K delta=13097K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=62545K delta=-35238K total=193024K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=70399K delta=7854K total=193024K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=4984ms visRi=506/26589 visRi2=323/22031 curNote0=69 curNote1=69 curVol0=66 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=78558K delta=8158K total=193024K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=86426K delta=7867K total=193024K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=94280K delta=7854K total=193024K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=32 paintAvg=0ms used=102229K delta=7949K total=193024K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[TEST] 播放中... 10 秒
+[PERF] fps=30 paintAvg=0ms used=58039K delta=-44190K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=9988ms visRi=1008/26589 visRi2=637/22031 curNote0=65 curNote1=77 curVol0=59 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=65637K delta=7598K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=73906K delta=8269K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=81307K delta=7401K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=5 paintAvg=0ms used=91827K delta=10519K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=99230K delta=7403K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=15000ms visRi=1477/26589 visRi2=940/22031 curNote0=65 curNote1=65 curVol0=66 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=107438K delta=8208K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=62603K delta=-44835K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=25 paintAvg=0ms used=68829K delta=6225K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=22 paintAvg=0ms used=75024K delta=6194K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[TEST] 播放中... 20 秒
+[PERF] fps=21 paintAvg=0ms used=80366K delta=5342K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=20004ms visRi=2218/26589 visRi2=1232/22031 curNote0=53 curNote1=96 curVol0=88 toneAct0=true
+[PERF] fps=16 paintAvg=0ms used=85444K delta=5077K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=92543K delta=7099K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=99656K delta=7112K total=201216K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=25012ms visRi=2966/26589 visRi2=1525/22031 curNote0=-1 curNote1=93 curVol0=45 toneAct0=false
+[PERF] fps=7 paintAvg=0ms used=58730K delta=-40926K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=66146K delta=7416K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=72637K delta=6491K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=80054K delta=7416K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=87470K delta=7416K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=30019ms visRi=3555/26589 visRi2=1831/22031 curNote0=-1 curNote1=93 curVol0=0 toneAct0=false
+[TEST] 播放中... 30 秒
+[PERF] fps=30 paintAvg=0ms used=94872K delta=7402K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=102291K delta=7418K total=192000K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=59339K delta=-42951K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=66179K delta=6840K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=73715K delta=7535K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=35028ms visRi=4114/26589 visRi2=2648/22031 curNote0=41 curNote1=84 curVol0=100 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=81303K delta=7587K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=88838K delta=7535K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=96376K delta=7537K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=104837K delta=8460K total=200704K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=61332K delta=-43504K total=190976K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=40031ms visRi=4726/26589 visRi2=3306/22031 curNote0=46 curNote1=77 curVol0=100 toneAct0=false
+[TEST] 播放中... 40 秒
+[PERF] fps=30 paintAvg=0ms used=69162K delta=7830K total=190976K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=77743K delta=8580K total=190976K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=85382K delta=7639K total=190976K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=93022K delta=7639K total=190976K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=100679K delta=7656K total=190976K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=45047ms visRi=5240/26589 visRi2=4307/22031 curNote0=37 curNote1=76 curVol0=100 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=58616K delta=-42062K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=67258K delta=8641K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=74955K delta=7696K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=82652K delta=7696K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=90349K delta=7696K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=50057ms visRi=5949/26589 visRi2=5234/22031 curNote0=56 curNote1=-1 curVol0=88 toneAct0=true
+[TEST] 播放中... 50 秒
+[PERF] fps=30 paintAvg=0ms used=98050K delta=7700K total=199680K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=56539K delta=-41510K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=65208K delta=8668K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=15 paintAvg=0ms used=69042K delta=3833K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=76711K delta=7669K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=55077ms visRi=6788/26589 visRi2=6181/22031 curNote0=46 curNote1=89 curVol0=100 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=84397K delta=7685K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=92067K delta=7670K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=99737K delta=7669K total=189952K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=58538K delta=-41198K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[TEST] 播放中... 60 秒
+[VIS] t=60089ms visRi=7964/26589 visRi2=7426/22031 curNote0=41 curNote1=89 curVol0=74 toneAct0=true
+[PERF] fps=31 paintAvg=0ms used=66250K delta=7712K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=74873K delta=8622K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=82537K delta=7664K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=11 paintAvg=0ms used=94846K delta=12308K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=102510K delta=7664K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=65089ms visRi=8727/26589 visRi2=8311/22031 curNote0=-1 curNote1=-1 curVol0=0 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=62325K delta=-40185K total=186368K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=69901K delta=7576K total=186368K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=77495K delta=7594K total=186368K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=85072K delta=7576K total=186368K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=92664K delta=7591K total=186368K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[TEST] 播放中... 70 秒
+[VIS] t=70090ms visRi=9507/26589 visRi2=8757/22031 curNote0=38 curNote1=26 curVol0=53 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=101189K delta=8524K total=186368K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=61322K delta=-39866K total=195072K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=68867K delta=7544K total=195072K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=77338K delta=8470K total=195072K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=84885K delta=7547K total=195072K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=75100ms visRi=10146/26589 visRi2=9175/22031 curNote0=50 curNote1=77 curVol0=88 toneAct0=true
+[PERF] fps=30 paintAvg=0ms used=93344K delta=8458K total=195072K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=100889K delta=7545K total=195072K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=60336K delta=-40553K total=182272K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=68033K delta=7697K total=182272K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=76437K delta=8403K total=182272K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[TEST] 播放中... 80 秒
+[VIS] t=80111ms visRi=10972/26589 visRi2=9607/22031 curNote0=-1 curNote1=-1 curVol0=63 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=83928K delta=7490K total=182272K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=91426K delta=7498K total=182272K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=99830K delta=8403K total=182272K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=60282K delta=-39548K total=192512K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=84764ms visRi=11822/26589 visRi2=10048/22031 curNote0=38 curNote1=26 curVol0=100 toneAct0=false
+[PERF] fps=25 paintAvg=0ms used=70433K delta=10151K total=192512K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=31 paintAvg=0ms used=78771K delta=8337K total=192512K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=86180K delta=7409K total=192512K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=93589K delta=7409K total=192512K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[TEST] 播放中... 90 秒
+[PERF] fps=30 paintAvg=0ms used=101482K delta=7892K total=192512K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=90870ms visRi=12817/26589 visRi2=10647/22031 curNote0=-1 curNote1=77 curVol0=0 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=64029K delta=-37452K total=181248K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=71320K delta=7290K total=181248K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=78610K delta=7289K total=181248K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=86794K delta=8184K total=181248K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=94978K delta=8184K total=181248K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[VIS] t=95888ms visRi=13619/26589 visRi2=10889/22031 curNote0=-1 curNote1=-1 curVol0=0 toneAct0=false
+[PERF] fps=30 paintAvg=0ms used=56930K delta=-38048K total=191488K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093
+[PERF] fps=30 paintAvg=0ms used=64136K delta=7206K total=191488K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=79767 gen2RecN=0 gen2RegN=66093

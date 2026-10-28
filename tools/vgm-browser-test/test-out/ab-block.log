@@ -1,0 +1,1079 @@
+0.355: Total time for which application threads were stopped: 0.0002137 seconds, Stopping threads took: 0.0000216 seconds
+0.364: Total time for which application threads were stopped: 0.0001509 seconds, Stopping threads took: 0.0000236 seconds
+十月 28, 2026 6:07:41 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+警告: Found unknown Windows version: Windows 11
+十月 28, 2026 6:07:41 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+信息: Attempting to use default windows plug-in.
+十月 28, 2026 6:07:41 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+信息: Loading: net.java.games.input.DirectAndRawInputEnvironmentPlugin
+十月 28, 2026 6:07:41 下午 net.java.games.input.ControllerEnvironment log
+信息: Failed to initialize device HIDI2C Device because of: java.io.IOException: Failed to acquire device (8007001e)
+
+Found controller: USB PnP Sound Device
+Found controller: HIDI2C Device
+Found controller: Intel(R) HID Event Filter
+Found controller: 2.4G Mouse
+Found controller: AIRMARS GM02
+KEmulator nnx64 2.22 Running on Windows 11 amd64 (10.0), Java: 1.8.0_504 (Temurin)
+Get classes from E:\working\zcode-projects\j2me_dev\tools\vgm-browser-test\VgmBrowserTest-block.jar
+Checking for updates
+0.496: Total time for which application threads were stopped: 0.0001944 seconds, Stopping threads took: 0.0000500 seconds
+0.500: Total time for which application threads were stopped: 0.0002568 seconds, Stopping threads took: 0.0000937 seconds
+Get class com.denjhang.vgmbrowser.FileListScreen$1
+Get class com.denjhang.vgm.StreamPlayer$SynthStream
+Get class com.denjhang.vgmbrowser.PlayScreen$1$1
+Get class com.denjhang.vgmbrowser.PlayScreen$1
+Get class com.denjhang.vgmbrowser.DetailScreen$1
+Get class com.denjhang.vgmbrowser.SettingsStore
+Get class com.denjhang.vgmbrowser.PlayScreen$5
+Get class com.denjhang.vgm.Gzip$Progress
+Get class com.denjhang.vgmbrowser.CommandScreen
+Get class com.denjhang.vgm.SmfSeg$Builder
+Get class com.denjhang.vgmbrowser.CommandScreen$1
+Get class com.denjhang.vgm.PlayToneEngine$1
+Get class com.denjhang.vgm.PlayToneEngine
+Get class com.denjhang.vgmbrowser.FileListScreen$Entry
+Get class com.denjhang.vgm.VgmParser
+Get class com.denjhang.vgm.VgmHeader
+Get class com.denjhang.vgmbrowser.DetailScreen
+Get class com.denjhang.vgm.StreamPlayer$1
+Get class com.denjhang.vgm.VgmParser$DataBlock
+Get class com.denjhang.vgmbrowser.BrowserMIDlet$1
+Get class com.denjhang.vgmbrowser.PlayScreen$4
+Get class com.denjhang.vgmbrowser.FileListScreen
+Get class com.denjhang.vgm.VgmFile
+Get class com.denjhang.vgm.Gzip$Inflater
+Get class com.denjhang.vgmbrowser.PlayScreen$3
+Get class com.denjhang.vgmbrowser.BrowserMIDlet
+Get class com.denjhang.vgmbrowser.MidiTestScreen
+Get class com.denjhang.vgm.Gzip
+Get class com.denjhang.vgm.Ay2Midi$1
+Get class com.denjhang.vgmbrowser.ToneTestScreen
+Get class com.denjhang.vgmbrowser.PlayScreen$2
+Get class com.denjhang.vgm.Gzip$1
+Get class com.denjhang.vgm.SmfSeg
+Get class com.denjhang.vgm.StreamPlayer
+Get class com.denjhang.vgm.VgmCommandTable
+Get class com.denjhang.vgm.Ay2Midi
+Get class com.denjhang.vgmbrowser.PlayScreen
+Get class com.denjhang.vgm.ChunkedPlayer
+Get class com.denjhang.vgmbrowser.PlayScreen$6
+Get class com.denjhang.vgm.Gzip$GrowBuf
+Custom.jar.getResourceStream: /icon.png (9565)
+Custom.jar.getResourceStream: /icon.png (9565)
+0.930: Total time for which application threads were stopped: 0.0003127 seconds, Stopping threads took: 0.0000291 seconds
+1.054: Total time for which application threads were stopped: 0.0002907 seconds, Stopping threads took: 0.0000337 seconds
+2.056: Total time for which application threads were stopped: 0.0003862 seconds, Stopping threads took: 0.0000273 seconds
+2.057: Total time for which application threads were stopped: 0.0002713 seconds, Stopping threads took: 0.0000694 seconds
+3.072: Total time for which application threads were stopped: 0.0000890 seconds, Stopping threads took: 0.0000218 seconds
+3.776: Total time for which application threads were stopped: 0.0003315 seconds, Stopping threads took: 0.0000217 seconds
+3.784: [GC (Metadata GC Threshold) [PSYoungGen: 44513K->10722K(75776K)] 44513K->11712K(249344K), 0.0101105 secs] [Times: user=0.03 sys=0.06, real=0.01 secs] 
+3.794: [Full GC (Metadata GC Threshold) [PSYoungGen: 10722K->0K(75776K)] [ParOldGen: 989K->11215K(77312K)] 11712K->11215K(153088K), [Metaspace: 20791K->20791K(1069056K)], 0.0237341 secs] [Times: user=0.08 sys=0.05, real=0.02 secs] 
+3.818: Total time for which application threads were stopped: 0.0343286 seconds, Stopping threads took: 0.0002764 seconds
+Launch MIDlet class: com.denjhang.vgmbrowser.BrowserMIDlet
+[TEST] === VgmBrowserSingle 测试版启动 ===
+[TEST] 自动播放目录: file:///root/vgm/2025-Turbosound/
+[TEST] 每首播放 30 秒后自动切曲
+System.getProperty#line.separator=
+
+4.035: Total time for which application threads were stopped: 0.0006807 seconds, Stopping threads took: 0.0000979 seconds
+4.095: Total time for which application threads were stopped: 0.0004782 seconds, Stopping threads took: 0.0002994 seconds
+File opened: file:///root/vgm/
+File opened: file:///root/vgm/
+4.167: Total time for which application threads were stopped: 0.0001313 seconds, Stopping threads took: 0.0000306 seconds
+4.167: Total time for which application threads were stopped: 0.0000771 seconds, Stopping threads took: 0.0000216 seconds
+File opened: file:///root/vgm/Beforeny2.vgz
+4.184: Total time for which application threads were stopped: 0.0001246 seconds, Stopping threads took: 0.0000574 seconds
+File opened: file:///root/vgm/bubbled-sKetch-.vgz
+File opened: file:///root/vgm/Digital-Espresso-Revision-2023-12-.vgz
+File opened: file:///root/vgm/Alla vill till himmelen.vgm
+File opened: file:///root/vgm/Beforeny2.vgm
+File opened: file:///root/vgm/bubbled-sKetch-.vgm
+File opened: file:///root/vgm/Bullet Sequence.vgm
+File opened: file:///root/vgm/Digital-Espresso-Revision-2023-12-.vgm
+File opened: file:///root/vgm/Reko7-Xenium-2022-.vgm
+File opened: file:///root/vgm/She-Stole-My-Cat.vgm
+4.208: Total time for which application threads were stopped: 0.0001802 seconds, Stopping threads took: 0.0000503 seconds
+File opened: file:///root/vgm/Solitude-Lost-Party-2024-1-.vgm
+File opened: file:///root/vgm/Thunderdome.vgm
+File opened: file:///root/chunk.txt
+[TEST] 无 chunk.txt，用默认块档
+File opened: file:///root/vgm/2025-Turbosound/
+[TEST] 找到 17 个 VGM 文件
+[TEST] (1/17) 加载: 03-wojtek-unreal-superhero-theme-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/03-wojtek-unreal-superhero-theme-1_merged.vgm
+[TEST] 文件已加载: 48198 bytes
+[RMS] midlet rms path: E:\working\zcode-projects\j2me_dev\emulators\kemnnx64\rms\RGVuamhhbmdfVmdtQnJvd3NlclRlc3Q=\
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+4.233: Total time for which application threads were stopped: 0.0001468 seconds, Stopping threads took: 0.0000522 seconds
+[TEST] 等待播放启动...
+4.531: Total time for which application threads were stopped: 0.0003175 seconds, Stopping threads took: 0.0002555 seconds
+[TEST] 播放已启动，等待完成...
+4.748: Total time for which application threads were stopped: 0.0000868 seconds, Stopping threads took: 0.0000264 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@3f27991a audio/midi
+4.821: Total time for which application threads were stopped: 0.0000836 seconds, Stopping threads took: 0.0000213 seconds
+4.828: Total time for which application threads were stopped: 0.0003932 seconds, Stopping threads took: 0.0003121 seconds
+4.829: Total time for which application threads were stopped: 0.0001051 seconds, Stopping threads took: 0.0000493 seconds
+4.830: Total time for which application threads were stopped: 0.0002828 seconds, Stopping threads took: 0.0002144 seconds
+4.839: Total time for which application threads were stopped: 0.0000947 seconds, Stopping threads took: 0.0000272 seconds
+4.841: Total time for which application threads were stopped: 0.0001587 seconds, Stopping threads took: 0.0000541 seconds
+4.845: Total time for which application threads were stopped: 0.0001208 seconds, Stopping threads took: 0.0000523 seconds
+4.846: Total time for which application threads were stopped: 0.0000966 seconds, Stopping threads took: 0.0000507 seconds
+4.846: Total time for which application threads were stopped: 0.0000637 seconds, Stopping threads took: 0.0000350 seconds
+[PERF] fps=33 paintAvg=1ms used=58299K delta=58299K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=0 genRecN=0 genRegN=6 gen2RecN=0 gen2RegN=9
+5.847: Total time for which application threads were stopped: 0.0001984 seconds, Stopping threads took: 0.0000945 seconds
+[PERF] fps=31 paintAvg=0ms used=65121K delta=6821K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=0 genRecN=0 genRegN=6 gen2RecN=0 gen2RegN=9
+6.847: Total time for which application threads were stopped: 0.0001300 seconds, Stopping threads took: 0.0000540 seconds
+[PERF] fps=30 paintAvg=0ms used=73568K delta=8447K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=0 genRecN=0 genRegN=6 gen2RecN=0 gen2RegN=9
+7.807: [GC (Allocation Failure) [PSYoungGen: 65024K->10730K(75776K)] 76239K->23541K(153088K), 0.0062214 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+7.813: Total time for which application threads were stopped: 0.0064018 seconds, Stopping threads took: 0.0000196 seconds
+7.814: Total time for which application threads were stopped: 0.0001318 seconds, Stopping threads took: 0.0000699 seconds
+7.814: Total time for which application threads were stopped: 0.0001125 seconds, Stopping threads took: 0.0000461 seconds
+7.814: Total time for which application threads were stopped: 0.0000675 seconds, Stopping threads took: 0.0000207 seconds
+7.814: Total time for which application threads were stopped: 0.0000738 seconds, Stopping threads took: 0.0000251 seconds
+7.814: Total time for which application threads were stopped: 0.0000837 seconds, Stopping threads took: 0.0000375 seconds
+7.815: Total time for which application threads were stopped: 0.0000808 seconds, Stopping threads took: 0.0000270 seconds
+[PERF] fps=32 paintAvg=0ms used=28156K delta=-45411K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=0 genRecN=0 genRegN=6 gen2RecN=0 gen2RegN=9
+8.815: Total time for which application threads were stopped: 0.0000919 seconds, Stopping threads took: 0.0000262 seconds
+[PERF] fps=31 paintAvg=0ms used=35806K delta=7650K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=0 genRecN=0 genRegN=6 gen2RecN=0 gen2RegN=9
+9.816: Total time for which application threads were stopped: 0.0001052 seconds, Stopping threads took: 0.0000244 seconds
+10.135: Total time for which application threads were stopped: 0.0000945 seconds, Stopping threads took: 0.0000281 seconds
+[SWITCH] target=1 vol=100 playing=true fileDurMs=0
+[PERF] fps=31 paintAvg=0ms used=43224K delta=7417K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=0 genRecN=0 genRegN=6 gen2RecN=0 gen2RegN=9
+[RMS] openRecordStore vgmbrowser_cfg
+10.405: Total time for which application threads were stopped: 0.0002429 seconds, Stopping threads took: 0.0001068 seconds
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #1 afterGc used=44106K total=153088K
+10.410: Total time for which application threads were stopped: 0.0001203 seconds, Stopping threads took: 0.0000485 seconds
+10.443: Total time for which application threads were stopped: 0.0253528 seconds, Stopping threads took: 0.0252509 seconds
+10.444: Total time for which application threads were stopped: 0.0002404 seconds, Stopping threads took: 0.0001744 seconds
+10.444: Total time for which application threads were stopped: 0.0000983 seconds, Stopping threads took: 0.0000425 seconds
+10.444: Total time for which application threads were stopped: 0.0002323 seconds, Stopping threads took: 0.0001595 seconds
+10.444: Total time for which application threads were stopped: 0.0000765 seconds, Stopping threads took: 0.0000236 seconds
+[TEST] 播放完成，总时长: 6 秒
+10.546: Total time for which application threads were stopped: 0.0000891 seconds, Stopping threads took: 0.0000265 seconds
+[SWITCH] target=1 vol=100 playing=false fileDurMs=0
+[PERF] fps=3 paintAvg=1ms used=57995K delta=14771K total=153088K chunkCut=1 chunkBuilt=1 buildMs=19 playMs=5680 genRecN=0 genRegN=0 gen2RecN=0 gen2RegN=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+12.477: Total time for which application threads were stopped: 0.0000891 seconds, Stopping threads took: 0.0000312 seconds
+[TEST] (2/17) 加载: a-cup-of-nes-tea-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/a-cup-of-nes-tea-1_merged.vgm
+[TEST] 文件已加载: 125903 bytes
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+12.847: Total time for which application threads were stopped: 0.0004192 seconds, Stopping threads took: 0.0003314 seconds
+[TEST] 播放已启动，等待完成...
+13.032: Total time for which application threads were stopped: 0.0000995 seconds, Stopping threads took: 0.0000325 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@424ff086 audio/midi
+13.041: Total time for which application threads were stopped: 0.0001421 seconds, Stopping threads took: 0.0000656 seconds
+13.042: Total time for which application threads were stopped: 0.0001381 seconds, Stopping threads took: 0.0000446 seconds
+13.060: Total time for which application threads were stopped: 0.0000997 seconds, Stopping threads took: 0.0000459 seconds
+13.061: Total time for which application threads were stopped: 0.0002859 seconds, Stopping threads took: 0.0002120 seconds
+13.062: Total time for which application threads were stopped: 0.0002318 seconds, Stopping threads took: 0.0000950 seconds
+13.063: Total time for which application threads were stopped: 0.0001097 seconds, Stopping threads took: 0.0000381 seconds
+13.065: Total time for which application threads were stopped: 0.0000897 seconds, Stopping threads took: 0.0000294 seconds
+13.068: Total time for which application threads were stopped: 0.0000835 seconds, Stopping threads took: 0.0000290 seconds
+13.068: Total time for which application threads were stopped: 0.0000947 seconds, Stopping threads took: 0.0000286 seconds
+13.068: Total time for which application threads were stopped: 0.0000659 seconds, Stopping threads took: 0.0000207 seconds
+[SWITCH] target=2 vol=100 playing=true fileDurMs=0
+[MEDIA] createPlayer java.io.ByteArrayInputStream@46be5513 audio/midi
+13.473: [GC (Allocation Failure) [PSYoungGen: 75732K->10732K(75776K)] 88543K->30497K(153088K), 0.0087437 secs] [Times: user=0.03 sys=0.00, real=0.01 secs] 
+13.482: Total time for which application threads were stopped: 0.0089793 seconds, Stopping threads took: 0.0000472 seconds
+13.482: Total time for which application threads were stopped: 0.0001029 seconds, Stopping threads took: 0.0000376 seconds
+[PERF] fps=33 paintAvg=0ms used=39490K delta=39490K total=153088K chunkCut=3 chunkBuilt=3 buildMs=40 playMs=5680 genRecN=83672 genRegN=18747 gen2RecN=79524 gen2RegN=13632
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #2 afterGc used=40329K total=153088K
+13.691: Total time for which application threads were stopped: 0.0002047 seconds, Stopping threads took: 0.0001345 seconds
+13.691: Total time for which application threads were stopped: 0.0000679 seconds, Stopping threads took: 0.0000219 seconds
+13.693: Total time for which application threads were stopped: 0.0001587 seconds, Stopping threads took: 0.0000439 seconds
+13.693: Total time for which application threads were stopped: 0.0000927 seconds, Stopping threads took: 0.0000236 seconds
+13.693: Total time for which application threads were stopped: 0.0001048 seconds, Stopping threads took: 0.0000557 seconds
+13.694: Total time for which application threads were stopped: 0.0003224 seconds, Stopping threads took: 0.0001740 seconds
+[TEST] 播放完成，总时长: 1 秒
+14.694: Total time for which application threads were stopped: 0.0000950 seconds, Stopping threads took: 0.0000271 seconds
+Right command: List
+15.605: Total time for which application threads were stopped: 0.0001228 seconds, Stopping threads took: 0.0000592 seconds
+[TEST] (3/17) 加载: AY-Machine-2_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/AY-Machine-2_merged.vgm
+[TEST] 文件已加载: 155319 bytes
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+16.151: Total time for which application threads were stopped: 0.0003347 seconds, Stopping threads took: 0.0002088 seconds
+[TEST] 播放已启动，等待完成...
+16.334: Total time for which application threads were stopped: 0.0001220 seconds, Stopping threads took: 0.0000525 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@17867005 audio/midi
+16.361: Total time for which application threads were stopped: 0.0001256 seconds, Stopping threads took: 0.0000405 seconds
+16.363: Total time for which application threads were stopped: 0.0003275 seconds, Stopping threads took: 0.0002466 seconds
+16.363: Total time for which application threads were stopped: 0.0001489 seconds, Stopping threads took: 0.0000580 seconds
+16.363: Total time for which application threads were stopped: 0.0000581 seconds, Stopping threads took: 0.0000216 seconds
+16.369: Total time for which application threads were stopped: 0.0001417 seconds, Stopping threads took: 0.0000623 seconds
+16.369: Total time for which application threads were stopped: 0.0001209 seconds, Stopping threads took: 0.0000574 seconds
+16.369: Total time for which application threads were stopped: 0.0000806 seconds, Stopping threads took: 0.0000378 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@7d84243a audio/midi
+[PERF] fps=33 paintAvg=0ms used=91681K delta=91681K total=153088K chunkCut=5 chunkBuilt=5 buildMs=53 playMs=6332 genRecN=181132 genRegN=31200 gen2RecN=175992 gen2RegN=28206
+Right command: List
+17.227: Total time for which application threads were stopped: 0.0001443 seconds, Stopping threads took: 0.0000282 seconds
+17.505: [GC (Allocation Failure) [PSYoungGen: 75756K->10726K(75776K)] 95521K->42923K(153088K), 0.0107599 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+17.516: Total time for which application threads were stopped: 0.0109000 seconds, Stopping threads took: 0.0000211 seconds
+18.515: Total time for which application threads were stopped: 0.0001271 seconds, Stopping threads took: 0.0000458 seconds
+File opened: file:///root/vgm/Pator/
+File opened: file:///root/vgm/Pator/Add-Astra-act-2-act-3-speccy.pl-party-2023.1-.vgm
+File opened: file:///root/vgm/Pator/Add-Astra-prologue-speccy.pl-party-2023.1-.vgm
+File opened: file:///root/vgm/Pator/Ascendant-Xenium-2023-2-.vgm
+File opened: file:///root/vgm/Pator/August-Melancholy-Decrunch-2020-1-.vgm
+File opened: file:///root/vgm/Pator/AY-Machine-Xenium-2021-2-.vgm
+File opened: file:///root/vgm/Pator/Dalthonizm-part-2.vgm
+File opened: file:///root/vgm/Pator/Dalthonizm-part-3.vgm
+File opened: file:///root/vgm/Pator/Digital-Espresso-Revision-2023-12-.vgm
+File opened: file:///root/vgm/Pator/Galaktika-speccy.pl-party-2023.1-1-.vgm
+File opened: file:///root/vgm/Pator/It-s-Raining-Outside-Lost-Party-2020-1-.vgm
+File opened: file:///root/vgm/Pator/Last-Minute-Accident-speccy.pl-party-2023.1-1-.vgm
+File opened: file:///root/vgm/Pator/Lost-Memories-Lost-Party-2021-2-.vgm
+File opened: file:///root/vgm/Pator/Mizerna-Cicha.vgm
+File opened: file:///root/vgm/Pator/Necropolis-Xenium-2022-2-.vgm
+File opened: file:///root/vgm/Pator/Not-Picking-Up-DiHalt-2025-Winter-2-.vgm
+File opened: file:///root/vgm/Pator/ODULA-Demoduljacija-2021-3-.vgm
+File opened: file:///root/vgm/Pator/Parallel-Visions.vgm
+File opened: file:///root/vgm/Pator/Reko7-Xenium-2022-.vgm
+File opened: file:///root/vgm/Pator/She-Stole-My-Cat.vgm
+File opened: file:///root/vgm/Pator/Sick-At-Heart.vgm
+File opened: file:///root/vgm/Pator/Smutek.vgm
+File opened: file:///root/vgm/Pator/Solitude-Lost-Party-2024-1-.vgm
+File opened: file:///root/vgm/Pator/Soothing-Lullaby-speccy.pl-party-2022.1-1-.vgm
+File opened: file:///root/vgm/Pator/Spectrumizer-Lost-Party-2023-3-.vgm
+File opened: file:///root/vgm/Pator/Whispers-speccy.pl-party-2022.1-3-.vgm
+19.516: Total time for which application threads were stopped: 0.0000985 seconds, Stopping threads took: 0.0000232 seconds
+22.516: Total time for which application threads were stopped: 0.0001091 seconds, Stopping threads took: 0.0000437 seconds
+24.517: Total time for which application threads were stopped: 0.0001067 seconds, Stopping threads took: 0.0000460 seconds
+File opened: file:///root/vgm/Pator/Ascendant-Xenium-2023-2-.vgm
+[TEST] PlayScreen.release #3 afterGc used=100365K total=153088K
+[RMS] openRecordStore vgmbrowser_cfg
+25.409: Total time for which application threads were stopped: 0.0001123 seconds, Stopping threads took: 0.0000369 seconds
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+25.411: Total time for which application threads were stopped: 0.0001132 seconds, Stopping threads took: 0.0000322 seconds
+25.417: Total time for which application threads were stopped: 0.0001626 seconds, Stopping threads took: 0.0000418 seconds
+25.421: Total time for which application threads were stopped: 0.0000995 seconds, Stopping threads took: 0.0000335 seconds
+25.421: Total time for which application threads were stopped: 0.0000798 seconds, Stopping threads took: 0.0000312 seconds
+25.422: Total time for which application threads were stopped: 0.0001019 seconds, Stopping threads took: 0.0000526 seconds
+25.422: Total time for which application threads were stopped: 0.0000642 seconds, Stopping threads took: 0.0000221 seconds
+25.422: Total time for which application threads were stopped: 0.0004787 seconds, Stopping threads took: 0.0003508 seconds
+25.423: Total time for which application threads were stopped: 0.0001354 seconds, Stopping threads took: 0.0000656 seconds
+25.423: Total time for which application threads were stopped: 0.0001422 seconds, Stopping threads took: 0.0000524 seconds
+25.712: Total time for which application threads were stopped: 0.0002704 seconds, Stopping threads took: 0.0001960 seconds
+25.793: [GC (Allocation Failure) [PSYoungGen: 74313K->8169K(74240K)] 106509K->40365K(151552K), 0.0034550 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+25.797: Total time for which application threads were stopped: 0.0036766 seconds, Stopping threads took: 0.0000418 seconds
+25.797: Total time for which application threads were stopped: 0.0002349 seconds, Stopping threads took: 0.0000936 seconds
+25.798: Total time for which application threads were stopped: 0.0005006 seconds, Stopping threads took: 0.0003283 seconds
+25.798: Total time for which application threads were stopped: 0.0002190 seconds, Stopping threads took: 0.0000965 seconds
+25.799: Total time for which application threads were stopped: 0.0001096 seconds, Stopping threads took: 0.0000397 seconds
+25.799: Total time for which application threads were stopped: 0.0000722 seconds, Stopping threads took: 0.0000202 seconds
+25.867: Total time for which application threads were stopped: 0.0003740 seconds, Stopping threads took: 0.0000870 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@58fe7352 audio/midi
+25.892: Total time for which application threads were stopped: 0.0001877 seconds, Stopping threads took: 0.0000833 seconds
+25.893: Total time for which application threads were stopped: 0.0002478 seconds, Stopping threads took: 0.0001675 seconds
+25.894: Total time for which application threads were stopped: 0.0000940 seconds, Stopping threads took: 0.0000219 seconds
+25.899: Total time for which application threads were stopped: 0.0001227 seconds, Stopping threads took: 0.0000410 seconds
+25.900: Total time for which application threads were stopped: 0.0000800 seconds, Stopping threads took: 0.0000401 seconds
+25.900: Total time for which application threads were stopped: 0.0000550 seconds, Stopping threads took: 0.0000175 seconds
+[TEST] 播放中... 10 秒
+[MEDIA] createPlayer java.io.ByteArrayInputStream@4fdb1ac2 audio/midi
+[PERF] fps=33 paintAvg=0ms used=78005K delta=78005K total=151552K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+26.900: Total time for which application threads were stopped: 0.0001091 seconds, Stopping threads took: 0.0000471 seconds
+[PERF] fps=30 paintAvg=0ms used=84460K delta=6454K total=151552K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+[PERF] fps=30 paintAvg=0ms used=90740K delta=6280K total=151552K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+28.901: Total time for which application threads were stopped: 0.0001315 seconds, Stopping threads took: 0.0000418 seconds
+[PERF] fps=31 paintAvg=0ms used=95261K delta=4521K total=151552K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+29.901: Total time for which application threads were stopped: 0.0001407 seconds, Stopping threads took: 0.0000388 seconds
+[PERF] fps=30 paintAvg=0ms used=101542K delta=6280K total=151552K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+30.872: [GC (Allocation Failure) [PSYoungGen: 71657K->23862K(84992K)] 103853K->56067K(162304K), 0.0115212 secs] [Times: user=0.12 sys=0.00, real=0.01 secs] 
+30.884: Total time for which application threads were stopped: 0.0116697 seconds, Stopping threads took: 0.0000221 seconds
+[PERF] fps=30 paintAvg=0ms used=60585K delta=-40956K total=162304K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+31.885: Total time for which application threads were stopped: 0.0001305 seconds, Stopping threads took: 0.0000305 seconds
+[PERF] fps=30 paintAvg=0ms used=66588K delta=6002K total=162304K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+[PERF] fps=30 paintAvg=0ms used=73433K delta=6844K total=162304K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+33.885: Total time for which application threads were stopped: 0.0000826 seconds, Stopping threads took: 0.0000201 seconds
+[PERF] fps=30 paintAvg=0ms used=79478K delta=6045K total=162304K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+[PERF] fps=30 paintAvg=0ms used=86216K delta=6737K total=162304K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+[TEST] 播放中... 20 秒
+[PERF] fps=30 paintAvg=0ms used=92306K delta=6090K total=162304K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+36.888: Total time for which application threads were stopped: 0.0002672 seconds, Stopping threads took: 0.0001448 seconds
+37.099: Total time for which application threads were stopped: 0.0000873 seconds, Stopping threads took: 0.0000200 seconds
+Left command: Settings
+37.099: Total time for which application threads were stopped: 0.0000754 seconds, Stopping threads took: 0.0000427 seconds
+40.358: [GC (Allocation Failure) [PSYoungGen: 83766K->23144K(87552K)] 115971K->55357K(164864K), 0.0101892 secs] [Times: user=0.11 sys=0.01, real=0.01 secs] 
+40.368: Total time for which application threads were stopped: 0.0103240 seconds, Stopping threads took: 0.0000211 seconds
+41.368: Total time for which application threads were stopped: 0.0002992 seconds, Stopping threads took: 0.0001068 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 播放中... 30 秒
+46.371: Total time for which application threads were stopped: 0.0001178 seconds, Stopping threads took: 0.0000359 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+49.423: [GC (Allocation Failure) [PSYoungGen: 82024K->23676K(88576K)] 114237K->55889K(165888K), 0.0097305 secs] [Times: user=0.09 sys=0.03, real=0.01 secs] 
+49.433: Total time for which application threads were stopped: 0.0098857 seconds, Stopping threads took: 0.0000282 seconds
+49.433: Total time for which application threads were stopped: 0.0000771 seconds, Stopping threads took: 0.0000268 seconds
+49.433: Total time for which application threads were stopped: 0.0000771 seconds, Stopping threads took: 0.0000322 seconds
+49.433: Total time for which application threads were stopped: 0.0000614 seconds, Stopping threads took: 0.0000273 seconds
+49.433: Total time for which application threads were stopped: 0.0000653 seconds, Stopping threads took: 0.0000289 seconds
+49.433: Total time for which application threads were stopped: 0.0000408 seconds, Stopping threads took: 0.0000138 seconds
+49.433: Total time for which application threads were stopped: 0.0000505 seconds, Stopping threads took: 0.0000236 seconds
+49.433: Total time for which application threads were stopped: 0.0000350 seconds, Stopping threads took: 0.0000107 seconds
+49.433: Total time for which application threads were stopped: 0.0000483 seconds, Stopping threads took: 0.0000224 seconds
+49.433: Total time for which application threads were stopped: 0.0000488 seconds, Stopping threads took: 0.0000228 seconds
+49.433: Total time for which application threads were stopped: 0.0000498 seconds, Stopping threads took: 0.0000219 seconds
+49.434: Total time for which application threads were stopped: 0.0000382 seconds, Stopping threads took: 0.0000118 seconds
+49.434: Total time for which application threads were stopped: 0.0000497 seconds, Stopping threads took: 0.0000216 seconds
+49.434: Total time for which application threads were stopped: 0.0000818 seconds, Stopping threads took: 0.0000385 seconds
+49.434: Total time for which application threads were stopped: 0.0000512 seconds, Stopping threads took: 0.0000151 seconds
+49.434: Total time for which application threads were stopped: 0.0000411 seconds, Stopping threads took: 0.0000123 seconds
+49.434: Total time for which application threads were stopped: 0.0000393 seconds, Stopping threads took: 0.0000109 seconds
+49.434: Total time for which application threads were stopped: 0.0000667 seconds, Stopping threads took: 0.0000293 seconds
+49.434: Total time for which application threads were stopped: 0.0000443 seconds, Stopping threads took: 0.0000149 seconds
+49.434: Total time for which application threads were stopped: 0.0000666 seconds, Stopping threads took: 0.0000308 seconds
+49.434: Total time for which application threads were stopped: 0.0001002 seconds, Stopping threads took: 0.0000139 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+51.435: Total time for which application threads were stopped: 0.0001467 seconds, Stopping threads took: 0.0000355 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+52.435: Total time for which application threads were stopped: 0.0001497 seconds, Stopping threads took: 0.0000642 seconds
+Left command: Back
+54.077: Total time for which application threads were stopped: 0.0001857 seconds, Stopping threads took: 0.0000840 seconds
+[PERF] fps=475 paintAvg=0ms used=86151K delta=-6154K total=165888K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+55.076: Total time for which application threads were stopped: 0.0002072 seconds, Stopping threads took: 0.0000668 seconds
+[PERF] fps=31 paintAvg=0ms used=92982K delta=6830K total=165888K chunkCut=7 chunkBuilt=7 buildMs=70 playMs=15413 genRecN=226904 genRegN=29817
+[SWITCH] target=1 vol=100 playing=true fileDurMs=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #4 afterGc used=95103K total=165888K
+File opened: file:///root/vgm/Pator/Add-Astra-prologue-speccy.pl-party-2023.1-.vgm
+55.539: Total time for which application threads were stopped: 0.0001767 seconds, Stopping threads took: 0.0000748 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+55.541: Total time for which application threads were stopped: 0.0001423 seconds, Stopping threads took: 0.0000507 seconds
+55.541: Total time for which application threads were stopped: 0.0000812 seconds, Stopping threads took: 0.0000248 seconds
+55.541: Total time for which application threads were stopped: 0.0000912 seconds, Stopping threads took: 0.0000399 seconds
+55.542: Total time for which application threads were stopped: 0.0003307 seconds, Stopping threads took: 0.0002384 seconds
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+55.542: Total time for which application threads were stopped: 0.0001054 seconds, Stopping threads took: 0.0000301 seconds
+[RMS] closeRecordStore vgmbrowser_cfg
+55.547: Total time for which application threads were stopped: 0.0002226 seconds, Stopping threads took: 0.0000621 seconds
+55.550: Total time for which application threads were stopped: 0.0000797 seconds, Stopping threads took: 0.0000225 seconds
+55.593: Total time for which application threads were stopped: 0.0001373 seconds, Stopping threads took: 0.0000443 seconds
+55.844: Total time for which application threads were stopped: 0.0002501 seconds, Stopping threads took: 0.0001995 seconds
+55.966: Total time for which application threads were stopped: 0.0000965 seconds, Stopping threads took: 0.0000270 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@1cd4db3a audio/midi
+55.973: Total time for which application threads were stopped: 0.0001142 seconds, Stopping threads took: 0.0000597 seconds
+55.974: Total time for which application threads were stopped: 0.0001605 seconds, Stopping threads took: 0.0001180 seconds
+55.974: Total time for which application threads were stopped: 0.0000543 seconds, Stopping threads took: 0.0000264 seconds
+55.976: Total time for which application threads were stopped: 0.0000676 seconds, Stopping threads took: 0.0000183 seconds
+55.976: Total time for which application threads were stopped: 0.0000898 seconds, Stopping threads took: 0.0000410 seconds
+55.976: Total time for which application threads were stopped: 0.0000405 seconds, Stopping threads took: 0.0000079 seconds
+[SWITCH] target=2 vol=100 playing=true fileDurMs=0
+[TEST] 播放中... 40 秒
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #5 afterGc used=110900K total=165888K
+File opened: file:///root/vgm/Pator/Ascendant-Xenium-2023-2-.vgm
+[RMS] openRecordStore vgmbrowser_cfg
+56.443: Total time for which application threads were stopped: 0.0002701 seconds, Stopping threads took: 0.0000949 seconds
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+56.445: Total time for which application threads were stopped: 0.0001610 seconds, Stopping threads took: 0.0000998 seconds
+56.446: Total time for which application threads were stopped: 0.0000803 seconds, Stopping threads took: 0.0000220 seconds
+56.447: Total time for which application threads were stopped: 0.0000781 seconds, Stopping threads took: 0.0000297 seconds
+56.447: Total time for which application threads were stopped: 0.0000356 seconds, Stopping threads took: 0.0000073 seconds
+56.447: Total time for which application threads were stopped: 0.0000452 seconds, Stopping threads took: 0.0000240 seconds
+56.448: Total time for which application threads were stopped: 0.0001350 seconds, Stopping threads took: 0.0001049 seconds
+56.448: Total time for which application threads were stopped: 0.0000377 seconds, Stopping threads took: 0.0000147 seconds
+56.622: [GC (Allocation Failure) [PSYoungGen: 81532K->7380K(64512K)] 113745K->39593K(141824K), 0.0043745 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+56.627: Total time for which application threads were stopped: 0.0045952 seconds, Stopping threads took: 0.0000453 seconds
+56.627: Total time for which application threads were stopped: 0.0001336 seconds, Stopping threads took: 0.0000592 seconds
+56.627: Total time for which application threads were stopped: 0.0000874 seconds, Stopping threads took: 0.0000320 seconds
+56.627: Total time for which application threads were stopped: 0.0000865 seconds, Stopping threads took: 0.0000430 seconds
+56.627: Total time for which application threads were stopped: 0.0000509 seconds, Stopping threads took: 0.0000207 seconds
+56.628: Total time for which application threads were stopped: 0.0000858 seconds, Stopping threads took: 0.0000366 seconds
+56.628: Total time for which application threads were stopped: 0.0000594 seconds, Stopping threads took: 0.0000187 seconds
+56.628: Total time for which application threads were stopped: 0.0001328 seconds, Stopping threads took: 0.0000957 seconds
+56.628: Total time for which application threads were stopped: 0.0000591 seconds, Stopping threads took: 0.0000329 seconds
+56.628: Total time for which application threads were stopped: 0.0000460 seconds, Stopping threads took: 0.0000152 seconds
+56.628: Total time for which application threads were stopped: 0.0000391 seconds, Stopping threads took: 0.0000137 seconds
+56.628: Total time for which application threads were stopped: 0.0000410 seconds, Stopping threads took: 0.0000141 seconds
+56.628: Total time for which application threads were stopped: 0.0000565 seconds, Stopping threads took: 0.0000298 seconds
+56.628: Total time for which application threads were stopped: 0.0000407 seconds, Stopping threads took: 0.0000141 seconds
+56.628: Total time for which application threads were stopped: 0.0000566 seconds, Stopping threads took: 0.0000275 seconds
+56.629: Total time for which application threads were stopped: 0.0001101 seconds, Stopping threads took: 0.0000307 seconds
+56.745: Total time for which application threads were stopped: 0.0003055 seconds, Stopping threads took: 0.0002249 seconds
+56.927: Total time for which application threads were stopped: 0.0001036 seconds, Stopping threads took: 0.0000406 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@7e83566 audio/midi
+56.944: Total time for which application threads were stopped: 0.0001451 seconds, Stopping threads took: 0.0000767 seconds
+56.945: Total time for which application threads were stopped: 0.0002204 seconds, Stopping threads took: 0.0001646 seconds
+56.945: Total time for which application threads were stopped: 0.0000375 seconds, Stopping threads took: 0.0000096 seconds
+56.951: Total time for which application threads were stopped: 0.0001164 seconds, Stopping threads took: 0.0000505 seconds
+56.951: Total time for which application threads were stopped: 0.0000771 seconds, Stopping threads took: 0.0000336 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@195b1add audio/midi
+[PERF] fps=32 paintAvg=0ms used=92629K delta=92629K total=141824K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+57.951: Total time for which application threads were stopped: 0.0001886 seconds, Stopping threads took: 0.0000606 seconds
+58.117: [GC (Allocation Failure) [PSYoungGen: 64212K->24155K(87552K)] 96425K->56368K(164864K), 0.0095528 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+58.126: Total time for which application threads were stopped: 0.0097000 seconds, Stopping threads took: 0.0000336 seconds
+[PERF] fps=31 paintAvg=0ms used=59176K delta=-33453K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+59.126: Total time for which application threads were stopped: 0.0001191 seconds, Stopping threads took: 0.0000438 seconds
+[PERF] fps=30 paintAvg=0ms used=65724K delta=6548K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+60.127: Total time for which application threads were stopped: 0.0001050 seconds, Stopping threads took: 0.0000255 seconds
+[PERF] fps=30 paintAvg=0ms used=72259K delta=6534K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=78167K delta=5907K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+61.586: Total time for which application threads were stopped: 0.0001770 seconds, Stopping threads took: 0.0000421 seconds
+Left command: Settings
+61.586: Total time for which application threads were stopped: 0.0002405 seconds, Stopping threads took: 0.0001053 seconds
+62.586: Total time for which application threads were stopped: 0.0001320 seconds, Stopping threads took: 0.0000740 seconds
+[TEST] 播放中... 50 秒
+66.859: [GC (Allocation Failure) [PSYoungGen: 79451K->23871K(78336K)] 111664K->56084K(155648K), 0.0146456 secs] [Times: user=0.09 sys=0.02, real=0.02 secs] 
+66.873: Total time for which application threads were stopped: 0.0149109 seconds, Stopping threads took: 0.0000513 seconds
+Right command: List
+70.964: Total time for which application threads were stopped: 0.0001414 seconds, Stopping threads took: 0.0000464 seconds
+71.964: Total time for which application threads were stopped: 0.0001117 seconds, Stopping threads took: 0.0000369 seconds
+72.223: Total time for which application threads were stopped: 0.0001336 seconds, Stopping threads took: 0.0000464 seconds
+72.224: Total time for which application threads were stopped: 0.0000973 seconds, Stopping threads took: 0.0000501 seconds
+73.224: Total time for which application threads were stopped: 0.0001241 seconds, Stopping threads took: 0.0000459 seconds
+74.224: Total time for which application threads were stopped: 0.0001163 seconds, Stopping threads took: 0.0000343 seconds
+Left command: Back
+74.655: Total time for which application threads were stopped: 0.0000800 seconds, Stopping threads took: 0.0000283 seconds
+[PERF] fps=323 paintAvg=0ms used=108730K delta=30562K total=155648K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+75.038: [GC (Allocation Failure) [PSYoungGen: 78143K->23647K(87552K)] 110356K->55868K(164864K), 0.0097712 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+75.048: Total time for which application threads were stopped: 0.0099069 seconds, Stopping threads took: 0.0000199 seconds
+[PERF] fps=31 paintAvg=0ms used=60368K delta=-48361K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+76.047: Total time for which application threads were stopped: 0.0000952 seconds, Stopping threads took: 0.0000274 seconds
+[TEST] 播放中... 60 秒
+[PERF] fps=30 paintAvg=0ms used=67437K delta=7068K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=73635K delta=6197K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=80352K delta=6716K total=164864K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+Left command: Settings
+79.479: Total time for which application threads were stopped: 0.0001072 seconds, Stopping threads took: 0.0000305 seconds
+80.479: Total time for which application threads were stopped: 0.0000916 seconds, Stopping threads took: 0.0000277 seconds
+83.088: [GC (Allocation Failure) [PSYoungGen: 76895K->24139K(76800K)] 109116K->56368K(154112K), 0.0098290 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+83.097: Total time for which application threads were stopped: 0.0100981 seconds, Stopping threads took: 0.0000810 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+Left command: Back
+84.869: Total time for which application threads were stopped: 0.0000814 seconds, Stopping threads took: 0.0000265 seconds
+[PERF] fps=158 paintAvg=0ms used=67531K delta=-12821K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=31 paintAvg=0ms used=73978K delta=6447K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[TEST] 播放中... 70 秒
+[PERF] fps=31 paintAvg=0ms used=80431K delta=6452K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=86878K delta=6447K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=31 paintAvg=0ms used=93341K delta=6462K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=99788K delta=6447K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=106331K delta=6542K total=154112K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+91.429: [GC (Allocation Failure) [PSYoungGen: 76363K->24203K(85504K)] 108592K->56440K(162816K), 0.0097632 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+91.439: Total time for which application threads were stopped: 0.0099163 seconds, Stopping threads took: 0.0000270 seconds
+[PERF] fps=30 paintAvg=0ms used=60310K delta=-46021K total=162816K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=67108K delta=6797K total=162816K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=73874K delta=6766K total=162816K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[PERF] fps=30 paintAvg=0ms used=79702K delta=5827K total=162816K chunkCut=10 chunkBuilt=10 buildMs=82 playMs=45558 genRecN=234080 genRegN=31281
+[SWITCH] target=3 vol=100 playing=true fileDurMs=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #6 afterGc used=82777K total=162816K
+File opened: file:///root/vgm/Pator/August-Melancholy-Decrunch-2020-1-.vgm
+95.334: Total time for which application threads were stopped: 0.0001208 seconds, Stopping threads took: 0.0000421 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+95.338: Total time for which application threads were stopped: 0.0002294 seconds, Stopping threads took: 0.0001085 seconds
+95.343: Total time for which application threads were stopped: 0.0001453 seconds, Stopping threads took: 0.0000461 seconds
+95.343: Total time for which application threads were stopped: 0.0000708 seconds, Stopping threads took: 0.0000192 seconds
+95.343: Total time for which application threads were stopped: 0.0000950 seconds, Stopping threads took: 0.0000374 seconds
+95.343: Total time for which application threads were stopped: 0.0001347 seconds, Stopping threads took: 0.0000330 seconds
+95.638: Total time for which application threads were stopped: 0.0003048 seconds, Stopping threads took: 0.0002345 seconds
+95.849: Total time for which application threads were stopped: 0.0000710 seconds, Stopping threads took: 0.0000184 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@6fb791d audio/midi
+95.866: Total time for which application threads were stopped: 0.0001328 seconds, Stopping threads took: 0.0000668 seconds
+95.867: Total time for which application threads were stopped: 0.0003009 seconds, Stopping threads took: 0.0002356 seconds
+95.867: Total time for which application threads were stopped: 0.0000828 seconds, Stopping threads took: 0.0000390 seconds
+95.870: [GC (Allocation Failure) [PSYoungGen: 75403K->14830K(65024K)] 107640K->47066K(142336K), 0.0065859 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+95.876: Total time for which application threads were stopped: 0.0067594 seconds, Stopping threads took: 0.0000632 seconds
+95.880: Total time for which application threads were stopped: 0.0000987 seconds, Stopping threads took: 0.0000271 seconds
+95.880: Total time for which application threads were stopped: 0.0000833 seconds, Stopping threads took: 0.0000347 seconds
+[TEST] 播放中... 80 秒
+[MEDIA] createPlayer java.io.ByteArrayInputStream@130cccb audio/midi
+[PERF] fps=32 paintAvg=0ms used=70097K delta=70097K total=142336K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+96.880: Total time for which application threads were stopped: 0.0001372 seconds, Stopping threads took: 0.0000415 seconds
+[PERF] fps=30 paintAvg=0ms used=76440K delta=6343K total=142336K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=30 paintAvg=0ms used=82802K delta=6361K total=142336K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=31 paintAvg=0ms used=89163K delta=6361K total=142336K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=30 paintAvg=0ms used=95703K delta=6539K total=142336K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+100.645: [GC (Allocation Failure) [PSYoungGen: 65006K->24136K(83968K)] 97242K->56381K(161280K), 0.0085639 secs] [Times: user=0.08 sys=0.00, real=0.01 secs] 
+100.653: Total time for which application threads were stopped: 0.0087439 seconds, Stopping threads took: 0.0000286 seconds
+[PERF] fps=30 paintAvg=0ms used=61458K delta=-34244K total=161280K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+102.278: Total time for which application threads were stopped: 0.0001750 seconds, Stopping threads took: 0.0000453 seconds
+Left command: Settings
+102.278: Total time for which application threads were stopped: 0.0000942 seconds, Stopping threads took: 0.0000253 seconds
+102.286: Total time for which application threads were stopped: 0.0001008 seconds, Stopping threads took: 0.0000263 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 播放中... 90 秒
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+108.251: [GC (Allocation Failure) [PSYoungGen: 73288K->21107K(69632K)] 105533K->56396K(146944K), 0.0093751 secs] [Times: user=0.06 sys=0.02, real=0.01 secs] 
+108.260: Total time for which application threads were stopped: 0.0095583 seconds, Stopping threads took: 0.0000271 seconds
+Left command: Back
+109.805: Total time for which application threads were stopped: 0.0000795 seconds, Stopping threads took: 0.0000273 seconds
+[PERF] fps=255 paintAvg=0ms used=66800K delta=5342K total=146944K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+110.806: Total time for which application threads were stopped: 0.0001674 seconds, Stopping threads took: 0.0000422 seconds
+[PERF] fps=31 paintAvg=0ms used=73229K delta=6429K total=146944K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=31 paintAvg=0ms used=79660K delta=6430K total=146944K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=30 paintAvg=0ms used=86010K delta=6349K total=146944K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+113.806: Total time for which application threads were stopped: 0.0001409 seconds, Stopping threads took: 0.0000643 seconds
+[PERF] fps=30 paintAvg=0ms used=92426K delta=6415K total=146944K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=30 paintAvg=0ms used=98775K delta=6349K total=146944K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+115.824: [GC (Allocation Failure) [PSYoungGen: 69235K->20361K(78336K)] 104524K->56810K(155648K), 0.0086191 secs] [Times: user=0.12 sys=0.00, real=0.01 secs] 
+115.833: Total time for which application threads were stopped: 0.0087737 seconds, Stopping threads took: 0.0000272 seconds
+[PERF] fps=30 paintAvg=0ms used=57702K delta=-41072K total=155648K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[TEST] 播放中... 100 秒
+[PERF] fps=30 paintAvg=0ms used=63649K delta=5946K total=155648K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=30 paintAvg=0ms used=70415K delta=6766K total=155648K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[PERF] fps=30 paintAvg=0ms used=77182K delta=6766K total=155648K chunkCut=12 chunkBuilt=12 buildMs=92 playMs=83969 genRecN=125032 genRegN=25899
+[SWITCH] target=4 vol=100 playing=true fileDurMs=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 播放完成，总时长: 103 秒
+[TEST] PlayScreen.release #7 afterGc used=79049K total=155648K
+File opened: file:///root/vgm/Pator/AY-Machine-Xenium-2021-2-.vgm
+119.224: Total time for which application threads were stopped: 0.0001889 seconds, Stopping threads took: 0.0000796 seconds
+119.228: Total time for which application threads were stopped: 0.0001393 seconds, Stopping threads took: 0.0000533 seconds
+119.228: Total time for which application threads were stopped: 0.0001032 seconds, Stopping threads took: 0.0000394 seconds
+119.228: Total time for which application threads were stopped: 0.0000970 seconds, Stopping threads took: 0.0000500 seconds
+119.229: Total time for which application threads were stopped: 0.0003612 seconds, Stopping threads took: 0.0002641 seconds
+[RMS] openRecordStore vgmbrowser_cfg119.229: Total time for which application threads were stopped: 0.0001359 seconds, Stopping threads took: 0.0000654 seconds
+
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+119.233: Total time for which application threads were stopped: 0.0001639 seconds, Stopping threads took: 0.0000490 seconds
+119.356: Total time for which application threads were stopped: 0.0000757 seconds, Stopping threads took: 0.0000216 seconds
+119.534: Total time for which application threads were stopped: 0.0003202 seconds, Stopping threads took: 0.0002190 seconds
+120.143: Total time for which application threads were stopped: 0.0000840 seconds, Stopping threads took: 0.0000238 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@f8aaea audio/midi
+120.151: [GC (Allocation Failure) [PSYoungGen: 67977K->8866K(79872K)] 104426K->46107K(157184K), 0.0027960 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+120.153: Total time for which application threads were stopped: 0.0029388 seconds, Stopping threads took: 0.0000269 seconds
+120.167: Total time for which application threads were stopped: 0.0001650 seconds, Stopping threads took: 0.0000947 seconds
+120.168: Total time for which application threads were stopped: 0.0002129 seconds, Stopping threads took: 0.0001594 seconds
+120.168: Total time for which application threads were stopped: 0.0000786 seconds, Stopping threads took: 0.0000436 seconds
+120.174: Total time for which application threads were stopped: 0.0001089 seconds, Stopping threads took: 0.0000405 seconds
+120.174: Total time for which application threads were stopped: 0.0000656 seconds, Stopping threads took: 0.0000253 seconds
+[PERF] fps=32 paintAvg=0ms used=55466K delta=55466K total=157184K chunkCut=13 chunkBuilt=13 buildMs=98 playMs=107343 genRecN=82368 genRegN=17553 gen2RecN=32856 gen2RegN=17673
+[MEDIA] createPlayer java.io.ByteArrayInputStream@7650f9ec audio/midi
+[SWITCH] target=5 vol=100 playing=true fileDurMs=0
+121.222: [GC (Allocation Failure) [PSYoungGen: 55970K->25601K(79360K)] 93211K->62897K(156672K), 0.0087425 secs] [Times: user=0.09 sys=0.01, real=0.01 secs] 
+121.231: Total time for which application threads were stopped: 0.0088985 seconds, Stopping threads took: 0.0000262 seconds
+[TEST] (4/17) 加载: Bananac-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/Bananac-1_merged.vgm
+[TEST] 文件已加载: 85605 bytes
+[TEST] PlayScreen.release #8 afterGc used=63587K total=156672K
+[RMS] openRecordStore vgmbrowser_cfg
+121.232: Total time for which application threads were stopped: 0.0001094 seconds, Stopping threads took: 0.0000474 seconds
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+121.244: Total time for which application threads were stopped: 0.0000953 seconds, Stopping threads took: 0.0000339 seconds
+121.244: Total time for which application threads were stopped: 0.0000575 seconds, Stopping threads took: 0.0000297 seconds
+121.245: Total time for which application threads were stopped: 0.0000587 seconds, Stopping threads took: 0.0000334 seconds
+121.245: Total time for which application threads were stopped: 0.0001874 seconds, Stopping threads took: 0.0001466 seconds
+121.245: Total time for which application threads were stopped: 0.0000373 seconds, Stopping threads took: 0.0000129 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #9 afterGc used=65453K total=156672K
+File opened: file:///root/vgm/Pator/Dalthonizm-part-2.vgm
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+121.368: Total time for which application threads were stopped: 0.0000790 seconds, Stopping threads took: 0.0000232 seconds
+121.370: Total time for which application threads were stopped: 0.0000772 seconds, Stopping threads took: 0.0000189 seconds
+121.536: Total time for which application threads were stopped: 0.0000793 seconds, Stopping threads took: 0.0000205 seconds
+121.668: Total time for which application threads were stopped: 0.0010569 seconds, Stopping threads took: 0.0009087 seconds
+[TEST] 播放已启动，等待完成...
+121.882: Total time for which application threads were stopped: 0.0000986 seconds, Stopping threads took: 0.0000389 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@7919fafe audio/midi
+121.897: Total time for which application threads were stopped: 0.0001208 seconds, Stopping threads took: 0.0000566 seconds
+121.898: Total time for which application threads were stopped: 0.0003083 seconds, Stopping threads took: 0.0002241 seconds
+121.899: Total time for which application threads were stopped: 0.0001414 seconds, Stopping threads took: 0.0000609 seconds
+121.905: Total time for which application threads were stopped: 0.0001161 seconds, Stopping threads took: 0.0000428 seconds
+121.905: Total time for which application threads were stopped: 0.0000741 seconds, Stopping threads took: 0.0000305 seconds
+122.250: [GC (Allocation Failure) [PSYoungGen: 71681K->14066K(59904K)] 108977K->51387K(137216K), 0.0059652 secs] [Times: user=0.09 sys=0.00, real=0.01 secs] 
+122.256: Total time for which application threads were stopped: 0.0061116 seconds, Stopping threads took: 0.0000319 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@707f743e audio/midi
+123.256: Total time for which application threads were stopped: 0.0002644 seconds, Stopping threads took: 0.0000867 seconds
+[PERF] fps=31 paintAvg=0ms used=69644K delta=69644K total=137216K chunkCut=16 chunkBuilt=16 buildMs=115 playMs=108439 genRecN=205792 genRegN=42252
+[PERF] fps=31 paintAvg=0ms used=75672K delta=6027K total=137216K chunkCut=16 chunkBuilt=16 buildMs=115 playMs=108439 genRecN=205792 genRegN=42252
+[PERF] fps=30 paintAvg=0ms used=82084K delta=6411K total=137216K chunkCut=16 chunkBuilt=16 buildMs=115 playMs=108439 genRecN=205792 genRegN=42252
+126.257: Total time for which application threads were stopped: 0.0001064 seconds, Stopping threads took: 0.0000309 seconds
+[PERF] fps=30 paintAvg=0ms used=88664K delta=6580K total=137216K chunkCut=16 chunkBuilt=16 buildMs=115 playMs=108439 genRecN=205792 genRegN=42252
+[PERF] fps=30 paintAvg=0ms used=95459K delta=6795K total=137216K chunkCut=16 chunkBuilt=16 buildMs=115 playMs=108439 genRecN=205792 genRegN=42252
+127.606: [GC (Allocation Failure) [PSYoungGen: 59634K->19996K(76288K)] 96955K->57348K(153600K), 0.0088025 secs] [Times: user=0.05 sys=0.01, real=0.01 secs] 
+127.615: Total time for which application threads were stopped: 0.0089477 seconds, Stopping threads took: 0.0000259 seconds
+[PERF] fps=30 paintAvg=0ms used=62806K delta=-32653K total=153600K chunkCut=16 chunkBuilt=16 buildMs=115 playMs=108439 genRecN=205792 genRegN=42252
+[SWITCH] target=6 vol=100 playing=true fileDurMs=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+129.138: Total time for which application threads were stopped: 0.0001036 seconds, Stopping threads took: 0.0000401 seconds
+129.138: Total time for which application threads were stopped: 0.0000823 seconds, Stopping threads took: 0.0000425 seconds
+129.138: Total time for which application threads were stopped: 0.0000468 seconds, Stopping threads took: 0.0000178 seconds
+129.138: Total time for which application threads were stopped: 0.0001753 seconds, Stopping threads took: 0.0001400 seconds
+129.138: Total time for which application threads were stopped: 0.0000555 seconds, Stopping threads took: 0.0000219 seconds
+[TEST] PlayScreen.release #10 afterGc used=67976K total=153600K
+File opened: file:///root/vgm/Pator/Dalthonizm-part-3.vgm
+129.139: Total time for which application threads were stopped: 0.0000549 seconds, Stopping threads took: 0.0000188 seconds
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+129.143: Total time for which application threads were stopped: 0.0001735 seconds, Stopping threads took: 0.0000552 seconds
+129.155: Total time for which application threads were stopped: 0.0000962 seconds, Stopping threads took: 0.0000296 seconds
+129.331: Total time for which application threads were stopped: 0.0001328 seconds, Stopping threads took: 0.0000307 seconds
+129.656: Total time for which application threads were stopped: 0.0002788 seconds, Stopping threads took: 0.0000957 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@38526806 audio/midi
+129.674: Total time for which application threads were stopped: 0.0002190 seconds, Stopping threads took: 0.0001314 seconds
+129.674: Total time for which application threads were stopped: 0.0001022 seconds, Stopping threads took: 0.0000309 seconds
+129.676: Total time for which application threads were stopped: 0.0001296 seconds, Stopping threads took: 0.0000327 seconds
+129.677: Total time for which application threads were stopped: 0.0001629 seconds, Stopping threads took: 0.0000249 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@4b67fc23 audio/midi
+[SWITCH] target=7 vol=100 playing=true fileDurMs=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #11 afterGc used=101506K total=153600K
+File opened: file:///root/vgm/Pator/Digital-Espresso-Revision-2023-12-.vgm
+[RMS] openRecordStore vgmbrowser_cfg
+130.549: Total time for which application threads were stopped: 0.0000864 seconds, Stopping threads took: 0.0000331 seconds
+130.549: Total time for which application threads were stopped: 0.0000602 seconds, Stopping threads took: 0.0000237 seconds
+130.550: Total time for which application threads were stopped: 0.0000743 seconds, Stopping threads took: 0.0000378 seconds
+130.550: [GC (Allocation Failure) [PSYoungGen: 65052K->1599K(77312K)] 102404K->38983K(154624K), 0.0011862 secs] [Times: user=0.02 sys=0.00, real=0.00 secs] 
+130.551: Total time for which application threads were stopped: 0.0013321 seconds, Stopping threads took: 0.0000319 seconds
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 播放完成，总时长: 9 秒
+131.068: Total time for which application threads were stopped: 0.0002913 seconds, Stopping threads took: 0.0001092 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@3060c493 audio/midi
+131.095: Total time for which application threads were stopped: 0.0002316 seconds, Stopping threads took: 0.0001658 seconds
+131.095: Total time for which application threads were stopped: 0.0000460 seconds, Stopping threads took: 0.0000124 seconds
+131.100: Total time for which application threads were stopped: 0.0001231 seconds, Stopping threads took: 0.0000293 seconds
+131.100: Total time for which application threads were stopped: 0.0001233 seconds, Stopping threads took: 0.0000534 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@5751ed23 audio/midi
+131.516: [GC (Allocation Failure) [PSYoungGen: 46143K->16569K(74752K)] 83527K->53977K(152064K), 0.0066495 secs] [Times: user=0.12 sys=0.00, real=0.01 secs] 
+131.522: Total time for which application threads were stopped: 0.0067795 seconds, Stopping threads took: 0.0000233 seconds
+[PERF] fps=33 paintAvg=0ms used=56728K delta=56728K total=152064K chunkCut=20 chunkBuilt=20 buildMs=136 playMs=116578 genRecN=61132 genRegN=11595
+[PERF] fps=31 paintAvg=0ms used=63329K delta=6600K total=152064K chunkCut=20 chunkBuilt=20 buildMs=136 playMs=116578 genRecN=61132 genRegN=11595
+[TEST] (5/17) 加载: Domen-turbosound-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/Domen-turbosound-1_merged.vgm
+[TEST] 文件已加载: 246403 bytes
+[TEST] PlayScreen.release #12 afterGc used=64816K total=152064K
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+132.748: Total time for which application threads were stopped: 0.0003309 seconds, Stopping threads took: 0.0002502 seconds
+132.748: Total time for which application threads were stopped: 0.0001067 seconds, Stopping threads took: 0.0000558 seconds
+[TEST] 等待播放启动...
+[TEST] 播放已启动，等待完成...
+133.231: Total time for which application threads were stopped: 0.0001056 seconds, Stopping threads took: 0.0000411 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@78d20f4b audio/midi
+133.248: Total time for which application threads were stopped: 0.0002906 seconds, Stopping threads took: 0.0002087 seconds
+133.248: Total time for which application threads were stopped: 0.0000586 seconds, Stopping threads took: 0.0000145 seconds
+133.253: Total time for which application threads were stopped: 0.0001079 seconds, Stopping threads took: 0.0000310 seconds
+133.253: Total time for which application threads were stopped: 0.0001904 seconds, Stopping threads took: 0.0000888 seconds
+133.425: [GC (Allocation Failure) [PSYoungGen: 60601K->10894K(54784K)] 98009K->48319K(132096K), 0.0059808 secs] [Times: user=0.06 sys=0.00, real=0.01 secs] 
+133.431: Total time for which application threads were stopped: 0.0061393 seconds, Stopping threads took: 0.0000287 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@6c3656e audio/midi
+[SWITCH] target=3 vol=100 playing=true fileDurMs=0
+[PERF] fps=32 paintAvg=0ms used=71443K delta=71443K total=132096K chunkCut=22 chunkBuilt=22 buildMs=146 playMs=118248 genRecN=192524 genRegN=36096 gen2RecN=150468 gen2RegN=27624
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #13 afterGc used=74496K total=132096K
+File opened: file:///root/vgm/Pator/August-Melancholy-Decrunch-2020-1-.vgm
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+134.039: Total time for which application threads were stopped: 0.0001021 seconds, Stopping threads took: 0.0000380 seconds
+134.039: Total time for which application threads were stopped: 0.0000544 seconds, Stopping threads took: 0.0000152 seconds
+[TEST] 播放完成，总时长: 1 秒
+134.550: Total time for which application threads were stopped: 0.0000979 seconds, Stopping threads took: 0.0000273 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@597d65c8 audio/midi
+134.556: [GC (Allocation Failure) [PSYoungGen: 54414K->4335K(75264K)] 91839K->41768K(152576K), 0.0012227 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+134.557: Total time for which application threads were stopped: 0.0013397 seconds, Stopping threads took: 0.0000212 seconds
+134.570: Total time for which application threads were stopped: 0.0002484 seconds, Stopping threads took: 0.0001854 seconds
+134.570: Total time for which application threads were stopped: 0.0000760 seconds, Stopping threads took: 0.0000181 seconds
+134.575: Total time for which application threads were stopped: 0.0000836 seconds, Stopping threads took: 0.0000253 seconds
+134.575: Total time for which application threads were stopped: 0.0000506 seconds, Stopping threads took: 0.0000128 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@40ba910a audio/midi
+[PERF] fps=32 paintAvg=0ms used=73682K delta=73682K total=152576K chunkCut=24 chunkBuilt=24 buildMs=155 playMs=119053 genRecN=125144 genRegN=25911
+[SWITCH] target=4 vol=100 playing=true fileDurMs=0
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #14 afterGc used=78052K total=152576K
+File opened: file:///root/vgm/Pator/AY-Machine-Xenium-2021-2-.vgm
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+135.676: Total time for which application threads were stopped: 0.0001295 seconds, Stopping threads took: 0.0000389 seconds
+135.676: Total time for which application threads were stopped: 0.0000858 seconds, Stopping threads took: 0.0000202 seconds
+[TEST] (6/17) 加载: Dream-of-Mermaid-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/Dream-of-Mermaid-1_merged.vgm
+136.053: [GC (Allocation Failure) [PSYoungGen: 47291K->3263K(75264K)] 84724K->40736K(152576K), 0.0012793 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+136.054: Total time for which application threads were stopped: 0.0014042 seconds, Stopping threads took: 0.0000212 seconds
+[TEST] 文件已加载: 153960 bytes
+[TEST] PlayScreen.release #15 afterGc used=40910K total=152576K
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+[SWITCH] target=6 vol=100 playing=false fileDurMs=0
+[TEST] 播放已启动，等待完成...
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] setRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] PlayScreen.release #16 afterGc used=51704K total=152576K
+File opened: file:///root/vgm/Pator/Dalthonizm-part-3.vgm
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+136.993: Total time for which application threads were stopped: 0.0001242 seconds, Stopping threads took: 0.0000394 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@bcda41d audio/midi
+137.011: Total time for which application threads were stopped: 0.0003003 seconds, Stopping threads took: 0.0002042 seconds
+137.011: Total time for which application threads were stopped: 0.0000954 seconds, Stopping threads took: 0.0000378 seconds
+137.016: Total time for which application threads were stopped: 0.0001232 seconds, Stopping threads took: 0.0000367 seconds
+137.016: Total time for which application threads were stopped: 0.0000988 seconds, Stopping threads took: 0.0000488 seconds
+137.416: [GC (Allocation Failure) [PSYoungGen: 45718K->13727K(71680K)] 83190K->51232K(148992K), 0.0052181 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+137.421: Total time for which application threads were stopped: 0.0053545 seconds, Stopping threads took: 0.0000227 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@1ac462f4 audio/midi
+[PERF] fps=32 paintAvg=0ms used=61690K delta=61690K total=148992K chunkCut=26 chunkBuilt=26 buildMs=170 playMs=120175 genRecN=63620 genRegN=8559
+[PERF] fps=31 paintAvg=0ms used=68155K delta=6465K total=148992K chunkCut=26 chunkBuilt=26 buildMs=170 playMs=120175 genRecN=63620 genRegN=8559
+[PERF] fps=9 paintAvg=0ms used=77148K delta=8992K total=148992K chunkCut=26 chunkBuilt=26 buildMs=170 playMs=120175 genRecN=63620 genRegN=8559
+Right command: List
+141.424: Total time for which application threads were stopped: 0.0002592 seconds, Stopping threads took: 0.0001090 seconds
+142.224: [GC (Allocation Failure) [PSYoungGen: 55711K->15509K(57344K)] 93216K->53021K(134656K), 0.0085749 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+142.233: Total time for which application threads were stopped: 0.0087625 seconds, Stopping threads took: 0.0000272 seconds
+143.233: Total time for which application threads were stopped: 0.0001058 seconds, Stopping threads took: 0.0000285 seconds
+File opened: file:///root/vgm/Pator/Last-Minute-Accident-speccy.pl-party-2023.1-1-.vgm
+[TEST] PlayScreen.release #17 afterGc used=62610K total=134656K
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+143.328: Total time for which application threads were stopped: 0.0001192 seconds, Stopping threads took: 0.0000318 seconds
+143.328: Total time for which application threads were stopped: 0.0000732 seconds, Stopping threads took: 0.0000175 seconds
+[TEST] 播放完成，总时长: 7 秒
+144.198: Total time for which application threads were stopped: 0.0001275 seconds, Stopping threads took: 0.0000435 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@515ed5fe audio/midi
+144.217: Total time for which application threads were stopped: 0.0004207 seconds, Stopping threads took: 0.0003053 seconds
+144.217: Total time for which application threads were stopped: 0.0001233 seconds, Stopping threads took: 0.0000535 seconds
+144.224: Total time for which application threads were stopped: 0.0001105 seconds, Stopping threads took: 0.0000459 seconds
+144.224: Total time for which application threads were stopped: 0.0000886 seconds, Stopping threads took: 0.0000385 seconds
+144.225: [GC (Allocation Failure) [PSYoungGen: 56981K->12132K(68608K)] 94493K->49652K(145920K), 0.0067954 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+144.232: Total time for which application threads were stopped: 0.0070491 seconds, Stopping threads took: 0.0000838 seconds
+[PERF] fps=33 paintAvg=0ms used=57297K delta=57297K total=145920K chunkCut=27 chunkBuilt=27 buildMs=176 playMs=126506 genRecN=78964 genRegN=15510 gen2RecN=82748 gen2RegN=18561
+[MEDIA] createPlayer java.io.ByteArrayInputStream@5e35bf69 audio/midi
+145.231: Total time for which application threads were stopped: 0.0001820 seconds, Stopping threads took: 0.0000533 seconds
+[PERF] fps=30 paintAvg=0ms used=88026K delta=30728K total=145920K chunkCut=28 chunkBuilt=28 buildMs=181 playMs=126506 genRecN=264144 genRegN=77772 gen2RecN=155300 gen2RegN=77625
+[TEST] (7/17) 加载: Insane-2006-version-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/Insane-2006-version-1_merged.vgm
+[TEST] 文件已加载: 89304 bytes
+[TEST] PlayScreen.release #18 afterGc used=88221K total=145920K
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+145.376: Total time for which application threads were stopped: 0.0001453 seconds, Stopping threads took: 0.0000649 seconds
+145.376: Total time for which application threads were stopped: 0.0000695 seconds, Stopping threads took: 0.0000346 seconds
+145.660: [GC (Allocation Failure) [PSYoungGen: 53092K->2007K(69632K)] 90612K->39536K(146944K), 0.0010958 secs] [Times: user=0.03 sys=0.00, real=0.00 secs] 
+145.661: Total time for which application threads were stopped: 0.0012131 seconds, Stopping threads took: 0.0000207 seconds
+[TEST] 播放已启动，等待完成...
+145.879: Total time for which application threads were stopped: 0.0001194 seconds, Stopping threads took: 0.0000472 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@3aae2c59 audio/midi
+145.897: Total time for which application threads were stopped: 0.0003207 seconds, Stopping threads took: 0.0002575 seconds
+145.897: Total time for which application threads were stopped: 0.0000769 seconds, Stopping threads took: 0.0000326 seconds
+145.902: Total time for which application threads were stopped: 0.0000842 seconds, Stopping threads took: 0.0000225 seconds
+145.902: Total time for which application threads were stopped: 0.0000708 seconds, Stopping threads took: 0.0000291 seconds
+146.188: [GC (Allocation Failure) [PSYoungGen: 42455K->12433K(66048K)] 79984K->49962K(143360K), 0.0081743 secs] [Times: user=0.11 sys=0.00, real=0.01 secs] 
+146.197: Total time for which application threads were stopped: 0.0084091 seconds, Stopping threads took: 0.0000347 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@5faad76a audio/midi
+[PERF] fps=32 paintAvg=0ms used=64326K delta=64326K total=143360K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=169880 genRegN=33414 gen2RecN=115260 gen2RegN=24765
+[PERF] fps=1 paintAvg=0ms used=74345K delta=10018K total=143360K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+[PERF] fps=31 paintAvg=0ms used=81036K delta=6691K total=143360K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+[PERF] fps=30 paintAvg=0ms used=87570K delta=6533K total=143360K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+Right command: List
+149.730: [GC (Allocation Failure) [PSYoungGen: 52369K->20167K(67584K)] 89898K->57704K(144896K), 0.0079466 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+149.738: Total time for which application threads were stopped: 0.0081103 seconds, Stopping threads took: 0.0000215 seconds
+150.739: Total time for which application threads were stopped: 0.0001149 seconds, Stopping threads took: 0.0000327 seconds
+152.431: Total time for which application threads were stopped: 0.0001033 seconds, Stopping threads took: 0.0000287 seconds
+153.431: Total time for which application threads were stopped: 0.0000985 seconds, Stopping threads took: 0.0000233 seconds
+153.557: Total time for which application threads were stopped: 0.0001858 seconds, Stopping threads took: 0.0000716 seconds
+153.558: Total time for which application threads were stopped: 0.0000882 seconds, Stopping threads took: 0.0000233 seconds
+[PERF] fps=7 paintAvg=0ms used=85616K delta=-1954K total=144896K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+154.557: Total time for which application threads were stopped: 0.0001817 seconds, Stopping threads took: 0.0000384 seconds
+[PERF] fps=31 paintAvg=0ms used=91864K delta=6248K total=144896K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+155.377: [GC (Allocation Failure) [PSYoungGen: 59591K->19888K(67584K)] 97128K->57433K(144896K), 0.0107823 secs] [Times: user=0.11 sys=0.00, real=0.01 secs] 
+155.388: Total time for which application threads were stopped: 0.0111068 seconds, Stopping threads took: 0.0000911 seconds
+[PERF] fps=30 paintAvg=0ms used=58871K delta=-32993K total=144896K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+[TEST] 播放中... 10 秒
+[PERF] fps=30 paintAvg=0ms used=65740K delta=6868K total=144896K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+157.388: Total time for which application threads were stopped: 0.0002731 seconds, Stopping threads took: 0.0001025 seconds
+[PERF] fps=30 paintAvg=0ms used=72226K delta=6486K total=144896K chunkCut=30 chunkBuilt=30 buildMs=194 playMs=127678 genRecN=252008 genRegN=49125 gen2RecN=167428 gen2RegN=34587
+Right command: List
+158.389: Total time for which application threads were stopped: 0.0001260 seconds, Stopping threads took: 0.0000298 seconds
+159.389: Total time for which application threads were stopped: 0.0000934 seconds, Stopping threads took: 0.0000298 seconds
+File opened: file:///root/vgm/Pator/Last-Minute-Accident-speccy.pl-party-2023.1-1-.vgm
+[TEST] PlayScreen.release #19 afterGc used=86870K total=144896K
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+159.512: Total time for which application threads were stopped: 0.0001835 seconds, Stopping threads took: 0.0000482 seconds
+159.512: Total time for which application threads were stopped: 0.0000890 seconds, Stopping threads took: 0.0000250 seconds
+[TEST] 播放完成，总时长: 14 秒
+160.113: [GC (Allocation Failure) [PSYoungGen: 58274K->3654K(41984K)] 95818K->41199K(119296K), 0.0014650 secs] [Times: user=0.03 sys=0.00, real=0.00 secs] 
+160.115: Total time for which application threads were stopped: 0.0016310 seconds, Stopping threads took: 0.0000229 seconds
+160.352: Total time for which application threads were stopped: 0.0001243 seconds, Stopping threads took: 0.0000311 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@31a7f904 audio/midi
+160.370: Total time for which application threads were stopped: 0.0003472 seconds, Stopping threads took: 0.0002458 seconds
+160.370: Total time for which application threads were stopped: 0.0001772 seconds, Stopping threads took: 0.0000502 seconds
+160.376: Total time for which application threads were stopped: 0.0000787 seconds, Stopping threads took: 0.0000195 seconds
+160.376: Total time for which application threads were stopped: 0.0000821 seconds, Stopping threads took: 0.0000439 seconds
+[PERF] fps=33 paintAvg=0ms used=73390K delta=73390K total=119296K chunkCut=31 chunkBuilt=31 buildMs=200 playMs=141306 genRecN=92952 genRegN=20133 gen2RecN=104492 gen2RegN=24159
+160.676: [GC (Allocation Failure) [PSYoungGen: 41542K->15271K(65024K)] 79087K->52832K(142336K), 0.0053142 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+160.681: Total time for which application threads were stopped: 0.0054578 seconds, Stopping threads took: 0.0000265 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@5ddfc4d1 audio/midi
+[PERF] fps=3 paintAvg=0ms used=79071K delta=5681K total=142336K chunkCut=32 chunkBuilt=32 buildMs=206 playMs=141306 genRecN=264916 genRegN=77571 gen2RecN=154544 gen2RegN=77295
+[TEST] (8/17) 加载: Last-Minute--1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/Last-Minute--1_merged.vgm
+[TEST] 文件已加载: 121691 bytes
+161.680: Total time for which application threads were stopped: 0.0001663 seconds, Stopping threads took: 0.0000301 seconds
+[TEST] PlayScreen.release #20 afterGc used=79343K total=142336K
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+161.693: Total time for which application threads were stopped: 0.0000888 seconds, Stopping threads took: 0.0000307 seconds
+161.693: Total time for which application threads were stopped: 0.0000461 seconds, Stopping threads took: 0.0000148 seconds
+[TEST] 播放已启动，等待完成...
+162.119: [GC (Allocation Failure) [PSYoungGen: 52647K->3326K(66048K)] 90208K->40918K(143360K), 0.0012671 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+162.120: Total time for which application threads were stopped: 0.0014140 seconds, Stopping threads took: 0.0000243 seconds
+162.195: Total time for which application threads were stopped: 0.0000811 seconds, Stopping threads took: 0.0000215 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@3d3876b3 audio/midi
+162.212: Total time for which application threads were stopped: 0.0003477 seconds, Stopping threads took: 0.0002644 seconds
+162.212: Total time for which application threads were stopped: 0.0000946 seconds, Stopping threads took: 0.0000368 seconds
+162.217: Total time for which application threads were stopped: 0.0002171 seconds, Stopping threads took: 0.0000529 seconds
+162.218: Total time for which application threads were stopped: 0.0001387 seconds, Stopping threads took: 0.0000548 seconds
+162.514: [GC (Allocation Failure) [PSYoungGen: 37595K->13948K(63488K)] 75188K->51549K(140800K), 0.0055732 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+162.519: Total time for which application threads were stopped: 0.0057164 seconds, Stopping threads took: 0.0000232 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@48e81e84 audio/midi
+[PERF] fps=32 paintAvg=0ms used=66517K delta=66517K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=31 paintAvg=0ms used=73215K delta=6697K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=31 paintAvg=0ms used=79570K delta=6355K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=86276K delta=6705K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+166.060: [GC (Allocation Failure) [PSYoungGen: 50300K->20804K(64512K)] 87901K->58429K(141824K), 0.0076998 secs] [Times: user=0.11 sys=0.00, real=0.01 secs] 
+166.067: Total time for which application threads were stopped: 0.0078515 seconds, Stopping threads took: 0.0000253 seconds
+[PERF] fps=30 paintAvg=0ms used=63161K delta=-23114K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=69911K delta=6749K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=76276K delta=6364K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=82740K delta=6464K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=88818K delta=6078K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+171.626: [GC (Allocation Failure) [PSYoungGen: 56644K->20531K(64512K)] 94269K->58164K(141824K), 0.0088343 secs] [Times: user=0.08 sys=0.02, real=0.01 secs] 
+171.635: Total time for which application threads were stopped: 0.0090174 seconds, Stopping threads took: 0.0000328 seconds
+[PERF] fps=30 paintAvg=0ms used=59509K delta=-29309K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[TEST] 播放中... 10 秒
+[PERF] fps=30 paintAvg=0ms used=65941K delta=6431K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=72367K delta=6426K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=78725K delta=6357K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=85150K delta=6425K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=91577K delta=6426K total=141824K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+177.055: [GC (Allocation Failure) [PSYoungGen: 55347K->20421K(65024K)] 92980K->58062K(142336K), 0.0095215 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+177.065: Total time for which application threads were stopped: 0.0097208 seconds, Stopping threads took: 0.0000382 seconds
+[PERF] fps=30 paintAvg=0ms used=63238K delta=-28338K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=69901K delta=6662K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=76052K delta=6151K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=83255K delta=7203K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=89405K delta=6149K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[TEST] 播放中... 20 秒
+182.304: [GC (Allocation Failure) [PSYoungGen: 54725K->20373K(65536K)] 92366K->58054K(142848K), 0.0072510 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+182.311: Total time for which application threads were stopped: 0.0074049 seconds, Stopping threads took: 0.0000366 seconds
+[PERF] fps=30 paintAvg=0ms used=61977K delta=-27427K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=68178K delta=6200K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=74377K delta=6199K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=81121K delta=6743K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=87322K delta=6200K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+187.556: [GC (Allocation Failure) [PSYoungGen: 54165K->21031K(65536K)] 91846K->58736K(142848K), 0.0100751 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+187.567: Total time for which application threads were stopped: 0.0103336 seconds, Stopping threads took: 0.0000542 seconds
+[PERF] fps=30 paintAvg=0ms used=61116K delta=-26205K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=67654K delta=6537K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=74202K delta=6548K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=80162K delta=5959K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=86711K delta=6549K total=142848K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[TEST] 播放中... 30 秒
+192.729: [GC (Allocation Failure) [PSYoungGen: 54311K->20981K(65024K)] 92016K->58710K(142336K), 0.0073852 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+192.737: Total time for which application threads were stopped: 0.0075421 seconds, Stopping threads took: 0.0000269 seconds
+[PERF] fps=30 paintAvg=0ms used=59929K delta=-26782K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=66572K delta=6643K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=72657K delta=6084K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=79315K delta=6657K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=85987K delta=6672K total=142336K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+197.769: [GC (Allocation Failure) [PSYoungGen: 53749K->20869K(53248K)] 91478K->58597K(130560K), 0.0077574 secs] [Times: user=0.09 sys=0.00, real=0.01 secs] 
+197.777: Total time for which application threads were stopped: 0.0079063 seconds, Stopping threads took: 0.0000239 seconds
+[PERF] fps=30 paintAvg=0ms used=59222K delta=-26765K total=130560K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=65480K delta=6257K total=130560K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=72399K delta=6919K total=130560K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=78706K delta=6306K total=130560K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=85557K delta=6851K total=130560K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[TEST] 播放中... 40 秒
+202.706: [GC (Allocation Failure) [PSYoungGen: 53125K->20626K(64000K)] 90853K->58363K(141312K), 0.0076213 secs] [Times: user=0.12 sys=0.00, real=0.01 secs] 
+202.714: Total time for which application threads were stopped: 0.0077581 seconds, Stopping threads took: 0.0000239 seconds
+[PERF] fps=30 paintAvg=0ms used=59600K delta=-25957K total=141312K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+203.713: Total time for which application threads were stopped: 0.0000986 seconds, Stopping threads took: 0.0000350 seconds
+[PERF] fps=30 paintAvg=0ms used=66443K delta=6842K total=141312K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=73241K delta=6798K total=141312K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=79463K delta=6221K total=141312K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+206.714: Total time for which application threads were stopped: 0.0001414 seconds, Stopping threads took: 0.0000791 seconds
+[PERF] fps=30 paintAvg=0ms used=86290K delta=6826K total=141312K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+207.572: [GC (Allocation Failure) [PSYoungGen: 52370K->20683K(52224K)] 90107K->58419K(129536K), 0.0084991 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+207.581: Total time for which application threads were stopped: 0.0086392 seconds, Stopping threads took: 0.0000257 seconds
+[PERF] fps=30 paintAvg=0ms used=60924K delta=-25365K total=129536K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=67088K delta=6164K total=129536K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=73251K delta=6162K total=129536K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=80045K delta=6794K total=129536K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=86209K delta=6163K total=129536K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[TEST] 播放中... 50 秒
+212.482: [GC (Allocation Failure) [PSYoungGen: 51915K->20823K(63488K)] 89651K->58576K(140800K), 0.0130937 secs] [Times: user=0.09 sys=0.02, real=0.01 secs] 
+212.495: Total time for which application threads were stopped: 0.0133795 seconds, Stopping threads took: 0.0000510 seconds
+[PERF] fps=30 paintAvg=0ms used=61667K delta=-24541K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=30 paintAvg=0ms used=68471K delta=6804K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+[PERF] fps=31 paintAvg=0ms used=75258K delta=6786K total=140800K chunkCut=34 chunkBuilt=34 buildMs=216 playMs=142642 genRecN=113332 genRegN=17637 gen2RecN=121384 gen2RegN=21336
+215.310: Total time for which application threads were stopped: 0.0000928 seconds, Stopping threads took: 0.0000252 seconds
+215.310: Total time for which application threads were stopped: 0.0001065 seconds, Stopping threads took: 0.0000241 seconds
+215.310: Total time for which application threads were stopped: 0.0000647 seconds, Stopping threads took: 0.0000209 seconds
+215.312: Total time for which application threads were stopped: 0.0002208 seconds, Stopping threads took: 0.0001669 seconds
+215.312: Total time for which application threads were stopped: 0.0000576 seconds, Stopping threads took: 0.0000256 seconds
+215.318: Total time for which application threads were stopped: 0.0000802 seconds, Stopping threads took: 0.0000211 seconds
+215.318: Total time for which application threads were stopped: 0.0000525 seconds, Stopping threads took: 0.0000122 seconds
+[MEDIA] createPlayer java.io.ByteArrayInputStream@46749ac5 audio/midi
+215.788: [GC (Allocation Failure) [PSYoungGen: 52055K->15811K(47104K)] 89808K->53588K(124416K), 0.0073602 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+215.795: Total time for which application threads were stopped: 0.0074931 seconds, Stopping threads took: 0.0000222 seconds
+[PERF] fps=30 paintAvg=0ms used=55195K delta=-20062K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=30 paintAvg=0ms used=61127K delta=5931K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=30 paintAvg=0ms used=67572K delta=6445K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=30 paintAvg=0ms used=74017K delta=6445K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=30 paintAvg=0ms used=80463K delta=6445K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+220.697: [GC (Allocation Failure) [PSYoungGen: 47043K->16002K(60416K)] 84820K->53803K(137728K), 0.0082418 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+220.706: Total time for which application threads were stopped: 0.0083832 seconds, Stopping threads took: 0.0000235 seconds
+[PERF] fps=31 paintAvg=0ms used=56084K delta=-24379K total=137728K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=31 paintAvg=0ms used=62341K delta=6257K total=137728K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[TEST] 播放中... 60 秒
+222.706: Total time for which application threads were stopped: 0.0001104 seconds, Stopping threads took: 0.0000464 seconds
+[PERF] fps=25 paintAvg=0ms used=68584K delta=6243K total=137728K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+223.710: Total time for which application threads were stopped: 0.0001627 seconds, Stopping threads took: 0.0000517 seconds
+[PERF] fps=15 paintAvg=0ms used=77582K delta=8997K total=137728K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=82149K delta=4567K total=137728K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+226.220: [GC (Allocation Failure) [PSYoungGen: 47234K->15616K(47104K)] 85035K->53417K(124416K), 0.0077016 secs] [Times: user=0.11 sys=0.00, real=0.01 secs] 
+226.228: Total time for which application threads were stopped: 0.0081061 seconds, Stopping threads took: 0.0000762 seconds
+[PERF] fps=29 paintAvg=0ms used=56959K delta=-25190K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+227.228: Total time for which application threads were stopped: 0.0001036 seconds, Stopping threads took: 0.0000324 seconds
+[PERF] fps=24 paintAvg=0ms used=62257K delta=5298K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=8 paintAvg=0ms used=68654K delta=6396K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=73373K delta=4718K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=78667K delta=5294K total=124416K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[TEST] 播放中... 70 秒
+232.552: [GC (Allocation Failure) [PSYoungGen: 46848K->14987K(59392K)] 84649K->53939K(136704K), 0.0124980 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+232.564: Total time for which application threads were stopped: 0.0127127 seconds, Stopping threads took: 0.0000377 seconds
+[PERF] fps=7 paintAvg=1ms used=54539K delta=-24128K total=136704K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=26 paintAvg=0ms used=59372K delta=4833K total=136704K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=30 paintAvg=0ms used=65995K delta=6623K total=136704K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=26 paintAvg=0ms used=71414K delta=5419K total=136704K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=76226K delta=4811K total=136704K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=81637K delta=5410K total=136704K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+238.520: [GC (Allocation Failure) [PSYoungGen: 46219K->13592K(45056K)] 85171K->53883K(122368K), 0.0082723 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+238.528: Total time for which application threads were stopped: 0.0084728 seconds, Stopping threads took: 0.0000351 seconds
+[PERF] fps=22 paintAvg=0ms used=55097K delta=-26539K total=122368K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=59958K delta=4861K total=122368K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+240.543: Total time for which application threads were stopped: 0.0001554 seconds, Stopping threads took: 0.0000642 seconds
+[PERF] fps=22 paintAvg=0ms used=64819K delta=4861K total=122368K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=70265K delta=5445K total=122368K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[TEST] 播放中... 80 秒
+[PERF] fps=22 paintAvg=0ms used=75128K delta=4863K total=122368K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=22 paintAvg=0ms used=79988K delta=4859K total=122368K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+245.023: [GC (Allocation Failure) [PSYoungGen: 44824K->7094K(58880K)] 85115K->54455K(136192K), 0.0090078 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+245.032: Total time for which application threads were stopped: 0.0092138 seconds, Stopping threads took: 0.0000345 seconds
+[PERF] fps=11 paintAvg=0ms used=56253K delta=-23734K total=136192K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=24 paintAvg=0ms used=61720K delta=5466K total=136192K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316
+[PERF] fps=30 paintAvg=0ms used=67801K delta=6081K total=136192K chunkCut=35 chunkBuilt=35 buildMs=226 playMs=195753 genRecN=13128 genRegN=3183 gen2RecN=11872 gen2RegN=2316

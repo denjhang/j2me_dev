@@ -1,0 +1,109 @@
+十月 28, 2026 5:58:25 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+警告: Found unknown Windows version: Windows 11
+十月 28, 2026 5:58:25 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+信息: Attempting to use default windows plug-in.
+十月 28, 2026 5:58:25 下午 net.java.games.input.DefaultControllerEnvironment getControllers
+信息: Loading: net.java.games.input.DirectAndRawInputEnvironmentPlugin
+十月 28, 2026 5:58:25 下午 net.java.games.input.ControllerEnvironment log
+信息: Failed to initialize device HIDI2C Device because of: java.io.IOException: Failed to acquire device (8007001e)
+
+Found controller: USB PnP Sound Device
+Found controller: HIDI2C Device
+Found controller: Intel(R) HID Event Filter
+Found controller: 2.4G Mouse
+Found controller: AIRMARS GM02
+KEmulator nnx64 2.22 Running on Windows 11 amd64 (10.0), Java: 1.8.0_504 (Temurin)
+Get classes from E:\working\zcode-projects\j2me_dev\tools\vgm-browser-test\VgmBrowserTest.jar
+Checking for updates
+Get class com.denjhang.vgmbrowser.FileListScreen$1
+Get class com.denjhang.vgm.StreamPlayer$SynthStream
+Get class com.denjhang.vgmbrowser.PlayScreen$1$1
+Get class com.denjhang.vgmbrowser.PlayScreen$1
+Get class com.denjhang.vgmbrowser.DetailScreen$1
+Get class com.denjhang.vgmbrowser.SettingsStore
+Get class com.denjhang.vgmbrowser.PlayScreen$5
+Get class com.denjhang.vgm.Gzip$Progress
+Get class com.denjhang.vgmbrowser.CommandScreen
+Get class com.denjhang.vgm.SmfSeg$Builder
+Get class com.denjhang.vgmbrowser.CommandScreen$1
+Get class com.denjhang.vgm.PlayToneEngine$1
+Get class com.denjhang.vgm.PlayToneEngine
+Get class com.denjhang.vgmbrowser.FileListScreen$Entry
+Get class com.denjhang.vgm.VgmParser
+Get class com.denjhang.vgm.VgmHeader
+Get class com.denjhang.vgmbrowser.DetailScreen
+Get class com.denjhang.vgm.StreamPlayer$1
+Get class com.denjhang.vgm.VgmParser$DataBlock
+Get class com.denjhang.vgmbrowser.BrowserMIDlet$1
+Get class com.denjhang.vgmbrowser.PlayScreen$4
+Get class com.denjhang.vgmbrowser.FileListScreen
+Get class com.denjhang.vgm.VgmFile
+Get class com.denjhang.vgm.Gzip$Inflater
+Get class com.denjhang.vgmbrowser.PlayScreen$3
+Get class com.denjhang.vgmbrowser.BrowserMIDlet
+Get class com.denjhang.vgmbrowser.MidiTestScreen
+Get class com.denjhang.vgm.Gzip
+Get class com.denjhang.vgm.Ay2Midi$1
+Get class com.denjhang.vgmbrowser.ToneTestScreen
+Get class com.denjhang.vgmbrowser.PlayScreen$2
+Get class com.denjhang.vgm.Gzip$1
+Get class com.denjhang.vgm.SmfSeg
+Get class com.denjhang.vgm.StreamPlayer
+Get class com.denjhang.vgm.VgmCommandTable
+Get class com.denjhang.vgm.Ay2Midi
+Get class com.denjhang.vgmbrowser.PlayScreen
+Get class com.denjhang.vgm.ChunkedPlayer
+Get class com.denjhang.vgmbrowser.PlayScreen$6
+Get class com.denjhang.vgm.Gzip$GrowBuf
+Custom.jar.getResourceStream: /icon.png (9565)
+Launch MIDlet class: com.denjhang.vgmbrowser.BrowserMIDlet
+[TEST] === VgmBrowserSingle 测试版启动 ===
+[TEST] 自动播放目录: file:///root/vgm/2025-Turbosound/
+[TEST] 每首播放 30 秒后自动切曲
+System.getProperty#line.separator=
+
+File opened: file:///root/vgm/
+File opened: file:///root/vgm/
+File opened: file:///root/vgm/Beforeny2.vgz
+File opened: file:///root/vgm/bubbled-sKetch-.vgz
+File opened: file:///root/vgm/Digital-Espresso-Revision-2023-12-.vgz
+File opened: file:///root/vgm/Alla vill till himmelen.vgm
+File opened: file:///root/vgm/Beforeny2.vgm
+File opened: file:///root/vgm/bubbled-sKetch-.vgm
+File opened: file:///root/vgm/Bullet Sequence.vgm
+File opened: file:///root/vgm/Digital-Espresso-Revision-2023-12-.vgm
+File opened: file:///root/vgm/Reko7-Xenium-2022-.vgm
+File opened: file:///root/vgm/She-Stole-My-Cat.vgm
+File opened: file:///root/vgm/Solitude-Lost-Party-2024-1-.vgm
+File opened: file:///root/vgm/Thunderdome.vgm
+File opened: file:///root/chunk.txt
+[TEST] 无 chunk.txt，用默认块档
+File opened: file:///root/vgm/2025-Turbosound/
+[TEST] 找到 17 个 VGM 文件
+[TEST] (1/17) 加载: 03-wojtek-unreal-superhero-theme-1_merged.vgm
+File opened: file:///root/vgm/2025-Turbosound/03-wojtek-unreal-superhero-theme-1_merged.vgm
+[TEST] 文件已加载: 48198 bytes
+[RMS] midlet rms path: E:\working\zcode-projects\j2me_dev\emulators\kemnnx64\rms\RGVuamhhbmdfVmdtQnJvd3NlclRlc3Q=\
+[RMS] openRecordStore vgmbrowser_cfg
+[RMS] getNumRecords: 1
+[RMS] getRecord vgmbrowser_cfg 1
+[RMS] closeRecordStore vgmbrowser_cfg
+[TEST] 等待播放启动...
+[FILE] entering file mode (thread=Thread-16)
+[FILE] waiting feedEnded... playing=true feedEnded=false recN=12 regN=39 rec2N=32
+[TEST] 播放已启动，等待完成...
+[FILE] feedEnded=true playing=true recN=85448 regN=16416
+[FILE] smf=200735 bytes, writing...
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+[FILE] wrote 200735 bytes -> file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+[FILE] wrote OK, releasing pipeline
+[FILE] pipeline released (regF+file kept for vis/paint)
+[FILE] playing from file...
+[MEDIA] createPlayer file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+File opened: file:///root/vgm/2025-Turbosound/vgm2mid/03-wojtek-unreal-superhero-theme-1_merged.mid
+[VIS] start: regN1=5472 regN2=9104 durMs=81340 gen.regN=16416 gen2.regN=27312
+[PERF] fps=32 paintAvg=1ms used=45446K delta=45446K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=52816K delta=7370K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=60834K delta=8018K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312
+[PERF] fps=30 paintAvg=0ms used=67553K delta=6718K total=198144K chunkCut=0 chunkBuilt=0 buildMs=0 playMs=0 genRecN=0 genRegN=16416 gen2RecN=0 gen2RegN=27312

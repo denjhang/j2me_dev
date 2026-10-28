@@ -1,0 +1,40 @@
+
+ num     #instances         #bytes  class name
+----------------------------------------------
+   1:         57398        5733656  [B
+   2:         63930        5625840  java.lang.reflect.Method
+   3:        188826        4946032  [Ljava.lang.Object;
+   4:         63711        4587192  java.lang.reflect.Field
+   5:          2771        3115448  [I
+   6:        126052        3031648  [Ljava.lang.Class;
+   7:         23673        1777216  [C
+   8:         55530        1776960  java.util.HashMap$Node
+   9:         61873        1492952  [Ljava.lang.reflect.Method;
+  10:         61828        1483872  java.lang.Class$MethodArray
+  11:         50227        1205448  javax.sound.midi.MidiEvent
+  12:         50225        1205400  com.sun.media.sound.FastShortMessage
+  13:         62539        1000624  java.lang.Integer
+  14:         62233         995728  java.lang.Short
+  15:           342         848184  [J
+  16:           310         587304  [Ljava.util.HashMap$Node;
+  17:         22755         546120  java.lang.String
+  18:          3893         484864  java.lang.Class
+  19:          4467         142944  java.awt.Color
+  20:          3395         108640  java.util.concurrent.ConcurrentHashMap$Node
+  21:          2438          78016  java.awt.Rectangle
+  22:           718          77992  [F
+  23:          2052          65664  net.java.games.input.Event
+  24:          2013          64416  java.util.Hashtable$Entry
+  25:          1599          63960  java.lang.ref.Finalizer
+  26:          1390          55600  java.util.LinkedHashMap$Entry
+  27:          1288          51520  java.util.TreeMap$Entry
+  28:          1363          43616  sun.security.util.ObjectIdentifier
+  29:           720          40320  java.util.zip.ZipFile$ZipFileInputStream
+  30:           716          40096  java.util.zip.ZipFile$ZipFileInflaterInputStream
+  31:          2225          35600  java.lang.Object
+  32:           933          35408  [Ljava.lang.String;
+  33:           794          31760  java.math.BigInteger
+  34:            62          30320  [Ljava.util.concurrent.ConcurrentHashMap$Node;
+  35:           448          28672  net.java.games.input.RawMouseEvent
+  36:           893          28576  sun.security.util.DerInputBuffer
+  37:           893          28576  sun.security.util.DerValue

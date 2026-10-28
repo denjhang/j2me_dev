@@ -970,6 +970,36 @@ aa27459  v1.0.37  切曲 System.gc()
   保留在代码里，真机 P5 阶段照此抓日志。
 - CLDC 1.1 无 `Throwable.getStackTrace()`（Java 1.4 SE 才有），日志别打调用栈。
 
+### 内存泄漏检查 + 卡顿归因（2026-10-28，A/B 受控实验）
+
+**方法**：`FILE_MODE` 临时改 false 编出块模式 jar（`VgmBrowserTest-block.jar`，源码已还原），
+KEmulator 加 `-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCApplicationStoppedTime`
+启动；GC 行与 `[PERF]` 同一 stdout 流天然按时序交错，直接关联卡顿↔停顿。
+数据在 `test-out/memcurve-memleak-20261028*` 与 `test-out/ab-{file,block}.log`。
+
+| 指标 | 文件模式 ab-file | 块模式 ab-block |
+|---|---|---|
+| fps（1s 窗均值） | 30.4，仅 9% 窗口 <28 | 切曲瞬间 11–24 |
+| 声音 | 完全不卡（Young GC 仅 12–18ms，混音缓冲吸收） | 切曲 2s 声画卡死（解压+解析+建块 `buildMs≈226ms/块`，V31 同模式固有） |
+| STW | 332 次共 1.05s，最大 0.40s（切曲 `System.gc()`→Full GC 0.35s） | 正常（仅启动 Metadata 阈值 1 次 Full GC） |
+| old gen | **地板逐首抬升**：t=90s Full GC 157MB→仅回收至 102MB 常驻；10 首后 212MB/248MB=85%，OOM 螺旋 | 稳定 54MB |
+
+**泄漏判定**（按交接判定表）：文件模式命中"old gen 每轮切曲抬地板不回落"=泄漏信号。
+泄漏点**不在本项目代码**：`Player.close()` 已调、`release()` 四连+`System.gc()` 已执行、
+`[FILE] pipeline released` 每首必打；抬地板的是 **KEmulator 侧 JavaSound 的 SMF 展开对象**
+（每首 MidiEvent+FastShortMessage+`[B`+`HashMap$Node` 各 ~36 万实例，数十 MB，跨切曲驻留）。
+**真机不受此影响**：真机 MMAPI 走硬件 MIDI 合成，SMF 不展开成 JavaSound 对象；
+P3（超堆曲目跳过）维持"可实现、不做"的决定。
+**PC 测试可用性**：KEmulator 文件模式连播 ~10 首必 OOM（大 SMF 如 Domen 3.5MB 是主要推手），
+跑长连播采样前需知晓此上限；块模式无此问题（54MB 平坦）。
+
+**卡顿归因清单**（全部有日志证据）：
+1. `jmap -histo/-heap` 每 30s 附着 ≈ 数百 ms 冻结（memcurve run1 fps 12–22 的主因，**采样假象**）。
+2. Young GC 12–18ms（分配率 ~8MB/s，Eden 50–100MB 约 5–6s 一轮）→ 画面闪跳一下，无声影响。
+3. 切曲 `System.gc()` → Full GC(Ergonomics) 0.35s → 切曲瞬间声画同顿（文件模式独有）。
+4. 块模式切曲 2s 卡死 = 建块期 CPU 挤占（这是块模式被文件引擎替代的原因，非回归）。
+5. 实验的"4:05 模拟器闪退"= 预设 `taskkill` 定时收尾，非崩溃（taskkill 成功行与日志末时间戳对齐）。
+
 ---
 
 ## 文档维护
@@ -980,4 +1010,4 @@ aa27459  v1.0.37  切曲 System.gc()
 - 新增性能问题 → 添加到「性能优化指南」
 - 每次发版 → 更新「版本演进历史」时间线
 
-**最后更新**：2026-10-28，P2 跳转验证通过（7/9 键 + setMediaTime 微秒单位修复）
+**最后更新**：2026-10-28，内存泄漏检查+卡顿归因完成：文件模式 old gen 地板抬升=KEmulator JavaSound SMF 展开泄漏（PC-only，真机走硬件合成不受影响）；块模式 54MB 平坦、切曲 2s 卡死为建块固有；run1 高频卡顿=jmap 附着假象
